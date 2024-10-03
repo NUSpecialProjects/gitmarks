@@ -20,6 +20,8 @@ const Stub: React.FC = () => {
   useEffect(() => {
     fetchStubs().then((stubArray) => {
       setStubs(stubArray);
+    }).catch((err: unknown) => {
+        console.log(err)
     });
   }, []);
 
