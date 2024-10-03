@@ -1,6 +1,5 @@
+import { Banner, NavStack } from "../../components"
 import { Outlet } from "react-router-dom"
-import Banner from "../Banner";
-import NavStack from "../NavStack";
 
 const Layout: React.FC = () => {
     return (

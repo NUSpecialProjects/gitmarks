@@ -8,7 +8,7 @@ import (
 )
 
 func (db *DB) GetTests(ctx context.Context) ([]models.Test, error) {
-	rows, err := db.conn.Query(ctx, "SELECT * FROM test")
+	rows, err := db.connPool.Query(ctx, "SELECT * FROM test")
 	if err != nil {
 		return []models.Test{}, err
 	}
