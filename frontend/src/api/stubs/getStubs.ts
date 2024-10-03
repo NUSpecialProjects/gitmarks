@@ -18,7 +18,7 @@ export const fetchStubs = async (): Promise<StubProps[]> => {
     );
   }
 
-  const response = await fetch(`https://${String(apiDomain)}/tests/all`, {
+  const response = await fetch(`http://${String(apiDomain)}/tests/all`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
