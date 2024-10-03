@@ -18,7 +18,7 @@ export const fetchStubs = async (): Promise<StubProps[]> => {
     );
   }
 
-  const response = await fetch(`http://${String(apiDomain)}/tests/all`, {
+  const response = await fetch(`${String(apiDomain)}/tests/all`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -39,8 +39,8 @@ export const fetchStubs = async (): Promise<StubProps[]> => {
 
   // Ensure proper mapping of API response to StubProps
   const stubs: StubProps[] = data.map((stub: ApiStub) => ({
-    stub_id: stub.id,            // Mapping API field 'id' to 'stub_id'
-    stub_content: stub.content,  // Mapping API field 'content' to 'stub_content'
+    stub_id: stub.id, 
+    stub_content: stub.content,  
   }));
 
   return stubs;
