@@ -7,6 +7,7 @@ const NavStack: React.FC = () => {
     { name: "Grading", dest: "/grading", Icon: FaStream },
     { name: "Assignments", dest: "/assignments", Icon: FaUsers },
     { name: "Settings", dest: "/settings", Icon: FaCog },
+    {name: "Stubs", dest: "/stubs", Icon: FaCog}
   ];
 
   return (
