@@ -1,8 +1,16 @@
+
+
 import { StubProps } from "../../pages/Stub";
+
+// Define the expected structure of the API response
+interface ApiStub {
+  id: string;
+  content: string;
+}
 
 // Function to fetch stubs from the API
 export const fetchStubs = async (): Promise<StubProps[]> => {
-  const apiDomain = await import.meta.env.VITE_TEST_VAR;
+  const apiDomain: string = import.meta.env.VITE_PUBLIC_API_DOMAIN as string;
 
   if (!apiDomain) {
     throw new Error(
@@ -10,32 +18,30 @@ export const fetchStubs = async (): Promise<StubProps[]> => {
     );
   }
 
-  const response = await fetch(`${apiDomain}/tests/all`, {
+  const response = await fetch(`https://${String(apiDomain)}/tests/all`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
   });
 
+  console.log(response.headers.get("content-type"))
+
   if (!response.ok) {
     throw new Error("Failed to fetch stubs");
   }
+  
+  console.log(response)
 
-  const data: any[] = await response.json();
+  // Explicitly define the type for the data returned from the API
+  const data: ApiStub[] = await response.json() as ApiStub[]
 
-  const stubs: StubProps[] = data.map((stub: any) => ({
-    stub_id: stub.id,
-    stub_content: stub.content,
+
+  // Ensure proper mapping of API response to StubProps
+  const stubs: StubProps[] = data.map((stub: ApiStub) => ({
+    stub_id: stub.id,            // Mapping API field 'id' to 'stub_id'
+    stub_content: stub.content,  // Mapping API field 'content' to 'stub_content'
   }));
+
   return stubs;
 };
-/*
-// Example usage of the fetchStubs function
-fetchStubs()
-  .then((stubs) => {
-    console.log("Stubs:", stubs);
-  })
-  .catch((error) => {
-    console.error("Error fetching stubs:", error);
-  });
-*/
