@@ -1,0 +1,52 @@
+name: Deploy Backend to ECS
+
+on:
+  push:
+    branches:
+      - terraform
+      - feature/fullstack-poc
+    paths:
+      - 'backend/**'
+      - 'terraform/**'
+      - '.github/workflows/backend_deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+        contents: read
+        id-token: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::058264409130:role/github-actions-deploy-role
+        aws-region: us-east-2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build Docker image
+      run: |
+        docker buildx build --platform linux/amd64 -t khoury-classroom-backend ./backend --load
+
+    - name: Tag Docker image
+      run: |
+        docker tag khoury-classroom-backend:latest 058264409130.dkr.ecr.us-east-2.amazonaws.com/khoury-classroom/backend:latest
+
+    - name: Push Docker image to ECR
+      run: |
+        docker push 058264409130.dkr.ecr.us-east-2.amazonaws.com/khoury-classroom/backend:latest
+
+    - name: Deploy to Amazon ECS
+      run: |
+        aws ecs update-service --cluster cb-cluster --service cb-service --force-new-deployment
