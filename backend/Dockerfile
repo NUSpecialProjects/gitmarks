@@ -47,7 +47,7 @@ WORKDIR /root/
 COPY --from=build /bin/server /bin/server
 
 # Expose the port that the application will listen on
-EXPOSE 3000
+EXPOSE 8080
 
 # Set the user to the non-privileged appuser
 USER appuser
