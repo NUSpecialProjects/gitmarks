@@ -1,5 +1,18 @@
 services:
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      target: final
+    ports:
+      - '8080:8080'
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
   db:
+    container_name: db
     image: postgres:14.1-alpine
     restart: always
     healthcheck:
@@ -18,7 +31,7 @@ services:
       retries: 10
     environment:
       - POSTGRES_USER=user
-      - POSTGRES_DB=classroom
+      - POSTGRES_DB=khouryclassroomdb
       - POSTGRES_PASSWORD=pwd
     ports:
       - '5434:5432'

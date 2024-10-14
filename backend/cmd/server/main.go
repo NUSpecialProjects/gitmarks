@@ -1,29 +1,22 @@
 package main
 
 import (
-  "context"
+	"context"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
 	"github.com/CamPlume1/khoury-classroom/internal/config"
 	"github.com/CamPlume1/khoury-classroom/internal/github/api"
 	"github.com/CamPlume1/khoury-classroom/internal/server"
-  "github.com/CamPlume1/khoury-classroom/internal/storage/postgres"
+	"github.com/CamPlume1/khoury-classroom/internal/storage/postgres"
 	"github.com/CamPlume1/khoury-classroom/internal/types"
-	"github.com/joho/godotenv"
-
 )
 
 func main() {
 	ctx := context.Background()
-
-	if isLocal() {
-		if err := godotenv.Load("../../../.env"); err != nil {
-			log.Fatalf("Error loading .env file: %v", err)
-		}
-	}
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -40,7 +33,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to establish connection with Github")
 	}
-
 
 	app := server.New(types.Params{
 		AuthHandler:       cfg.AuthHandler,

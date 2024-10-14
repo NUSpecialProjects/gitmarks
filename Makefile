@@ -15,36 +15,6 @@ frontend-run:
 frontend-lint:
 	cd frontend && npx eslint
 
-# Installing backend dependencies
-.PHONY: backend-dep
-backend-dep:
-	cd backend/cmd/server && go get .
-
-# Lint backend source code
-.PHONY: backend-lint
-backend-lint:
-	cd backend && golangci-lint run
-
-# Format backend source code
-.PHONY: backend-format
-backend-format:
-	cd backend && go fmt ./...
-
-# Run backend tests
-.PHONY: backend-test
-backend-test:
-	cd backend && go test ./...
-
-# Run backend
-.PHONY: backend-run
-backend-run:
-	cd backend/cmd/server && go run main.go
-
-# Build backend
-.PHONY: backend-build
-backend-build:
-	cd backend && go build -o bin/classroom cmd/server/main.go
-
 # Run database
 .PHONY: db-run
 db-run:
