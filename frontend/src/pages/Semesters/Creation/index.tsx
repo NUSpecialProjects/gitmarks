@@ -178,7 +178,7 @@ const SemesterCreation: React.FC = () => {
       </div>
       <button
         onClick={() => {
-          navigate("/class-selection");
+          navigate("/app/classroom/select");
         }}
       >
         {" "}

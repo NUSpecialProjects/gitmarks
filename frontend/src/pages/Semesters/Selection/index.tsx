@@ -159,7 +159,7 @@ const SemesterSelection: React.FC = () => {
           <p>You have no classes.</p>
         </div>
       )}
-      <button onClick={() => navigate("/class-creation")}>
+      <button onClick={() => navigate("/app/classroom/create")}>
         Create a Class
       </button>
     </div>

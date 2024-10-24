@@ -32,7 +32,7 @@ const Callback: React.FC = () => {
             } else {
               //Successful login. Navigate to dashboard page and call login
               login();
-              navigate("/class-creation");
+              navigate("/app/classroom/create");
             }
           })
           .catch((err: unknown) => {

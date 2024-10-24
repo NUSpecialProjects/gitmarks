@@ -1,10 +1,13 @@
 import { FiGithub, FiX } from "react-icons/fi";
 import "./styles.css";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useContext, useEffect, useMemo, useState } from "react";
 import ErrorMessage from "@/components/Error";
+import { AuthContext } from "@/contexts/auth";
 
 const Login: React.FC = () => {
+  const { isLoggedIn } = useContext(AuthContext);
+
   const clientId: string = import.meta.env.VITE_GITHUB_CLIENT_ID as string;
   const location = useLocation();
   const navigate = useNavigate();
@@ -23,7 +26,9 @@ const Login: React.FC = () => {
     }
   }, [errorFromQuery, navigate, queryParams]);
 
-  return (
+  return isLoggedIn ? (
+    <Navigate to="/app/dashboard" />
+  ) : (
     <div className="LandingPage">
       <div className="LogoBar">
         <FiGithub className="Icon" />

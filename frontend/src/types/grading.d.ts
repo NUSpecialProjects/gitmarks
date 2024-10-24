@@ -8,7 +8,7 @@ interface IGradingSubmissionRow {
 }
 
 interface IGradingAssignmentRow extends React.HTMLProps<HTMLDivElement> {
-  submissions: IGradingSubmissionRow[];
+  assignmentId: number;
 }
 
 /******************************

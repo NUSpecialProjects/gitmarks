@@ -1,3 +1,4 @@
+import PageNotFound from "./PageNotFound";
 import Settings from "./Settings";
 import Dashboard from "./Dashboard";
 import Assignments from "./Assignments";
@@ -10,6 +11,7 @@ import SemesterCreation from "./Semesters/Creation";
 import SemesterSelection from "./Semesters/Selection";
 
 export {
+  PageNotFound,
   Settings,
   Dashboard,
   Assignments,

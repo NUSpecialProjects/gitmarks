@@ -1,6 +1,6 @@
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import Prism from "prismjs";
 import "prismjs/plugins/line-numbers/prism-line-numbers";
@@ -25,6 +25,8 @@ import {
 import "./styles.css";
 
 const Grader: React.FC = () => {
+  const navigate = useNavigate();
+
   // params
   const { assignmentId, studentAssignmentId } = useParams();
   const { selectedSemester } = useContext(SelectedSemesterContext);
@@ -51,8 +53,8 @@ const Grader: React.FC = () => {
         setStudentAssignment(resp);
       })
       .catch((err: unknown) => {
-        // todo: reroute 404
         console.log(err);
+        navigate("/404");
       });
   }, [studentAssignmentId]);
 
