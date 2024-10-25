@@ -14,13 +14,13 @@ export const getGrades = async (assID: number): Promise<GradeEntry[]> => {
     if (!response.ok) {
         throw new Error("Network response was not ok");
     }
-    const data = await response.json();
+    return await response.json() as GradeEntry[];
 
     // Coerce response into an array of GradeEntry objects
-    return data.map((item: any) => ({
-        name: item.name,   
-        value: item.value    
-    })) as GradeEntry[];
+    // return data.map((item: any) => ({
+    //     name: item.name,   
+    //     value: item.value    
+    // })) as GradeEntry[];
 };
 
 export const getUserGrades = async (userGH: string): Promise<GradeEntry[]> => {
@@ -34,13 +34,13 @@ export const getUserGrades = async (userGH: string): Promise<GradeEntry[]> => {
     if (!response.ok) {
         throw new Error("Network response was not ok");
     }
-    const data = await response.json();
+    return await response.json() as GradeEntry[];
 
     // Coerce response into an array of GradeEntry objects
-    return data.map((item: any) => ({
-        name: item.name,   
-        value: item.value    
-    })) as GradeEntry[];
+    // return data.map((item: any) => ({
+    //     name: item.name,   
+    //     value: item.value    
+    // })) as GradeEntry[];
 };
 
 
