@@ -126,5 +126,5 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	CreateBranchRuleset(ctx context.Context,  orgName, repoName string) error
 
 	//Creates PR enforcements
-	CreatePREnforcement(ctx context.Context, orgName, repoName string) error
+	CreatePREnforcement(ctx context.Context, orgName, repoName, destBranch string) error
 }

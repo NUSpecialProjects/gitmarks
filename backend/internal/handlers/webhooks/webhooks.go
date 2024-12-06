@@ -92,16 +92,17 @@ func (s *WebHookService) baseRepoInitialization(c *fiber.Ctx, pushEvent github.P
 
 	// Retrieve assignment deadline from DB
 	deadline, err := s.store.GetAssignmentDueDateByRepoName(c.Context(), *pushEvent.Repo.Name)
-	if err == nil {
+	if err != nil && deadline == nil {
 		// There is a deadline
 		err = s.appClient.CreateDeadlineEnforcement(c.Context(), deadline, *pushEvent.Repo.Organization, *pushEvent.Repo.Name)
 		if err != nil {
-			//TODO: Recovery. Will do in a new ticket. For now, log
+			//TODO: Recovery. Will do in a new ticket. For now, log. KHO-239
 			return err
 		}
 	}
 	//Create PR Enforcement Action
-	err = s.appClient.CreatePREnforcement(c.Context(), *pushEvent.Repo.Organization, *pushEvent.Repo.Name)
+	// Should store org info with default branch, and encode the name here, could be master
+	err = s.appClient.CreatePREnforcement(c.Context(), *pushEvent.Repo.Organization, *pushEvent.Repo.Name, "main")
 		if err != nil {
 			return err
 		}

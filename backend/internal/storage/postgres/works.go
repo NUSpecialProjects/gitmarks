@@ -139,14 +139,6 @@ WHERE student_work_id = $3
 	return formatted[0], nil
 }
 
-// func (db *DB) GetWorkFromRepoName(ctx context.Context, repoName string) (*models.StudentWork, error){
-// 	var studentWork models.StudentWork
-// 	err := db.connPool.QueryRow(ctx, `SELECT * FROM student_works WHERE repo_name = $1`, repoName).Scan(&studentWork)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &studentWork, nil
-// }
 
 func (db *DB) CreateStudentWork(ctx context.Context, assignmentOutlineID int32, gitHubUserID int64, repoName string, workState models.WorkState, dueDate *time.Time) (models.StudentWork, error) {
 	var studentWork models.StudentWork

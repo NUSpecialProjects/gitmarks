@@ -293,20 +293,22 @@ func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *t
 }
 
 
-func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName string) error {
+func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName, destBranch string) error {
 
 	addition := models.RepositoryAddition{
 		FilePath: ".github/workflows/branchProtections.yml",
 		RepoName: repoName,
 		OwnerName: orgName,
-		DestinationBranch: "main",
-		Content: utils.TargetBranchProtectionAction(),
+		DestinationBranch: destBranch,
+		Content: utils.TargetBranchProtectionAction(), //returns content string
 		CommitMessage: "Deadline enforcement GH action files",
 	}
-	return api.EditRepository(ctx, &addition)
-
+	return api.EditRepository(ctx, &addition) 
 }
 
+
+
+//make private
 func (api *CommonAPI) EditRepository(ctx context.Context, addition *models.RepositoryAddition) error {
 	endpoint := fmt.Sprintf("/repos/%s/%s/contents/%s", addition.OwnerName, addition.RepoName, addition.FilePath)
 	encodedContent := base64.StdEncoding.EncodeToString([]byte(addition.Content))
