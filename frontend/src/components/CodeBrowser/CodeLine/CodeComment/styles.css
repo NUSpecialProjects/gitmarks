@@ -1,0 +1,181 @@
+.CodeComment {
+  padding: 12px 20px;
+  width: 100%;
+  border: 1px solid var(--comment-border);
+  background: var(--comment-background);
+  border-radius: 4px;
+  font-family: var(--primary-font);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #a3a3a3;
+
+  &__head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-weight: 500;
+    color: #dfdfdf;
+    font-size: 14px;
+
+    > div {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      img {
+        width: 26px;
+        height: 26px;
+        border-radius: 100%;
+      }
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+  }
+
+  &__pendingPill {
+    --pending-color: #ffaf2e;
+    display: flex;
+    width: fit-content;
+    flex-direction: row;
+    color: var(--pending-color);
+    padding: 1px 14px;
+    border-radius: 100vw;
+    font-weight: 400;
+    border: 2px solid var(--pending-color);
+    font-size: 11px;
+  }
+
+  &__points {
+    display: flex;
+    width: fit-content;
+    flex-direction: row;
+    gap: 5px;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: 500;
+
+    &--positive {
+      background: var(--green);
+    }
+    &--negative {
+      background: var(--red);
+    }
+    &--neutral {
+      background: var(--comment-border);
+    }
+  }
+}
+
+.CodeCommentForm {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 10px;
+
+  textarea,
+  input {
+    resize: vertical;
+    width: 100%;
+    outline: none;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--comment-border);
+    border-radius: 4px;
+    padding: 10px;
+    color: white;
+    font-family: var(--primary-font);
+
+    &:focus {
+      border-color: var(--brand-lighter);
+    }
+  }
+
+  &__points {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 40px;
+
+    label {
+      margin-right: 10px;
+    }
+    input {
+      height: 100%;
+      width: 60px;
+      text-align: center;
+      -webkit-appearance: textfield;
+      -moz-appearance: textfield;
+      appearance: textfield;
+      border-right: none;
+      border-bottom-right-radius: 0;
+      border-top-right-radius: 0;
+
+      &::-webkit-inner-spin-button,
+      &::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+      }
+
+      &:focus ~ &__spinners {
+        border-color: var(--brand-lighter);
+      }
+    }
+
+    &__spinners {
+      height: 100%;
+      border: 1px solid var(--comment-border);
+      border-left: none;
+      border-bottom-right-radius: 4px;
+      border-top-right-radius: 4px;
+
+      > div {
+        background: rgba(0, 0, 0, 0.1);
+        height: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5em;
+        cursor: pointer;
+        user-select: none;
+        border-left: 1px solid var(--comment-border);
+
+        &:first-of-type {
+          border-bottom: 1px solid var(--comment-border);
+          &:active {
+            background: var(--green);
+          }
+        }
+        &:last-of-type {
+          &:active {
+            background: var(--red);
+          }
+        }
+
+        &:hover {
+          background: var(--comment-border);
+        }
+      }
+    }
+  }
+
+  &__buttons {
+    display: inline-flex;
+    gap: 5px;
+
+    > .Button {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      font-weight: 500;
+    }
+
+    &--cancel {
+      background: var(--comment-border);
+      border: 1px solid var(--comment-border);
+    }
+  }
+}
