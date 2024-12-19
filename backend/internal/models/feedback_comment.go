@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type FeedbackComment struct {
+type FeedbackCommentBase struct {
 	FeedbackCommentID int       `json:"feedback_comment_id" db:"id"`
 	StudentWorkID     int       `json:"student_work_id"`
 	RubricItemID      int       `json:"rubric_item_id"`
@@ -13,10 +13,14 @@ type FeedbackComment struct {
 	FilePath          *string   `json:"path"`
 	FileLine          *int      `json:"line"`
 	CreatedAt         time.Time `json:"created_at"`
-	SupersededBy      *int      `json:"superseded_by"`
+}
+
+type FeedbackComment struct {
+	FeedbackCommentBase
+	SupersededBy *int `json:"superseded_by"`
 }
 
 type FeedbackCommentWithHistory struct {
-	FeedbackComment
-	History []FeedbackComment `json:"history"`
+	FeedbackCommentBase
+	History []FeedbackCommentBase `json:"history"`
 }

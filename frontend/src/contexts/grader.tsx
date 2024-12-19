@@ -104,6 +104,7 @@ export const GraderProvider: React.FC<{
       .then((resp) => {
         setStudentWork(resp.student_work);
         setFeedback(resp.feedback);
+        console.log(resp.feedback);
         setStagedFeedback({});
       })
       .catch((_: unknown) => {

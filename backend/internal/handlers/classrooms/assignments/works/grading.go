@@ -18,34 +18,36 @@ const LatexNegativePointPrefix = `$${\huge\color{WildStrawberry}\textbf{[%d]}}$$
 func formatFeedbackForGrader(comments []models.FeedbackComment) []models.FeedbackCommentWithHistory {
 	// convert to map for fast lookup
 	commentMap := make(map[int]models.FeedbackComment)
+	supersedesMap := make(map[int]int) // maps comment id to the id of comment that it supersedes
+
 	for _, comment := range comments {
 		commentMap[comment.FeedbackCommentID] = comment
+		if comment.SupersededBy != nil {
+			supersedesMap[*comment.SupersededBy] = comment.FeedbackCommentID
+		}
 	}
 
-	seen := make(map[int]bool)
 	var formattedComments []models.FeedbackCommentWithHistory
 	for _, comment := range comments {
-		if seen[comment.FeedbackCommentID] {
+		if comment.SupersededBy != nil {
 			continue
 		}
 
-		// build comment history in "reverse" so that most recent is on top
-		var history []models.FeedbackComment
-		current := comment
-		for current.SupersededBy != nil {
-			history = append([]models.FeedbackComment{current}, history...)
-			seen[current.FeedbackCommentID] = true
-			next, exists := commentMap[*current.SupersededBy]
-			if !exists {
+		var history []models.FeedbackCommentBase
+		current := comment.FeedbackCommentBase
+
+		for {
+			if supersedesID, supersedesAnything := supersedesMap[current.FeedbackCommentID]; supersedesAnything {
+				current = commentMap[supersedesID].FeedbackCommentBase
+				history = append(history, current)
+			} else {
 				break
 			}
-			current = next
 		}
 
-		seen[current.FeedbackCommentID] = true
 		formattedComments = append(formattedComments, models.FeedbackCommentWithHistory{
-			FeedbackComment: current,
-			History:         history,
+			FeedbackCommentBase: comment.FeedbackCommentBase,
+			History:             history,
 		})
 	}
 

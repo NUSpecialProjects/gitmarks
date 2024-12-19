@@ -13,6 +13,7 @@ interface IGraderFeedback {
   body: string;
   points: number;
   ta_username?: string;
+  history?: IGraderFeedback[];
 }
 
 /******************************
