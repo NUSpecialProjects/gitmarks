@@ -197,7 +197,6 @@ func (s *ClassroomService) getClassroomUsers() fiber.Handler {
 
 		usersInClassroom, err := s.store.GetUsersInClassroom(c.Context(), classroomID)
 		if err != nil {
-
 			return errs.InternalServerError()
 		}
 
@@ -218,6 +217,7 @@ func (s *ClassroomService) getClassroomUsers() fiber.Handler {
 		return c.Status(http.StatusOK).JSON(fiber.Map{"users": updatedUsersInClassroom})
 	}
 }
+
 func (s *ClassroomService) getRubricsInClassroom() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		classroomID, err := strconv.ParseInt(c.Params("classroom_id"), 10, 64)
@@ -321,6 +321,14 @@ func (s *ClassroomService) generateClassroomToken() fiber.Handler {
 		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
+		}
+
+		// if the link is permenant, use the existing permanent token
+		if body.Duration == nil {
+			classroomToken, err := s.store.GetPermanentClassroomTokenByClassroomIDAndRole(c.Context(), classroomID, classroomRole)
+			if err == nil {
+				return c.Status(http.StatusOK).JSON(fiber.Map{"token": classroomToken.Token})
+			}
 		}
 
 		token, err := utils.GenerateToken(16)

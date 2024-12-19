@@ -1,4 +1,5 @@
-import { useState, createContext, useLayoutEffect, useContext } from "react";
+import { useState, createContext, useContext, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 import { logout as logoutApi } from "@/api/auth";
 import { SelectedClassroomContext } from "./selectedClassroom";
@@ -21,49 +22,56 @@ export const AuthContext = createContext<IAuthContext>({
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [currentUser, setCurrentUser] = useState<IGitHubUser | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
 
-  useLayoutEffect(() => {
-    fetchCurrentUser()
-      .then((user: IGitHubUser | null) => {
-        if (user) {
-          setIsLoggedIn(true);
-          setCurrentUser(user);
-        } else {
-          setIsLoggedIn(false);
-        }
-      })
-      .catch((_: unknown) => {
-        setIsLoggedIn(false);
-        setCurrentUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: fetchCurrentUser,
+    select: (data: IUserResponse) => {
+      return data;
+    },
+    retry: false,
+    staleTime: 0, 
+    gcTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true
+  });
+
+  useEffect(() => {
+    setIsLoggedIn(!!user);
+  }, [user]);
+
+  const logoutMutation = useMutation({
+    mutationFn: logoutApi,
+    onSuccess: () => {
+      setSelectedClassroom(null);
+      setIsLoggedIn(false);
+    },
+    retry: false // Don't retry logout operations
+  });
 
   const login = () => {
     setIsLoggedIn(true);
   };
 
   const logout = () => {
-    logoutApi()
-      .then(() => {
-        setSelectedClassroom(null);
-        setIsLoggedIn(false);
-      })
-      .catch((_: Error) => {});
+    logoutMutation.mutate();
   };
 
-  if (loading) {
+  if (isLoading) {
     return null;
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, isLoggedIn, login, logout }}>
+    <AuthContext.Provider 
+      value={{ 
+        currentUser: user?.github_user || null, 
+        isLoggedIn, 
+        login, 
+        logout 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

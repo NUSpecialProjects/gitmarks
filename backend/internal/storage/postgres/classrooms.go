@@ -302,6 +302,27 @@ func (db *DB) GetClassroomToken(ctx context.Context, token string) (models.Class
 	return tokenData, nil
 }
 
+func (db *DB) GetPermanentClassroomTokenByClassroomIDAndRole(ctx context.Context, classroomID int64, classroomRole models.ClassroomRole) (models.ClassroomToken, error) {
+	var tokenData models.ClassroomToken
+	err := db.connPool.QueryRow(ctx, `
+		SELECT classroom_id, classroom_role, token, created_at, expires_at
+		FROM classroom_tokens
+		WHERE classroom_id = $1 AND classroom_role = $2 AND expires_at IS NULL
+	`, classroomID, classroomRole).Scan(
+		&tokenData.ClassroomID,
+		&tokenData.ClassroomRole,
+		&tokenData.Token,
+		&tokenData.CreatedAt,
+		&tokenData.ExpiresAt,
+	)
+
+	if err != nil {
+		return models.ClassroomToken{}, errs.NewDBError(err)
+	}
+
+	return tokenData, nil
+}
+
 func (db *DB) GetNumberOfStudentsInClassroom(ctx context.Context, classroomID int64) (int, error) {
 	var count int
 	err := db.connPool.QueryRow(ctx, `

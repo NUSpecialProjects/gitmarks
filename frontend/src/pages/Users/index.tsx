@@ -1,7 +1,7 @@
 import { sendOrganizationInvitesToRequestedUsers, sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom, postClassroomToken, getClassroomUsers } from "@/api/classrooms";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import { Table, TableCell, TableRow } from "@/components/Table";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
@@ -11,6 +11,7 @@ import CopyLink from "@/components/CopyLink";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface GenericRolePageProps {
   role_label: string;
@@ -26,22 +27,51 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const { classroomUser: currentClassroomUser } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
-  const [link, setLink] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [users, setUsers] = useState<IClassroomUser[]>(initialUserList);
+  const queryClient = useQueryClient();
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['classroomUsers', selectedClassroom?.id, role_type],
+    queryFn: async () => {
+      if (!selectedClassroom?.id) return [];
+      const users = await getClassroomUsers(selectedClassroom.id);
+      return users.filter((user: IClassroomUser) => user.classroom_role === role_type);
+    },
+    enabled: !!selectedClassroom?.id,
+    initialData: initialUserList
+  });
+
+  const { data: inviteLink = "" } = useQuery({
+    queryKey: ['classroomToken', selectedClassroom?.id, role_type],
+    queryFn: async () => {
+      if (!selectedClassroom?.id || !showActionsColumn) return "";
+      const data = await postClassroomToken(selectedClassroom.id, role_type);
+      return `${base_url}/app/token/classroom/join?token=${data.token}`;
+    },
+    enabled: !!selectedClassroom?.id,
+  });
 
   const removeUserFromList = (userId: number) => {
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+    queryClient.setQueryData(
+      ['classroomUsers', selectedClassroom?.id, role_type],
+      (oldData: IClassroomUser[] = []) => oldData.filter(user => user.id !== userId)
+    );
   };
 
   const addUserToList = (user: IClassroomUser) => {
-    setUsers(prevUsers => [...prevUsers, user]);
+    queryClient.setQueryData(
+      ['classroomUsers', selectedClassroom?.id, role_type],
+      (oldData: IClassroomUser[] = []) => [...oldData, user]
+    );
   };
 
   const handleInviteAll = async () => {
     await sendOrganizationInvitesToRequestedUsers(selectedClassroom!.id, role_type)
       .then((data: IClassroomInvitedUsersListResponse) => {
-        setUsers([...data.invited_users, ...data.requested_users]);
+        queryClient.setQueryData(
+          ['classroomUsers', selectedClassroom?.id, role_type],
+          [...data.invited_users, ...data.requested_users]
+        );
       })
       .catch((_) => {
         setError("Failed to invite all users. Please try again.");
@@ -83,25 +113,6 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
       });
   };
 
-  useEffect(() => {
-    const handleRefresh = async () => {
-      if (!selectedClassroom) {
-        setError(null);
-        return;
-      }
-
-      try {
-        const users = await getClassroomUsers(selectedClassroom.id);
-        setUsers(users.filter((user: IClassroomUser) => user.classroom_role === role_type));
-        setError(null);
-      } catch (_) {
-        setError("Failed to update classroom users");
-      }
-    };
-
-    handleRefresh();
-  }, [selectedClassroom]);
-
   // Don't show buttons if (the current user is a professor) AND (the current user is not the target user)
   function shouldShowActionButtons(user: IClassroomUser) {
     return currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR && currentClassroomUser?.id !== user.id;
@@ -129,30 +140,10 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     }
   };
 
-  useEffect(() => {
-    const handleCreateToken = async () => {
-      if (!selectedClassroom || !showActionsColumn) {
-        return;
-      }
-      await postClassroomToken(selectedClassroom.id, role_type)
-        .then((data: ITokenResponse) => {
-          const url = `${base_url}/app/token/classroom/join?token=${data.token}`;
-          setLink(url);
-        })
-        .catch((_) => {
-          setError("Failed to generate invite URL. Please try again.");
-        });
-    };
-
-    if (selectedClassroom) {
-      handleCreateToken();
-    }
-  }, [selectedClassroom, showActionsColumn])
-
   return (
     <div>
       <SubPageHeader pageTitle={role_label + `s`} chevronLink="/app/dashboard/"></SubPageHeader>
-      {link && (
+      {inviteLink && (
         <div className="Users__inviteLinkWrapper">
           <div>
             <h2>Invite {role_label + `s`}</h2>
@@ -161,7 +152,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
               <p>Warning: This will make them an admin of the organization.</p>}
             {error && <p className="error">{error}</p>}
           </div>
-          <CopyLink link={link} name="invite-link"></CopyLink>
+          <CopyLink link={inviteLink} name="invite-link"></CopyLink>
 
           {users.filter(user => (user.status === ClassroomUserStatus.REQUESTED && shouldShowActionButtons(user))).length > 0 && (
             <div className="Users__inviteAllWrapper">

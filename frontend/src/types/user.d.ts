@@ -8,6 +8,11 @@ interface IGitHubUser {
   email: string | null;
 }
 
+interface IUserResponse {
+  github_user: IGitHubUser;
+  user: IClassroomUser;
+}
+
 interface IGitHubUserResponse {
   user: IGitHubUser;
 }

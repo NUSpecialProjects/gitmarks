@@ -1,35 +1,19 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getClassroomUsers } from "@/api/classrooms";
 
 export function useClassroomUsersList(classroomId?: number) {
-  const [classroomUsers, setClassroomUsers] = useState<IClassroomUser[]>([]);
-  const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: classroomUsers, error, isLoading } = useQuery({
+    queryKey: ['classroomUsers', classroomId],
+    queryFn: async () => {
+      if (!classroomId) return [];
+      return await getClassroomUsers(classroomId);
+    },
+    enabled: !!classroomId
+  });
 
-  useEffect(() => {
-    const fetchClassroomUsers = async () => {
-      if (classroomId) {
-        await getClassroomUsers(classroomId)
-          .then((users) => {
-            setClassroomUsers(users);
-            setError(null);
-          })
-          .catch((_) => {
-            setError(new Error("Failed to fetch classroom users"));
-            setClassroomUsers([]);
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-      } else {
-        setClassroomUsers([]);
-        setError(null);
-        setLoading(false);
-      }
-    };
-
-    fetchClassroomUsers();
-  }, [classroomId]);
-
-  return { classroomUsers, error, loading };
+  return { 
+    classroomUsers: classroomUsers || [], 
+    error: error as Error | null,
+    loading: isLoading 
+  };
 }

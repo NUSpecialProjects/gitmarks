@@ -1,6 +1,6 @@
+import LoadingSpinner from "@/components/LoadingSpinner";
 import useUrlParameter from "@/hooks/useUrlParameter";
 import { useEffect, useState } from "react";
-import ClipLoader from "react-spinners/ClipLoader";
 
 export interface TokenHandlerConfig<T extends ITokenUseResponse> {
         useTokenFunction: (token: string) => Promise<T>;
@@ -45,7 +45,7 @@ export interface TokenHandlerConfig<T extends ITokenUseResponse> {
   
     return (
         <>
-          <ClipLoader size={50} color={"#123abc"} loading={loading} />
+          {loading && <LoadingSpinner />} 
           <p>{message}</p>
         </>
     );

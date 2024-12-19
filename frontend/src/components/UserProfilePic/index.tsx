@@ -2,14 +2,16 @@ import React, { useEffect, useState } from "react";
 import "./styles.css";
 import { fetchCurrentUser } from "@/api/users";
 
+
+
 const UserProfilePic: React.FC = () => {
   const [user, setUser] = useState<IGitHubUser | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       await fetchCurrentUser()
-        .then((user: IGitHubUser | null) => {
-          setUser(user);
+        .then((data: IUserResponse) => {
+          setUser(data.github_user);
         })
         .catch((error: unknown) => {
           console.error("Error fetching user data:", error);

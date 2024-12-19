@@ -142,6 +142,14 @@ func (s *AssignmentService) generateAssignmentToken() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
+		// if the link is permenant, use the existing permanent token
+		if body.Duration == nil {
+			assignmentToken, err := s.store.GetPermanentAssignmentTokenByAssignmentID(c.Context(), assignmentID)
+			if err == nil {
+				return c.Status(http.StatusOK).JSON(fiber.Map{"token": assignmentToken.Token})
+			}
+		}
+
 		token, err := utils.GenerateToken(16)
 		if err != nil {
 			return errs.InternalServerError()

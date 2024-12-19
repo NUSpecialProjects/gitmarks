@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, ReactElement } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import ClipLoader from "react-spinners/ClipLoader";
 import Button from "../Button";
 import './styles.css';
+import LoadingSpinner from "../LoadingSpinner";
 
 const MultiStepForm = <T,>({
   steps,
@@ -123,7 +123,7 @@ const MultiStepForm = <T,>({
       {/* Spinner Overlay */}
       {isLoading && (
         <div className="MultiStepForm__spinnerOverlay">
-          <ClipLoader size={50} color={"#123abc"} loading={isLoading} />
+          <LoadingSpinner />
         </div>
       )}
     </div>

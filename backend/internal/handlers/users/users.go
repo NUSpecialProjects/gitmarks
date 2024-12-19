@@ -20,13 +20,19 @@ func (s *UserService) GetUser() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
-		user, err := client.GetUser(c.Context(), userName)
+		githubUser, err := client.GetUser(c.Context(), userName)
+		if err != nil {
+			return errs.AuthenticationError()
+		}
+
+		user, err := s.store.GetUserByGitHubID(c.Context(), *githubUser.ID)
 		if err != nil {
 			return errs.AuthenticationError()
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"user": user,
+			"user":        user,
+			"github_user": githubUser,
 		})
 	}
 }

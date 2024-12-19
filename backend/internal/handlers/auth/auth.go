@@ -142,12 +142,20 @@ func (service *AuthService) GetCurrentUser() fiber.Handler {
 			return errs.AuthenticationError()
 		}
 
-		user, err := client.GetCurrentUser(c.Context())
+		githubUser, err := client.GetCurrentUser(c.Context())
 		if err != nil {
 			return errs.AuthenticationError()
 		}
 
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{"user": user})
+		user, err := service.store.GetUserByGitHubID(c.Context(), githubUser.ID)
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"github_user": githubUser,
+			"user":        user,
+		})
 	}
 }
 

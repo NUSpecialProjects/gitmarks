@@ -1,62 +1,49 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useContext } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { getClassroomNames, postClassroom } from "@/api/classrooms";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { getOrganizationDetails } from "@/api/organizations";
-import useUrlParameter from "@/hooks/useUrlParameter";
 import Panel from "@/components/Panel";
 import Button from "@/components/Button";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import "./styles.css";
 import Input from "@/components/Input";
 import GenericDropdown from "@/components/Dropdown";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const ClassroomCreation: React.FC = () => {
-  const [name, setName] = useState("");
-  const [organization, setOrganization] = useState<IOrganization | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const orgID = useUrlParameter("org_id");
-  const [predefinedClassroomNames, setPredefinedClassroomNames] = useState<string[]>([]);
-  const [showCustomNameInput, setShowCustomNameInput] = useState(false);
+  const [name, setName] = React.useState("");
+  const [showCustomNameInput, setShowCustomNameInput] = React.useState(false);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const orgID = location.state?.orgID;
 
-  useEffect(() => {
-    const fetchClassroomNames = async () => {
-      try {
-        const names = await getClassroomNames();
-        setPredefinedClassroomNames([...names, "Custom"]);
-        if (names.length > 0) {
-          setName(names[0]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch classroom names:", error);
+  const { data: predefinedClassroomNames = [], isError: isNamesError } = useQuery({
+    queryKey: ['classroomNames'],
+    queryFn: async () => {
+      const names = await getClassroomNames();
+      if (names.length > 0 && !name) {
+        setName(names[0]);
       }
-    };
+      return names;
+    }
+  });
 
-    fetchClassroomNames();
-  }, []);
+  const { data: organization, isLoading: isOrgLoading, error: orgError } = useQuery({
+    queryKey: ['organization', orgID],
+    queryFn: () => getOrganizationDetails(orgID),
+    enabled: !!orgID
+  });
 
-  useEffect(() => {
-    const fetchOrganizationDetails = async () => {
-      if (orgID) {
-        setLoading(true);
-        await getOrganizationDetails(orgID)
-          .then((org) => {
-            setOrganization(org);
-          })
-          .catch((_) => {
-            setError("Failed to fetch organization details. Please try again.");
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-      }
-    };
-
-    fetchOrganizationDetails();
-  }, [orgID, navigate]);
+  const createClassroomMutation = useMutation({
+    mutationFn: postClassroom,
+    onSuccess: (createdClassroom: IClassroom) => {
+      setSelectedClassroom(createdClassroom);
+      navigate("/app/classroom/invite-tas");
+    }
+  });
 
   const handleNameChange = (selected: string) => {
     if (selected === "Custom") {
@@ -71,32 +58,23 @@ const ClassroomCreation: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !organization) {
-      setError("Please fill in all fields.");
       return;
     }
-    setLoading(true);
-    await postClassroom({
+    
+    createClassroomMutation.mutate({
       name: name,
       org_id: organization.id,
       org_name: organization.login,
-    })
-      .then((createdClassroom) => {
-        setSelectedClassroom(createdClassroom);
-        navigate("/app/classroom/invite-tas");
-      })
-      .catch((_) => {
-        setError("Failed to create classroom. Please try again.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    });
   };
+
+  const allClassroomNames = [...predefinedClassroomNames, "Custom"];
 
   return (
     <Panel title="New Classroom" logo={true}>
       <div className="ClassroomCreation">
-        {loading ? (
-          <p>Loading...</p>
+        {isOrgLoading ? (
+          <LoadingSpinner />
         ) : (
           <form onSubmit={handleSubmit}>
             <Input
@@ -107,17 +85,17 @@ const ClassroomCreation: React.FC = () => {
               value={organization ? organization.login : ""}
             />
 
-            {predefinedClassroomNames.length > 0 && (
+            {allClassroomNames.length > 0 && (
               <GenericDropdown
                 labelText="Classroom name"
                 selectedOption={showCustomNameInput ? "Custom" : name}
                 loading={false}
-                options={predefinedClassroomNames.map(option => ({ value: option, label: option }))}
+                options={allClassroomNames.map(option => ({ value: option, label: option }))}
                 onChange={handleNameChange}
               />
             )}
 
-            {(showCustomNameInput || predefinedClassroomNames.length === 0) && (
+            {(showCustomNameInput || allClassroomNames.length === 0) && (
               <Input
                 label="Custom classroom name"
                 name="classroom-name"
@@ -127,7 +105,16 @@ const ClassroomCreation: React.FC = () => {
               />
             )}
 
-            {error && <p className="error">{error}</p>}
+            {(createClassroomMutation.error || orgError || isNamesError) && (
+              <p className="error">
+                {createClassroomMutation.error
+                  ? "Failed to create classroom. Please try again."
+                  : orgError
+                  ? "Failed to fetch organization details. Please try again."
+                  : "Failed to fetch classroom names. Please try again."}
+              </p>
+            )}
+            
             {!organization && (
               <p className="error">
                 <Link to="/app/organization/select">
@@ -137,7 +124,13 @@ const ClassroomCreation: React.FC = () => {
               </p>
             )}
             <div className="ClassroomCreation__buttonWrapper">
-              <Button type="submit">Create Classroom</Button>
+              <Button 
+                type="submit" 
+                disabled={createClassroomMutation.isPending}
+                variant={createClassroomMutation.isPending ? "disabled" : "primary"}
+              >
+                {createClassroomMutation.isPending ? "Creating..." : "Create Classroom"}
+              </Button>
               <Button variant="secondary" href="/app/organization/select">
                 Select a different organization
               </Button>

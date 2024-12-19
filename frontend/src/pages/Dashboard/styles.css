@@ -41,4 +41,16 @@
   &__sectionWrapper {
     padding: 20px;
   }
+
+  &__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+
+  &__horizontalButtons {
+    display: flex;
+    gap: 10px;
+  }
 }

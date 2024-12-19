@@ -1,54 +1,47 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useContext, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./styles.css";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { Link } from "react-router-dom";
 import { getClassroomsInOrg } from "@/api/classrooms";
-import useUrlParameter from "@/hooks/useUrlParameter";
 import { Table, TableRow, TableCell } from "@/components/Table";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
 import Button from "@/components/Button";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { MdAdd } from "react-icons/md";
-import { ClassroomRole, OrgRole, toClassroom } from "@/types/enums";
+import { useQuery } from "@tanstack/react-query";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { ClassroomRole, OrgRole } from "@/types/enums";
+import { toClassroom } from "@/types/enums";
 
 const ClassroomSelection: React.FC = () => {
-  const [classrooms, setClassrooms] = useState<IClassroomUser[]>([]);
-  const [orgRole, setOrgRole] = useState<OrgRole>(OrgRole.MEMBER);
-  const orgID = useUrlParameter("org_id");
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
-
   const navigate = useNavigate();
+  const orgID = location.state?.orgID;
 
   useEffect(() => {
-    const fetchClassrooms = async () => {
-      if (!loading && !orgID) {
-        navigate("/app/organization/select");
-      } else {
-        setLoading(true);
-        try {
-          const org_id = parseInt(orgID);
-          if (!isNaN(org_id)) {
-            const data: IClassroomUsersListResponse = await getClassroomsInOrg(org_id);
-            if (data.classroom_users) {
-              setClassrooms(data.classroom_users);
-            }
-            if (data.org_role) {
-              setOrgRole(data.org_role);
-            }
-          }
-        } catch (_) {
-          // do nothing
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
+    if (!orgID) {
+      console.log("No organization ID provided. Redirecting to organization selection.");
+      navigate("/app/organization/select");
+    }
+  }, [orgID, navigate]);
 
-    void fetchClassrooms();
-  }, [orgID]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['classrooms', orgID],
+    queryFn: async () => {
+      if (!orgID || isNaN(Number(orgID))) {
+        throw new Error("Invalid organization ID");
+      }
+      return getClassroomsInOrg(Number(orgID));
+    },
+    enabled: !!orgID && !isNaN(Number(orgID)),
+    retry: false
+  });
+
+  const classrooms = data?.classroom_users || [];
+  const orgRole = data?.org_role || OrgRole.MEMBER;
 
   const handleClassroomSelect = (classroomUser: IClassroomUser) => {
     const classroom: IClassroom = toClassroom(classroomUser);
@@ -62,9 +55,16 @@ const ClassroomSelection: React.FC = () => {
     <div className="Selection">
       <h1 className="Selection__title">Your Classrooms</h1>
       <div className="Selection__tableWrapper">
-        {/* If the screen is loading, display a message, else render table */}
-        {loading ? (
-          <p>Loading...</p>
+        {isLoading ? (
+          <>
+          <br></br>
+          <EmptyDataBanner>
+            <LoadingSpinner />
+          </EmptyDataBanner>
+          <br></br>
+          </>
+        ) : error ? (
+          <p>Error loading classrooms: {error instanceof Error ? error.message : "Unknown error"}</p>
         ) : (
           <>
           <Table cols={2}>
@@ -75,14 +75,16 @@ const ClassroomSelection: React.FC = () => {
               <TableCell>
                 {orgRole === OrgRole.ADMIN &&
                   (<div className="Selection__tableHeaderButton">
-                    <Button size="small" href={`/app/classroom/create?org_id=${orgID}`}>
-                      <MdAdd /> New Classroom
+                    <Button 
+                      size="small" 
+                      onClick={() => navigate('/app/classroom/create', { state: { orgID } })}
+                    >
+                        <MdAdd /> New Classroom
                     </Button>
                   </div>
-                  )}
+                )}
               </TableCell>
             </TableRow>
-            {/* If the org has classrooms, populate table, else display a message TODO make alert for no classes*/}
             {hasClassrooms && (
               classrooms.map((classroomUser, i) => (
                 <TableRow key={i} className="Selection__tableRow">
@@ -121,7 +123,8 @@ const ClassroomSelection: React.FC = () => {
                       <br></br>
                       Please create a new classroom to get started.
                </div>
-               <Button variant="secondary" href={`/app/classroom/create?org_id=${orgID}`}>
+               <Button variant="secondary"
+                  onClick={() => navigate('/app/classroom/create', { state: { orgID } })}>
                    <MdAdd /> New Classroom
                  </Button>
                  </EmptyDataBanner>
