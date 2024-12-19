@@ -75,5 +75,29 @@ func (db *DB) CreateFeedbackCommentFromRubricItem(ctx context.Context, TAUserID 
 
 // edit a feedback comment
 func (db *DB) EditFeedbackComment(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) error {
-	return nil
+	_, err := db.connPool.Exec(ctx,
+		`WITH ri AS (
+			INSERT INTO rubric_items (point_value, explanation)
+			VALUES ($1, $2)
+			RETURNING id
+		),
+		new AS (
+			INSERT INTO feedback_comment
+			(rubric_item_id, file_path, file_line, student_work_id, ta_user_id)
+			VALUES ((SELECT id FROM ri), $3, $4, $5, $6)
+			RETURNING id
+		)
+		UPDATE feedback_comment
+			SET superseded_by = (SELECT id FROM new)
+			WHERE id = $7`,
+		comment.Points,
+		comment.Body,
+		comment.Path,
+		comment.Line,
+		studentWorkID,
+		TAUserID,
+		comment.FeedbackCommentID,
+	)
+
+	return err
 }

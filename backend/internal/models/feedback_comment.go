@@ -15,3 +15,8 @@ type FeedbackComment struct {
 	CreatedAt         time.Time `json:"created_at"`
 	SupersededBy      *int      `json:"superseded_by"`
 }
+
+type FeedbackCommentWithHistory struct {
+	FeedbackComment
+	History []FeedbackComment `json:"history"`
+}
