@@ -14,6 +14,7 @@ interface IGraderFeedback {
   points: number;
   ta_username?: string;
   history?: IGraderFeedback[];
+  created_at?: Date;
 }
 
 /******************************

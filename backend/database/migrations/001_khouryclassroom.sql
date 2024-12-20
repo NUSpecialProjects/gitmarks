@@ -177,7 +177,11 @@ SELECT sw.*,
     END AS manual_feedback_score,
     NULL AS auto_grader_score -- TODO REPLACE WITH MAXIMUM AUTO GRADER SCORE
 FROM student_works sw
-LEFT JOIN feedback_comment fc ON sw.id = fc.student_work_id
+LEFT JOIN (
+    SELECT * 
+    FROM feedback_comment 
+    WHERE superseded_by IS NULL
+) fc ON sw.id = fc.student_work_id
 LEFT JOIN rubric_items ri ON fc.rubric_item_id = ri.id
 LEFT JOIN assignment_outlines ao ON ao.id = sw.assignment_outline_id
 GROUP BY sw.id, ao.default_score;
