@@ -49,6 +49,7 @@ type Classroom interface {
 	CreateClassroom(ctx context.Context, classroomData models.Classroom) (models.Classroom, error)
 	UpdateClassroom(ctx context.Context, classroomData models.Classroom) (models.Classroom, error)
 	GetClassroomByID(ctx context.Context, classroomID int64) (models.Classroom, error)
+	GetClassroomByName(ctx context.Context, classroomName string) (models.Classroom, error)
 	AddUserToClassroom(ctx context.Context, classroomID int64, classroomRole string, classroomStatus models.UserStatus, userID int64) (models.ClassroomUser, error)
 	RemoveUserFromClassroom(ctx context.Context, classroomID int64, userID int64) error
 	ModifyUserRole(ctx context.Context, classroomID int64, classroomRole string, userID int64) (models.ClassroomUser, error)

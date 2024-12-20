@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { getClassroomNames, postClassroom } from "@/api/classrooms";
+import { checkClassroomExists, getClassroomNames, postClassroom } from "@/api/classrooms";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { getOrganizationDetails } from "@/api/organizations";
 import useUrlParameter from "@/hooks/useUrlParameter";
@@ -21,6 +21,23 @@ const ClassroomCreation: React.FC = () => {
   const [showCustomNameInput, setShowCustomNameInput] = useState(false);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
   const navigate = useNavigate();
+
+  const [classroomExists, setClassroomExists] = useState(false);
+
+  useEffect(() => {
+    const checkExists = async () => {
+      if (name) {
+        const exists = await checkClassroomExists(name);
+        setClassroomExists(exists);
+        if (exists) {
+          setError("A classroom with this name already exists.");
+        } else {
+          setError(null);
+        }
+      }
+    };
+    checkExists();
+  }, [name]);
 
   useEffect(() => {
     const fetchClassroomNames = async () => {
@@ -137,7 +154,7 @@ const ClassroomCreation: React.FC = () => {
               </p>
             )}
             <div className="ClassroomCreation__buttonWrapper">
-              <Button type="submit">Create Classroom</Button>
+              <Button variant={classroomExists ? "disabled" : "primary"} type="submit" disabled={classroomExists}>Create Classroom</Button>
               <Button variant="secondary" href="/app/organization/select">
                 Select a different organization
               </Button>

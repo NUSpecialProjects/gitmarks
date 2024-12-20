@@ -105,6 +105,13 @@ a {
  font-size: var(--body-font-size);
 }
 
+.error {
+  color: var(--red);
+  font-size: var(--font-size-xs);
+  margin-top: 5px;
+  text-align: center;
+}
+
 /* Custom scroll bar flex properties and styling */
 .simplebar-wrapper {
   flex-grow: 1;

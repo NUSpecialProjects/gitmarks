@@ -40,6 +40,9 @@ func classroomRoutes(router fiber.Router, service *ClassroomService) fiber.Route
 	// Create a classroom
 	classroomRouter.Post("/", service.createClassroom())
 
+	// Check if a classroom exists
+	classroomRouter.Get("/check-classroom/:classroom_name", service.checkClassroomExists())
+
 	// Update a classroom
 	classroomRouter.Put("/classroom/:classroom_id", service.updateClassroom())
 

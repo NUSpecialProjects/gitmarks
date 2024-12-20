@@ -2,9 +2,11 @@ package classrooms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -48,6 +50,28 @@ func (s *ClassroomService) getClassroom() fiber.Handler {
 	}
 }
 
+func (s *ClassroomService) checkClassroomExists() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		classroomName := c.Params("classroom_name")
+		if classroomName == "" {
+			return errs.BadRequest(errors.New("classroom name is required"))
+		}
+
+		// Decode the URL-encoded classroom name
+		decodedName, err := url.QueryUnescape(classroomName)
+		if err != nil {
+			return errs.BadRequest(errors.New("invalid classroom name encoding"))
+		}
+
+		_, err = s.store.GetClassroomByName(c.Context(), decodedName)
+		exists := err == nil // If no error, classroom exists
+
+		return c.Status(http.StatusOK).JSON(fiber.Map{
+			"exists": exists,
+		})
+	}
+}
+
 // Creates a new classroom.
 func (s *ClassroomService) createClassroom() fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -60,6 +84,15 @@ func (s *ClassroomService) createClassroom() fiber.Handler {
 		err = c.BodyParser(&classroomData)
 		if err != nil {
 			return errs.InvalidRequestBody(models.Classroom{})
+		}
+
+		// check if classroom exists already
+		_, err = s.store.GetClassroomByName(c.Context(), classroomData.Name)
+		exists := err == nil // If no error, classroom exists
+		if exists {
+			return c.Status(http.StatusConflict).JSON(fiber.Map{
+				"exists": true,
+			})
 		}
 
 		membership, err := client.GetUserOrgMembership(c.Context(), classroomData.OrgName, githubUser.Login)

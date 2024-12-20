@@ -76,6 +76,27 @@ func (db *DB) GetClassroomByID(ctx context.Context, classroomID int64) (models.C
 	return classroomData, nil
 }
 
+func (db *DB) GetClassroomByName(ctx context.Context, classroomName string) (models.Classroom, error) {
+	var classroomData models.Classroom
+	err := db.connPool.QueryRow(ctx, `
+	SELECT id, name, org_id, org_name, created_at, student_team_name
+	FROM classrooms
+	WHERE name = $1`, classroomName).Scan(
+		&classroomData.ID,
+		&classroomData.Name,
+		&classroomData.OrgID,
+		&classroomData.OrgName,
+		&classroomData.CreatedAt,
+		&classroomData.StudentTeamName,
+	)
+
+	if err != nil {
+		return models.Classroom{}, errs.NewDBError(err)
+	}
+
+	return classroomData, nil
+}
+
 func (db *DB) AddUserToClassroom(ctx context.Context, classroomID int64, classroomRole string, classroomStatus models.UserStatus, userID int64) (models.ClassroomUser, error) {
 	var classroomUser models.ClassroomUser
 

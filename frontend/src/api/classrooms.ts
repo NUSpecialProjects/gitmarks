@@ -245,3 +245,19 @@ export async function getClassroomNames(): Promise<string[]> {
   const resp: { semester_names: string[] } = await response.json();
   return resp.semester_names;
 }
+
+export async function checkClassroomExists(classroomName: string): Promise<boolean> {
+  const encodedName = encodeURIComponent(classroomName);
+  const response = await fetch(`${base_url}/classrooms/check-classroom/${encodedName}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+  const data = await response.json();
+  return data.exists;
+}
