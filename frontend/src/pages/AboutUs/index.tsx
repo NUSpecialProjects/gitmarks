@@ -67,6 +67,7 @@ const AboutUs: React.FC = () => {
     <div className="AboutUs">
       <div className="AboutUs__container">
         <h1 className="AboutUs__title">About GitMarks</h1>
+        <h3 className="AboutUs__subtitle">{"\"Built by TAs, for TAs\""}</h3>
         <div className="AboutUs__description">
           <p>
             {"GitMarks is an innovative grading application designed to bridge the gap between academic programming assignments and industry practices. By leveraging GitHub's infrastructure, GitMarks creates a seamless experience for students to submit assignments through pull requests while allowing teaching assistants to provide detailed feedback through code reviews."}
@@ -94,7 +95,7 @@ const AboutUs: React.FC = () => {
           </div>
         </div>
 
-        <h2 className="AboutUs__subtitle">Our Team</h2>
+        <h2 className="AboutUs__title">Our Team</h2>
         <div className="AboutUs__grid">
           {team.map((member) => (
             <AboutCard

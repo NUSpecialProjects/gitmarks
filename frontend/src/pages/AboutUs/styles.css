@@ -1,6 +1,6 @@
 .AboutUs {
   padding: 60px 0;
-  min-height: calc(100vh - 100px); /* Adjust based on your header/footer height */
+  min-height: calc(100vh);
 }
 
 .AboutUs__container {
@@ -12,10 +12,14 @@
 .AboutUs__title {
   text-align: center;
   font-family: var(--primary-font);
-  font-size: 36px;
+  font-size: 48px;
   font-weight: 700;
   margin-bottom: 40px;
   color: var(--primary-text);
+}
+
+.AboutUs__title + .AboutUs__subtitle {
+  margin-top: -30px;
 }
 
 .AboutUs__grid {
@@ -31,25 +35,33 @@
   background: var(--brand-gradient-light);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   height: auto;
+  position: relative;
 }
 
 .AboutCard:hover {
-  transform: translateY(-4px);
+  transform: translateY(-8px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .AboutCard__image {
   width: 100%;
   height: 280px;
   overflow: hidden;
+  position: relative;
 }
 
 .AboutCard__image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.AboutCard:hover .AboutCard__image img {
+  transform: scale(1.02);
 }
 
 .AboutCard__info {
@@ -115,6 +127,7 @@
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 30px;
   margin-top: 40px;
+  padding-bottom: 60px;
 }
 
 .AboutUs__feature {
@@ -122,6 +135,15 @@
   background: var(--brand-gradient-light);
   border-radius: 8px;
   text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.AboutUs__feature:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--brand-lightest);
 }
 
 .AboutUs__feature h3 {
@@ -129,6 +151,11 @@
   font-size: 20px;
   color: var(--primary-text);
   margin-bottom: 12px;
+  transition: color 0.3s ease;
+}
+
+.AboutUs__feature:hover h3 {
+  color: var(--accent-color, #007bff);
 }
 
 .AboutUs__feature p {
@@ -141,8 +168,8 @@
 .AboutUs__subtitle {
   text-align: center;
   font-family: var(--primary-font);
-  font-size: 32px;
-  font-weight: 700;
-  margin-bottom: 40px;
-  color: var(--primary-text);
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 30px;
+  color: var(--caption-text);
 }
