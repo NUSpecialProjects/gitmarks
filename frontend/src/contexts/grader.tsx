@@ -137,35 +137,49 @@ export const GraderProvider: React.FC<{
   };
 
   const editFeedback = (feedbackID: number, fb: IGraderFeedback) => {
-    const newFeedback: IGraderFeedback = {
-      ...fb,
-      action: "EDIT",
-    };
-    setFeedback((prevFeedback) => ({
-      ...prevFeedback,
-      [feedbackID]: newFeedback,
-    }));
     setStagedFeedback((prevFeedback) => ({
       ...prevFeedback,
-      [feedbackID]: newFeedback,
+      [feedbackID]: {
+        ...fb,
+        action: "EDIT",
+      },
     }));
+
+    setFeedback((prevFeedback) => {
+      const currentFeedback = prevFeedback[feedbackID];
+      const newHistory = currentFeedback.history
+        ? [{ ...currentFeedback }, ...currentFeedback.history]
+        : [{ ...currentFeedback }];
+
+      const newFeedback: IGraderFeedbackWithHistory = {
+        ...fb,
+        action: "EDIT",
+        history: newHistory,
+      };
+
+      return {
+        ...prevFeedback,
+        [feedbackID]: newFeedback,
+      };
+    });
   };
 
   const discardEditFeedback = (feedbackID: number) => {
     setFeedback((prevFeedback) => {
-      if (prevFeedback[feedbackID].history) {
-        const lastFeedback =
-          prevFeedback[feedbackID].history[
-            prevFeedback[feedbackID].history.length - 1
-          ];
+      const currentFeedback = prevFeedback[feedbackID];
 
-        lastFeedback.history?.pop();
+      if (currentFeedback.history && currentFeedback.history.length > 0) {
+        const restoredFeedback = {
+          ...currentFeedback.history[0], // pop the latest from history
+          history: currentFeedback.history.slice(1),
+        };
 
         return {
           ...prevFeedback,
-          [feedbackID]: lastFeedback,
+          [feedbackID]: restoredFeedback,
         };
       }
+
       return prevFeedback;
     });
     setStagedFeedback((prevFeedback) => {
@@ -182,14 +196,31 @@ export const GraderProvider: React.FC<{
   };
 
   const removeFeedback = (feedbackID: number) => {
-    const newFeedback: IGraderFeedback = {
-      ...feedback[feedbackID],
-      action: "DELETE",
-    };
     setStagedFeedback((prevFeedback) => ({
       ...prevFeedback,
-      [feedbackID]: newFeedback,
+      [feedbackID]: {
+        ...feedback[feedbackID],
+        action: "DELETE",
+      },
     }));
+
+    setFeedback((prevFeedback) => {
+      const currentFeedback = prevFeedback[feedbackID];
+      const newHistory = currentFeedback.history
+        ? [{ ...currentFeedback }, ...currentFeedback.history]
+        : [{ ...currentFeedback }];
+
+      const newFeedback: IGraderFeedbackWithHistory = {
+        ...currentFeedback,
+        action: "DELETE",
+        history: newHistory,
+      };
+
+      return {
+        ...prevFeedback,
+        [feedbackID]: newFeedback,
+      };
+    });
   };
 
   const postFeedback = () => {
@@ -198,7 +229,7 @@ export const GraderProvider: React.FC<{
     const stagedFeedbackWithoutHistory: IGraderFeedback[] = Object.values(
       stagedFeedback
     ).map((fb: IGraderFeedbackWithHistory) => {
-      const { history, ...fbWithoutHistory } = fb;
+      const { history: _, ...fbWithoutHistory } = fb;
       return fbWithoutHistory;
     });
 

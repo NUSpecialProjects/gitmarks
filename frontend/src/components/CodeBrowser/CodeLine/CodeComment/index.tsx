@@ -36,14 +36,17 @@ export const CodeComment: React.FC<ICodeComment> = ({
             <img src={currentUser?.avatar_url} alt="new" />
             <div>
               <span>{fb.ta_username}</span>
-              {!pending && (
-                <span className="CodeComment__date">
-                  {fb.history ? "updated " : "commented "}
-                  {formatRelativeTime(fb.created_at)}
-                </span>
-              )}
+              <span className="CodeComment__date">
+                {fb.action == "DELETE"
+                  ? "deleted " + formatRelativeTime(new Date())
+                  : !pending && fb.history
+                    ? "updated "
+                    : "commented " + formatRelativeTime(fb.created_at)}
+              </span>
             </div>
-            {pending && <div className="CodeComment__pendingPill">Pending</div>}
+            {(pending || fb.action == "DELETE") && (
+              <div className="CodeComment__pendingPill">Pending</div>
+            )}
           </div>
           {!readOnly && (
             <div className="CodeComment__icons">
@@ -86,7 +89,7 @@ export const CodeComment: React.FC<ICodeComment> = ({
                     className="CodeComment__menu__dropdown--delete"
                     onClick={() => {
                       if (typeof localFeedbackID !== "undefined") {
-                        if (fb.action == "EDIT") {
+                        if (fb.action == "EDIT" || fb.action == "DELETE") {
                           discardEditFeedback(localFeedbackID);
                         } else if (fb.action == "CREATE") {
                           (document.activeElement as HTMLElement).blur();
@@ -99,7 +102,17 @@ export const CodeComment: React.FC<ICodeComment> = ({
                     }}
                   >
                     <FaTrash />
-                    {fb.action == "EDIT" ? "Discard Changes" : "Delete"}
+                    {(() => {
+                      switch (fb.action) {
+                        case "EDIT":
+                          return "Discard Changes";
+                        case "DELETE":
+                          return "Restore";
+
+                        default:
+                          return "Delete";
+                      }
+                    })()}
                   </li>
                 </div>
               </div>
@@ -114,18 +127,20 @@ export const CodeComment: React.FC<ICodeComment> = ({
             onCancel={() => setEditing(false)}
           />
         ) : (
-          <div className="CodeComment__body">
-            <div
-              className={`CodeComment__points CodeComment__points--${fb.points > 0 ? "positive" : fb.points < 0 ? "negative" : "neutral"}`}
-            >
-              {fb.points == 0
-                ? "Comment"
-                : fb.points > 0
-                  ? `+${fb.points}`
-                  : fb.points}
+          fb.action != "DELETE" && (
+            <div className="CodeComment__body">
+              <div
+                className={`CodeComment__points CodeComment__points--${fb.points > 0 ? "positive" : fb.points < 0 ? "negative" : "neutral"}`}
+              >
+                {fb.points == 0
+                  ? "Comment"
+                  : fb.points > 0
+                    ? `+${fb.points}`
+                    : fb.points}
+              </div>
+              {fb.body}
             </div>
-            {fb.body}
-          </div>
+          )
         )}
       </div>
     </>
@@ -158,7 +173,7 @@ export const CodeCommentForm: React.FC<ICodeCommentForm> = ({
     points.current.value = (parseInt(pts, 10) + x).toString();
   };
 
-  const handleAddFeedback = (e: React.FormEvent) => {
+  const handleSubmitFeedback = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !selectedClassroom) return;
 
@@ -176,10 +191,8 @@ export const CodeCommentForm: React.FC<ICodeCommentForm> = ({
     if (fb.points == 0 && fb.body == "") return;
     if (fb.body == "") fb.body = "No comment left for this point adjustment.";
 
-    // if content already exists, edit instead of create
+    // if content already exists, edit/delete instead of create
     if (content && typeof content.localFeedbackID !== "undefined") {
-      if (!fb.history) fb.history = [];
-      fb.history.push(content.fb);
       editFeedback(content.localFeedbackID, fb);
     } else {
       addFeedback([fb]);
@@ -206,8 +219,21 @@ export const CodeCommentForm: React.FC<ICodeCommentForm> = ({
   }, []);
 
   return (
-    <form className="CodeCommentForm" onSubmit={handleAddFeedback} ref={form}>
+    <form
+      className="CodeCommentForm"
+      onSubmit={handleSubmitFeedback}
+      ref={form}
+    >
       <div className="CodeCommentForm__points">
+        <input
+          id="action"
+          type="text"
+          name="action"
+          defaultValue={"CREATE"}
+          hidden
+          disabled
+          readOnly
+        />
         <label htmlFor="points">Point Adjustment</label>
         <input
           ref={points}
