@@ -17,35 +17,47 @@ GitMarks is a Git-based grading platform designed to mirror industry standard wo
 <table>
   <tr>
     <td align="center" width="33%">
-      <img src="/frontend/public/images/alexander-angione.jpg" width="150" height="150" style="border-radius: 50%"><br>
-      <strong><a href="https://github.com/alexangione419">Alex Angione</a></strong><br>
+      <a href="https://github.com/alexangione419">
+        <img src="/frontend/public/images/alexander-angione.jpg" width="150" height="150" style="border-radius: 50%"><br>
+        <strong>Alex Angione</strong><br>
+      </a>
       Full Stack Developer
     </td>
     <td align="center" width="33%">
-      <img src="/frontend/public/images/cameron-plume.jpg" width="150" height="150" style="border-radius: 50%"><br>
-      <strong><a href="https://github.com/CamPlume1">Cam Plume</a></strong><br>
+      <a href="https://github.com/CamPlume1">
+        <img src="/frontend/public/images/cameron-plume.jpg" width="150" height="150" style="border-radius: 50%"><br>
+        <strong>Cam Plume</strong><br>
+      </a>
       Backend Developer
     </td>
     <td align="center" width="33%">
-      <img src="/frontend/public/images/kenneth-chen.png" width="150" height="150" style="border-radius: 50%"><br>
-      <strong><a href="https://github.com/kennybc">Kenny Chen</a></strong><br>
+      <a href="https://github.com/kennybc">
+        <img src="/frontend/public/images/kenneth-chen.png" width="150" height="150" style="border-radius: 50%"><br>
+        <strong>Kenny Chen</strong><br>
+      </a>
       Full Stack Developer
     </td>
   </tr>
   <tr>
     <td align="center" width="33%">
-      <img src="/frontend/public/images/nandini-ghosh.png" width="150" height="150" style="border-radius: 50%"><br>
-      <strong><a href="https://github.com/nandini-ghosh">Nandini Ghosh</a></strong><br>
+      <a href="https://github.com/nandini-ghosh">
+        <img src="/frontend/public/images/nandini-ghosh.png" width="150" height="150" style="border-radius: 50%"><br>
+        <strong>Nandini Ghosh</strong><br>
+      </a>
       Designer & Frontend Developer
     </td>
     <td align="center" width="33%">
-      <img src="/frontend/public/images/nick-tietje.jpg" width="150" height="150" style="border-radius: 50%"><br>
-      <strong><a href="https://github.com/ntietje1">Nick Tietje</a></strong><br>
+      <a href="https://github.com/ntietje1">
+        <img src="/frontend/public/images/nick-tietje.jpg" width="150" height="150" style="border-radius: 50%"><br>
+        <strong>Nick Tietje</strong><br>
+      </a>
       Full Stack Developer
     </td>
     <td align="center" width="33%">
-      <img src="/frontend/public/images/sebastian-tremblay.png" width="150" height="150" style="border-radius: 50%"><br>
-      <strong><a href="https://github.com/sebytremblay">Seby Tremblay</a></strong><br>
+      <a href="https://github.com/sebytremblay">
+        <img src="/frontend/public/images/sebastian-tremblay.png" width="150" height="150" style="border-radius: 50%"><br>
+        <strong>Seby Tremblay</strong><br>
+      </a>
       Infrastructure & Product Manager
     </td>
   </tr>
