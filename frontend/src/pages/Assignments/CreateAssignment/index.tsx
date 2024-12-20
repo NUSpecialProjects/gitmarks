@@ -11,6 +11,7 @@ import { createAssignment, assignmentNameExists } from "@/api/assignments";
 import "./styles.css";
 import { useClassroomUser } from "@/hooks/useClassroomUser";
 import { ClassroomRole } from "@/types/enums";
+import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 
 const CreateAssignment: React.FC = () => {
   const navigate = useNavigate();
@@ -102,16 +103,19 @@ const CreateAssignment: React.FC = () => {
   ];
 
   return (
-    <div className="CreateAssignment">
-      <div className="CreateAssignment__header">
-        <h1>Create Assignment</h1>
+    <>
+      <SubPageHeader
+        pageTitle={"Create Assignment"}
+        chevronLink={"/app/dashboard"}
+      >
+      </SubPageHeader>
+      <div className="CreateAssignment">
+        <MultiStepForm
+          steps={steps}
+          cancelLink="/app/dashboard"
+          initialData={initialData} />
       </div>
-      <MultiStepForm
-        steps={steps}
-        cancelLink="/app/dashboard"
-        initialData={initialData}
-      />
-    </div>
+    </>
   );
 };
 
