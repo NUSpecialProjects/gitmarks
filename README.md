@@ -1,5 +1,11 @@
 ![Banner](https://github.com/user-attachments/assets/84169d26-84f0-4786-bf37-87484ef475bb)
 
+![GitHub Check Status](https://img.shields.io/github/check-runs/NUSpecialProjects/gitmarks/main?style=for-the-badge)
+![GitHub contributors](https://img.shields.io/github/contributors/NUSpecialProjects/gitmarks?style=for-the-badge)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/NUSpecialProjects/gitmarks?style=for-the-badge)
+![GitHub last commit](https://img.shields.io/github/last-commit/NUSpecialProjects/gitmarks/main?style=for-the-badge)
+
+
 # GitMarks
 GitMarks is a Git-based grading platform designed to mirror industry standard workflows and provide support for both students and teaching staff.
 
