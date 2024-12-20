@@ -102,21 +102,40 @@ const CodeLine: React.FC<ICodeLine> = ({ path, line, isDiff, code }) => {
             Object.entries(feedback).map(
               ([i, fb]: [string, IGraderFeedback]) =>
                 fb.path == path &&
-                fb.line == line && <CodeComment fb={fb} key={Number(i)} />
+                fb.line == line && (
+                  <CodeComment
+                    fb={fb}
+                    localFeedbackID={Number(i)}
+                    key={Number(i)}
+                    pending={fb.action == "EDIT"}
+                  />
+                )
             )}
 
           {stagedFeedbackExists &&
             Object.entries(stagedFeedback).map(
-              ([i, fb]) =>
+              ([i, fb]: [string, IGraderFeedback]) =>
                 fb.path == path &&
-                fb.line == line && (
-                  <CodeComment fb={fb} key={Number(i)} pending />
+                fb.line == line &&
+                fb.action == "CREATE" && (
+                  <CodeComment
+                    fb={fb}
+                    localFeedbackID={Number(i)}
+                    key={Number(i)}
+                    pending
+                  />
                 )
             )}
 
           {/************ Display form to create new comment *************/}
           {editing && (
-            <CodeCommentForm path={path} line={line} setEditing={setEditing} />
+            <div className="CodeComment">
+              <CodeCommentForm
+                path={path}
+                line={line}
+                onCancel={() => setEditing(false)}
+              />
+            </div>
           )}
         </div>
       )}

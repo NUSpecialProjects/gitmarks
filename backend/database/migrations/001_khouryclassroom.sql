@@ -153,6 +153,7 @@ CREATE TABLE IF NOT EXISTS feedback_comment (
     student_work_id INTEGER NOT NULL,
     rubric_item_id INTEGER NOT NULL,
     ta_user_id INTEGER NOT NULL,
+    github_comment_id INTEGER,
     file_path VARCHAR(255),
     file_line INTEGER,
     created_at TIMESTAMP DEFAULT NOW(),

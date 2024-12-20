@@ -35,31 +35,35 @@ func (db *DB) GetFeedbackOnWork(ctx context.Context, studentWorkID int) ([]model
 }
 
 // create a new feedback comment (ad-hoc: also create a rubric item simultaneously)
-func (db *DB) CreateFeedbackComment(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) error {
-	_, err := db.connPool.Exec(ctx,
+func (db *DB) CreateFeedbackComment(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) (int, error) {
+	var feedbackCommentID int
+	err := db.connPool.QueryRow(ctx,
 		`WITH ri AS
 			(INSERT INTO rubric_items (point_value, explanation) VALUES ($1, $2) RETURNING id)
 		INSERT INTO feedback_comment
 			(rubric_item_id, file_path, file_line, student_work_id, ta_user_id)
-			VALUES ((SELECT id FROM ri), $3, $4, $5, $6)`,
+			VALUES ((SELECT id FROM ri), $3, $4, $5, $6)
+		RETURNING id`,
 		comment.Points,
 		comment.Body,
 		comment.Path,
 		comment.Line,
 		studentWorkID,
 		TAUserID,
-	)
+	).Scan(&feedbackCommentID)
 
-	return err
+	return feedbackCommentID, err
 }
 
 // create a new feedback comment (attach existing rubric item)
-func (db *DB) CreateFeedbackCommentFromRubricItem(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) error {
+func (db *DB) CreateFeedbackCommentFromRubricItem(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) (int, error) {
+	var feedbackCommentID int
+
 	if comment.RubricItemID == nil {
-		return errors.New("no rubric item id given")
+		return feedbackCommentID, errors.New("no rubric item id given")
 	}
 
-	_, err := db.connPool.Exec(ctx,
+	err := db.connPool.QueryRow(ctx,
 		`INSERT INTO feedback_comment
 				(rubric_item_id, file_path, file_line, student_work_id, ta_user_id)
 				VALUES ($1, $2, $3, $4, $5)`,
@@ -68,9 +72,9 @@ func (db *DB) CreateFeedbackCommentFromRubricItem(ctx context.Context, TAUserID 
 		comment.Line,
 		studentWorkID,
 		TAUserID,
-	)
+	).Scan(&feedbackCommentID)
 
-	return err
+	return feedbackCommentID, err
 }
 
 // edit a feedback comment
@@ -97,6 +101,17 @@ func (db *DB) EditFeedbackComment(ctx context.Context, TAUserID int64, studentWo
 		studentWorkID,
 		TAUserID,
 		comment.FeedbackCommentID,
+	)
+
+	return err
+}
+
+// updates a feedback comment in our DB with the ID of the newly created corresponding github comment ID
+func (db *DB) LinkFeedbackCommentWithGitHub(ctx context.Context, feedbackCommentID, gitHubCommentID int64) error {
+	_, err := db.connPool.Exec(ctx,
+		`UPDATE feedback_comment SET github_comment_id = $1 WHERE id = $2`,
+		gitHubCommentID,
+		feedbackCommentID,
 	)
 
 	return err

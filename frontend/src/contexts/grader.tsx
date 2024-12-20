@@ -18,6 +18,8 @@ interface IGraderContext {
   setSelectedFile: React.Dispatch<React.SetStateAction<IFileTreeNode | null>>;
   addFeedback: (feedback: IGraderFeedback[]) => void;
   editFeedback: (feedbackID: number, feedback: IGraderFeedback) => void;
+  discardAddFeedback: (feedbackID: number) => void;
+  discardEditFeedback: (feedbackID: number) => void;
   removeFeedback: (feedbackID: number) => void;
   postFeedback: () => void;
   selectRubricItem: (riID: number) => void;
@@ -36,6 +38,8 @@ export const GraderContext: React.Context<IGraderContext> =
     setSelectedFile: () => {},
     addFeedback: () => 0,
     editFeedback: () => {},
+    discardAddFeedback: () => {},
+    discardEditFeedback: () => {},
     removeFeedback: () => {},
     postFeedback: () => {},
     selectRubricItem: () => {},
@@ -104,7 +108,6 @@ export const GraderProvider: React.FC<{
       .then((resp) => {
         setStudentWork(resp.student_work);
         setFeedback(resp.feedback);
-        console.log(resp.feedback);
         setStagedFeedback({});
       })
       .catch((_: unknown) => {
@@ -133,18 +136,68 @@ export const GraderProvider: React.FC<{
     }));
   };
 
-  const editFeedback = (_feedbackID: number, _feedback: IGraderFeedback) => {};
+  const editFeedback = (feedbackID: number, feedback: IGraderFeedback) => {
+    const newFeedback: IGraderFeedback = {
+      ...feedback,
+      action: "EDIT",
+    };
+    setFeedback((prevFeedback) => ({
+      ...prevFeedback,
+      [feedbackID]: newFeedback,
+    }));
+    setStagedFeedback((prevFeedback) => ({
+      ...prevFeedback,
+      [feedbackID]: newFeedback,
+    }));
+  };
+
+  const discardEditFeedback = (feedbackID: number) => {
+    setFeedback((prevFeedback) => {
+      if (prevFeedback[feedbackID].history) {
+        const lastFeedback =
+          prevFeedback[feedbackID].history[
+            prevFeedback[feedbackID].history.length - 1
+          ];
+
+        lastFeedback.history?.pop();
+
+        return {
+          ...prevFeedback,
+          [feedbackID]: lastFeedback,
+        };
+      }
+      return prevFeedback;
+    });
+    setStagedFeedback((prevFeedback) => {
+      const { [feedbackID]: _, ...remainingFeedback } = prevFeedback;
+      return remainingFeedback;
+    });
+  };
+
+  const discardAddFeedback = (feedbackID: number) => {
+    setStagedFeedback((prevFeedback) => {
+      const { [feedbackID]: _, ...remainingFeedback } = prevFeedback;
+      return remainingFeedback;
+    });
+  };
 
   const removeFeedback = (_feedbackID: number) => {};
 
   const postFeedback = () => {
     if (!selectedClassroom || !assignmentID || !studentWorkID) return;
 
+    const stagedFeedbackWithoutHistory: IGraderFeedback[] = Object.values(
+      stagedFeedback
+    ).map((fb: IGraderFeedbackWithHistory) => {
+      const { history, ...fbWithoutHistory } = fb;
+      return fbWithoutHistory;
+    });
+
     gradeWork(
       selectedClassroom.id,
       Number(assignmentID),
       Number(studentWorkID),
-      stagedFeedback
+      stagedFeedbackWithoutHistory
     ).then(() => {
       setStudentWork((prevStudentWork) => {
         if (prevStudentWork) {
@@ -198,6 +251,8 @@ export const GraderProvider: React.FC<{
         setSelectedFile,
         addFeedback,
         editFeedback,
+        discardAddFeedback,
+        discardEditFeedback,
         removeFeedback,
         postFeedback,
         selectRubricItem,

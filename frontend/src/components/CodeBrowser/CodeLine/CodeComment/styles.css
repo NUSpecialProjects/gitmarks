@@ -67,6 +67,8 @@
 
   &__menu,
   &__history {
+    user-select: none;
+
     &__dropdown,
     &__details {
       position: absolute;

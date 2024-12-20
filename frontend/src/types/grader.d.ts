@@ -2,7 +2,7 @@
  * Grading page types
  ********************/
 interface IGraderFeedbackMap {
-  [commentID: number]: IGraderFeedback;
+  [commentID: number]: IGraderFeedbackWithHistory;
 }
 interface IGraderFeedback {
   action?: "CREATE" | "EDIT" | "DELETE";
@@ -13,8 +13,10 @@ interface IGraderFeedback {
   body: string;
   points: number;
   ta_username?: string;
-  history?: IGraderFeedback[];
   created_at?: Date;
+}
+interface IGraderFeedbackWithHistory extends IGraderFeedback {
+  history?: IGraderFeedbackWithHistory[];
 }
 
 /******************************

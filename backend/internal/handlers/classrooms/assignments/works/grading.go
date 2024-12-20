@@ -3,6 +3,8 @@ package works
 import (
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/middleware"
@@ -55,43 +57,31 @@ func formatFeedbackForGrader(comments []models.FeedbackComment) []models.Feedbac
 }
 
 // takes a comment sent from our grader and formats it as a GitHub PR review comment
-func formatFeedbackForGitHub(comments []models.PRReviewCommentWithMetaData) []models.PRReviewComment {
-	var formattedComments []models.PRReviewComment
-	for _, comment := range comments {
-		// format comment: body -> [pt value] body
-		prefix := ""
-		if comment.Points > 0 {
-			prefix = fmt.Sprintf(LatexPositivePointPrefix, comment.Points)
-		}
-		if comment.Points < 0 {
-			prefix = fmt.Sprintf(LatexNegativePointPrefix, comment.Points)
-		}
-		comment.PRReviewComment.Body = prefix + comment.PRReviewComment.Body
-		formattedComments = append(formattedComments, comment.PRReviewComment)
+func formatFeedbackForGitHub(comment models.PRReviewCommentWithMetaData) models.PRReviewComment {
+	// format comment: body -> [pt value] body
+	// DO NOT TOUCH THE LINE BREAK IN THE PREFIX, IT IS NECESSARY
+	prefix := fmt.Sprintf(`<!-- [CID:%d] -->
+`, *comment.FeedbackCommentID)
+	if comment.Points > 0 {
+		prefix += fmt.Sprintf(LatexPositivePointPrefix, comment.Points)
 	}
-
-	return formattedComments
+	if comment.Points < 0 {
+		prefix += fmt.Sprintf(LatexNegativePointPrefix, comment.Points)
+	}
+	comment.PRReviewComment.Body = prefix + comment.PRReviewComment.Body
+	return comment.PRReviewComment
 }
 
-func insertFeedbackInDB(s *WorkService, c *fiber.Ctx, comments []models.PRReviewCommentWithMetaData, taUserID int64, workID int) error {
-	// insert into DB, remove points field and format the body to display the points
-	for _, comment := range comments {
-		// insert into DB
-		if comment.RubricItemID == nil {
-			// create new rubric item and then attach
-			err := s.store.CreateFeedbackComment(c.Context(), taUserID, workID, comment)
-			if err != nil {
-				return errs.InternalServerError()
-			}
-		} else {
-			// attach rubric item
-			err := s.store.CreateFeedbackCommentFromRubricItem(c.Context(), taUserID, workID, comment)
-			if err != nil {
-				return errs.InternalServerError()
-			}
-		}
+// TODO: atomocity
+func insertFeedbackInDB(s *WorkService, c *fiber.Ctx, comment models.PRReviewCommentWithMetaData, taUserID int64, workID int) (int, error) {
+	if comment.RubricItemID == nil {
+		// create new rubric item and then attach
+		return s.store.CreateFeedbackComment(c.Context(), taUserID, workID, comment)
+
+	} else {
+		// create from existing rubric item
+		return s.store.CreateFeedbackCommentFromRubricItem(c.Context(), taUserID, workID, comment)
 	}
-	return nil
 }
 
 func (s *WorkService) gradeWorkByID() fiber.Handler {
@@ -121,20 +111,45 @@ func (s *WorkService) gradeWorkByID() fiber.Handler {
 			return errs.InvalidRequestBody(requestBody)
 		}
 
+		var formattedComments []models.PRReviewComment
+		// insert each comment into DB, then format for github
+		for _, comment := range requestBody.Comments {
+			feedbackCommentID, err := insertFeedbackInDB(s, c, comment, *taUser.ID, work.ID)
+			if err != nil {
+				return err
+			}
+			comment.FeedbackCommentID = &feedbackCommentID
+			formattedComments = append(formattedComments, formatFeedbackForGitHub(comment))
+		}
+
 		// create PR review via github API
-		review, err := userClient.CreatePRReview(c.Context(), work.OrgName, work.RepoName, requestBody.Body, formatFeedbackForGitHub(requestBody.Comments))
+		review, err := userClient.CreatePRReview(c.Context(), work.OrgName, work.RepoName, requestBody.Body, formattedComments)
 		if err != nil {
 			return errs.GithubAPIError(err)
 		}
 
-		// insert into DB
-		err = insertFeedbackInDB(s, c, requestBody.Comments, *taUser.ID, work.ID)
+		// fetch the comments we just created
+		comments, err := userClient.GetPRReviewComments(c.Context(), work.OrgName, work.RepoName, *review.ID)
 		if err != nil {
-			return err
+			return errs.GithubAPIError(err)
+		}
+		for _, comment := range comments {
+			pattern := `<!-- \[CID:(\d+)\] -->`
+			re := regexp.MustCompile(pattern)
+
+			// search for the CID in the string
+			match := re.FindStringSubmatch(*comment.Body)
+
+			// link the created comment to our record
+			if len(match) > 1 {
+				feedbackCommentID, _ := strconv.ParseInt(match[1], 10, 0)
+				s.store.LinkFeedbackCommentWithGitHub(c.Context(), feedbackCommentID, *comment.ID)
+			}
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"review": review,
+			"review":   review,
+			"comments": comments,
 		})
 	}
 }

@@ -447,3 +447,12 @@ func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Reposit
 
 	return len(branches) == len(srcBranches)
 }
+
+func (api *CommonAPI) GetPRReviewComments(ctx context.Context, owner string, repo string, reviewID int64) ([]*github.PullRequestComment, error) {
+	comments, _, err := api.Client.PullRequests.ListReviewComments(ctx, owner, repo, 1, reviewID, nil)
+	if err != nil {
+		return nil, errs.GithubAPIError(err)
+	}
+
+	return comments, nil
+}
