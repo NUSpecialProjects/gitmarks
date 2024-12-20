@@ -48,6 +48,8 @@
       width: 100%;
       padding: 14px;
       overflow: hidden;
+      font-size: 0.85rem;
+      height: 3rem;
     }
   }
 }

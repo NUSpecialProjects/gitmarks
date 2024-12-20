@@ -26,6 +26,7 @@ interface IGraderContext {
   stagedFeedback: IGraderFeedbackMap;
   rubric: IFullRubric | null;
   selectedRubricItems: number[];
+  postingFeedback: boolean;
   setSelectedFile: React.Dispatch<React.SetStateAction<IFileTreeNode | null>>;
   addFeedback: (feedback: IGraderFeedback[]) => void;
   editFeedback: (
@@ -49,6 +50,7 @@ export const GraderContext: React.Context<IGraderContext> =
     stagedFeedback: {},
     rubric: null,
     selectedRubricItems: [],
+    postingFeedback: false,
     setSelectedFile: () => {},
     addFeedback: () => 0,
     editFeedback: () => {},
@@ -77,6 +79,7 @@ export const GraderProvider: React.FC<{
   const [selectedRubricItems, setSelectedRubricItems] = useState<number[]>([]);
   const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
   const [rubric, setRubric] = useState<IFullRubric | null>(null);
+  const [postingFeedback, setPostingFeedback] = useState(false);
 
   const navigate = useNavigate();
 
@@ -238,8 +241,17 @@ export const GraderProvider: React.FC<{
   };
 
   const postFeedback = () => {
-    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
+    if (
+      !selectedClassroom ||
+      !assignmentID ||
+      !studentWorkID ||
+      postingFeedback
+    )
+      return;
 
+    setPostingFeedback(true);
+
+    // strip history from feedback before posting to backend (backend does not need to know)
     const stagedFeedbackWithoutHistory: IGraderFeedback[] = Object.values(
       stagedFeedback
     ).map((fb: IGraderFeedbackWithHistory) => {
@@ -252,17 +264,21 @@ export const GraderProvider: React.FC<{
       Number(assignmentID),
       Number(studentWorkID),
       stagedFeedbackWithoutHistory
-    ).then(() => {
-      getPaginatedStudentWork(
-        selectedClassroom.id,
-        Number(assignmentID),
-        Number(studentWorkID)
-      ).then((resp) => {
-        setStudentWork(resp.student_work);
-        setFeedback(resp.feedback);
-        setStagedFeedback({});
+    )
+      .then(() => {
+        getPaginatedStudentWork(
+          selectedClassroom.id,
+          Number(assignmentID),
+          Number(studentWorkID)
+        ).then((resp) => {
+          setStudentWork(resp.student_work);
+          setFeedback(resp.feedback);
+          setStagedFeedback({});
+        });
+      })
+      .finally(() => {
+        setPostingFeedback(false);
       });
-    });
   };
 
   const selectRubricItem = (riID: number) => {
@@ -290,6 +306,7 @@ export const GraderProvider: React.FC<{
         stagedFeedback,
         rubric,
         selectedRubricItems,
+        postingFeedback,
         setSelectedFile,
         addFeedback,
         editFeedback,

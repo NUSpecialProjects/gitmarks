@@ -5,12 +5,13 @@
   padding: 14px 38px;
   border-radius: 5px;
   cursor: pointer;
+  border-width: var(--border-width);
   font-family: var(--primary-font);
 
   &--primary {
     background: var(--brand);
     color: var(--primary-text-white);
-    border: none;
+    border-color: var(--brand);
 
     &:hover {
       background: var(--brand-gradient-bright);
@@ -20,7 +21,6 @@
   &--secondary {
     background: var(--page-background);
     color: var(--primary-text);
-    border-width: var(--border-width);
     border-style: var(--border-style);
     border-color: var(--button-border-color);
     box-shadow: 0px 0px 10px 0px rgba(84, 96, 141, 0.05);
@@ -32,6 +32,7 @@
 
   &--warning-primary {
     background: var(--red);
+    border-color: var(--red);
     color: var(--primary-text-white);
     border: none;
 
@@ -56,5 +57,12 @@
   &--small {
     font-size: var(--font-size-xs);
     padding: 12px 30px;
+  }
+
+  &--disabled {
+    background: gray;
+    border-color: rgb(105, 105, 105);
+    color: rgb(197, 197, 197);
+    cursor: not-allowed;
   }
 }

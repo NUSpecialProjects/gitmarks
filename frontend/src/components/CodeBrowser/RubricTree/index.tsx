@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import SimpleBar from "simplebar-react";
+import ClipLoader from "react-spinners/ClipLoader";
 
 import ResizablePanel from "../ResizablePanel";
 import Button from "@/components/Button";
@@ -8,8 +9,14 @@ import { GraderContext } from "@/contexts/grader";
 import "./styles.css";
 
 const RubricTree: React.FC = () => {
-  const { assignment, rubric, feedback, stagedFeedback, postFeedback } =
-    useContext(GraderContext);
+  const {
+    assignment,
+    rubric,
+    feedback,
+    stagedFeedback,
+    postingFeedback,
+    postFeedback,
+  } = useContext(GraderContext);
 
   return (
     <ResizablePanel border="left">
@@ -53,7 +60,18 @@ const RubricTree: React.FC = () => {
               0
             )}
         </div>
-        <Button onClick={postFeedback}>Submit Grade</Button>
+        <Button
+          onClick={postFeedback}
+          variant={
+            Object.values(stagedFeedback).length == 0 ? "disabled" : "primary"
+          }
+        >
+          {postingFeedback ? (
+            <ClipLoader size={40} color={"white"} loading={true} />
+          ) : (
+            "Submit Comments"
+          )}
+        </Button>
       </div>
     </ResizablePanel>
   );
