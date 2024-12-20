@@ -1,0 +1,148 @@
+.AboutUs {
+  padding: 60px 0;
+  min-height: calc(100vh - 100px); /* Adjust based on your header/footer height */
+}
+
+.AboutUs__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.AboutUs__title {
+  text-align: center;
+  font-family: var(--primary-font);
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--primary-text);
+}
+
+.AboutUs__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 40px;
+  justify-items: center;
+  margin-bottom: 60px;
+}
+
+.AboutCard {
+  width: 300px;
+  background: var(--brand-gradient-light);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+  height: auto;
+}
+
+.AboutCard:hover {
+  transform: translateY(-4px);
+}
+
+.AboutCard__image {
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+}
+
+.AboutCard__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.AboutCard__info {
+  padding: 20px;
+  text-align: center;
+}
+
+.AboutCard__name {
+  font-family: var(--primary-font);
+  font-weight: 500;
+  font-size: 18px;
+  margin: 0 0 4px 0;
+  color: var(--primary-text);
+}
+
+.AboutCard__title {
+  font-family: var(--primary-font);
+  font-size: 14px;
+  color: var(--secondary-text);
+  margin: 0;
+}
+
+.AboutCard__bio {
+  font-family: var(--primary-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--secondary-text);
+  margin: 12px 0 0 0;
+  text-align: left;
+}
+
+.AboutUs__team-photo {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 60px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.AboutUs__team-photo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.AboutUs__description {
+  max-width: 800px;
+  margin: 0 auto 60px;
+  text-align: center;
+}
+
+.AboutUs__description p {
+  font-family: var(--primary-font);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--secondary-text);
+  margin-bottom: 24px;
+}
+
+.AboutUs__features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.AboutUs__feature {
+  padding: 24px;
+  background: var(--brand-gradient-light);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.AboutUs__feature h3 {
+  font-family: var(--primary-font);
+  font-size: 20px;
+  color: var(--primary-text);
+  margin-bottom: 12px;
+}
+
+.AboutUs__feature p {
+  font-family: var(--primary-font);
+  font-size: 14px;
+  color: var(--secondary-text);
+  margin: 0;
+}
+
+.AboutUs__subtitle {
+  text-align: center;
+  font-family: var(--primary-font);
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--primary-text);
+}
