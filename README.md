@@ -3,14 +3,55 @@
 # GitMarks
 GitMarks is a Git-based grading platform designed to mirror industry standard workflows and provide support for both students and teaching staff.
 
-*Developed in 2024 by:*
+## Key Features
+ - **GitHub Integration**: Seamlessly connects with GitHub repositories for assignment submission and management
+ - **Automated Grading**: Supports automated testing and grading through GitHub Actions workflows
+ - **Code Review Tools**: Built-in tools for providing line-by-line feedback and annotations
+ - **Assignment Management**: Easy creation and distribution of assignments built on top of GitHub Repositories
+ - **Progress Tracking**: Real-time visibility into student progress and submission status
+ - **Industry Standard Workflows**: Pull request-based submissions and code review processes that mirror real-world development
+ - **Seamless Student Experience**: Students interact solely with GitHub while staff benefit from a consolidated grading and classroom management platform
 
-- [Alex Angione](https://github.com/alexangione419)
-- [Cam Plume](https://github.com/CamPlume1)
-- [Kenny Chen](https://github.com/kennybc)
-- [Nandini Ghosh](https://github.com/nandini-ghosh)
-- [Nick Tietje](https://github.com/ntietje1)
-- [Seby Tremblay](https://github.com/sebytremblay)
+<div align="center">
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="/frontend/public/images/alexander-angione.jpg" width="150" height="150" style="border-radius: 50%"><br>
+      <strong><a href="https://github.com/alexangione419">Alex Angione</a></strong><br>
+      Full Stack Developer
+    </td>
+    <td align="center" width="33%">
+      <img src="/frontend/public/images/cameron-plume.jpg" width="150" height="150" style="border-radius: 50%"><br>
+      <strong><a href="https://github.com/CamPlume1">Cam Plume</a></strong><br>
+      Backend Developer
+    </td>
+    <td align="center" width="33%">
+      <img src="/frontend/public/images/kenneth-chen.png" width="150" height="150" style="border-radius: 50%"><br>
+      <strong><a href="https://github.com/kennybc">Kenny Chen</a></strong><br>
+      Full Stack Developer
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <img src="/frontend/public/images/nandini-ghosh.png" width="150" height="150" style="border-radius: 50%"><br>
+      <strong><a href="https://github.com/nandini-ghosh">Nandini Ghosh</a></strong><br>
+      Designer & Frontend Developer
+    </td>
+    <td align="center" width="33%">
+      <img src="/frontend/public/images/nick-tietje.jpg" width="150" height="150" style="border-radius: 50%"><br>
+      <strong><a href="https://github.com/ntietje1">Nick Tietje</a></strong><br>
+      Full Stack Developer
+    </td>
+    <td align="center" width="33%">
+      <img src="/frontend/public/images/sebastian-tremblay.png" width="150" height="150" style="border-radius: 50%"><br>
+      <strong><a href="https://github.com/sebytremblay">Seby Tremblay</a></strong><br>
+      Infrastructure & Product Manager
+    </td>
+  </tr>
+</table>
+
+</div>
 
 ## Tech Stack
 
@@ -35,8 +76,7 @@ our package manager in the frontend.
 [Docker Desktop](https://www.docker.com/products/docker-desktop/) our Postgres
 Database will be containerized in Docker.
 
-[Ngrok](https://ngrok.com/docs/getting-started/) Allows us to easily connect the
-frontend to backend code. Make an account for a stable link!
+[Ngrok](https://ngrok.com/docs/getting-started/) Allows us to easily expose our local backend to GitHub webhook events. Make an account for a stable link!
 
 ## Before Running
 
@@ -75,7 +115,7 @@ VITE_GITHUB_APP_NAME=<Your GitHub app name>
 5. Finally, open one last new tab: run `make frontend-run`
 
 
-## Running locally in dev mode without using Make (due to multi-line env variable issues):
+## Running locally in dev mode without using Make:
 
 1. Launch Docker Desktop
 2. In the repo root: run `docker compose up --build`
