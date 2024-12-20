@@ -114,7 +114,10 @@ func createComments(s *WorkService, c *fiber.Ctx, userClient github.GitHubUserCl
 		// link the created comment to our record
 		if len(match) > 1 {
 			feedbackCommentID, _ := strconv.ParseInt(match[1], 10, 0)
-			s.store.LinkFeedbackCommentWithGitHub(c.Context(), feedbackCommentID, *comment.ID)
+			err = s.store.LinkFeedbackCommentWithGitHub(c.Context(), feedbackCommentID, *comment.ID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
