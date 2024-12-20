@@ -65,7 +65,7 @@ const AboutUs: React.FC = () => {
       name: "Kenneth Chen",
       title: "Full Stack Developer",
       imageUrl: "/images/kenneth-chen.png",
-      bio: "Kenneth is a full stack developer with a strong background in both frontend and backend development.",
+      bio: "Kenny likes coding and code architecting. Founding president of Cooking Club, love art, cooking, and volleyball. Big braised ribs fan",
       website: "https://github.com/kennybc"
     }
   ];
