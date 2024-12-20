@@ -171,6 +171,7 @@ func (s *AssignmentService) generateAssignmentToken() fiber.Handler {
 
 // Uses an assignment token to accept an assignment.
 func (s *AssignmentService) useAssignmentToken() fiber.Handler {
+	//@KHO-239
 	return func(c *fiber.Ctx) error {
 		token := c.Params("token")
 		if token == "" {
@@ -278,6 +279,12 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 
 			time.Sleep(initialDelay)
 			initialDelay *= 2
+		}
+
+		//KHO-239
+		err = client.CreateBranchRuleset(c.Context(), classroom.OrgName, forkName)
+		if err != nil {
+			return errs.CriticalGithubError()
 		}
 
 		// Remove student team's access to forked repo

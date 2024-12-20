@@ -2,10 +2,12 @@ package sharedclient
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
-
+	"time"
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
+	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	"github.com/google/go-github/github"
 )
 
@@ -182,6 +184,147 @@ func (api *CommonAPI) GetUser(ctx context.Context, userName string) (*github.Use
 	user, _, err := api.Client.Users.Get(ctx, userName)
 	return user, err
 }
+
+
+
+func (api *CommonAPI) createRuleSet(ctx context.Context, ruleset interface{}, orgName, repoName string) error {
+	endpoint := fmt.Sprintf("/repos/%s/%s/rulesets", orgName, repoName)
+	req, err := api.Client.NewRequest("POST", endpoint, ruleset)
+	if err != nil {
+		return err
+	}
+	_, err = api.Client.Do(ctx, req, nil)
+	return err
+}
+
+//Given a repo name and org name, create a push ruleset to protect the .github directory
+func (api *CommonAPI) CreatePushRuleset(ctx context.Context, orgName, repoName string) error {
+	body := map[string]interface{}{
+		"name":        "Restrict .github Directory Edits: Preserves Submission Deadline",
+		"target":      "push",
+		"enforcement": "active",
+		"rules": []interface{}{
+			map[string]interface{}{
+				"type": "file_path_restriction",
+				"parameters": map[string]interface{}{
+					"restricted_file_paths": []string{".github/**/*"},
+				},
+			},
+		},
+	}
+	return api.createRuleSet(ctx, body, orgName, repoName)
+}
+
+
+
+func (api *CommonAPI) CreateBranchRuleset(ctx context.Context,  orgName, repoName string) error {
+	body := map[string]interface{}{
+		"name": "Feedback and Main Branch Protedtion: PR Enforcement",
+		"target": "branch",
+		"enforcement": "active",
+		"conditions": map[string]interface{}{
+			"ref_name": map[string]interface{}{
+				"exclude": []interface{}{},
+				"include": []interface{}{"refs/heads/feedback", "~DEFAULT_BRANCH"},
+			},
+		},
+		"rules": []interface{}{
+			map[string]interface{}{
+				"type": "non_fast_forward",
+			},
+			map[string]interface{}{
+				"type": "deletion",
+			},
+			map[string]interface{}{
+				"type": "update",
+				"parameters": map[string]interface{}{
+				  "update_allows_fetch_and_merge": true,
+				},
+			  },
+			  
+			map[string]interface{}{
+				"type": "pull_request",
+				"parameters" : map[string]interface{}{
+								"required_approving_review_count": 0,
+        						"dismiss_stale_reviews_on_push": true,
+       							"require_code_owner_review": false,
+        						"require_last_push_approval": false,
+        						"required_review_thread_resolution": false,
+       							"automatic_copilot_code_review_enabled": false,
+				},
+			},
+			map[string]interface{}{
+				"type": "required_status_checks",
+				"parameters": map[string]interface{}{
+					"strict_required_status_checks_policy": false,
+					"do_not_enforce_on_create": false,
+					"required_status_checks": []map[string]string{
+						map[string]string{
+							"context": "check-date",
+						},
+						map[string]string{
+							"context": "check-target",
+						},
+
+					},
+					
+				},
+			},
+		},
+	}
+	return api.createRuleSet(ctx, body, orgName, repoName)
+}
+
+
+
+
+
+func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName string) error {
+	addition := models.RepositoryAddition{
+		FilePath: ".github/workflows/deadline.yml",
+		RepoName: repoName,
+		OwnerName: orgName,
+		DestinationBranch: branchName,
+		Content: utils.ActionWithDeadline(deadline),
+		CommitMessage: "Deadline enforcement GH action files",
+	}
+	return api.EditRepository(ctx, &addition)
+
+}
+
+
+func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName, branchName string) error {
+
+	addition := models.RepositoryAddition{
+		FilePath: ".github/workflows/branchProtections.yml",
+		RepoName: repoName,
+		OwnerName: orgName,
+		DestinationBranch: branchName,
+		Content: utils.TargetBranchProtectionAction(),
+		CommitMessage: "Deadline enforcement GH action files",
+	}
+	return api.EditRepository(ctx, &addition)
+
+}
+
+func (api *CommonAPI) EditRepository(ctx context.Context, addition *models.RepositoryAddition) error {
+	endpoint := fmt.Sprintf("/repos/%s/%s/contents/%s", addition.OwnerName, addition.RepoName, addition.FilePath)
+	encodedContent := base64.StdEncoding.EncodeToString([]byte(addition.Content))
+
+	body := map[string]interface{}{
+		"message": addition.CommitMessage,
+		"content": encodedContent,
+		"branch": addition.DestinationBranch,
+	}
+	req, err := api.Client.NewRequest("PUT", endpoint, body)
+	if err != nil {
+		return err
+	}
+	_, err = api.Client.Do(ctx, req, nil)
+	return err
+}
+
+
 
 func (api *CommonAPI) InviteUserToOrganization(ctx context.Context, orgName string, userID int64) error {
 	body := map[string]interface{}{

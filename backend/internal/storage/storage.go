@@ -31,6 +31,7 @@ type Works interface {
 	GetWorks(ctx context.Context, classroomID int, assignmentID int) ([]*models.StudentWorkWithContributors, error)
 	GetWork(ctx context.Context, classroomID int, assignmentID int, studentWorkID int) (*models.PaginatedStudentWorkWithContributors, error)
 	CreateStudentWork(ctx context.Context, assignmentOutlineID int32, gitHubUserID int64, repoName string, workState models.WorkState, dueDate *time.Time) (models.StudentWork, error)
+
 	UpdateStudentWork(ctx context.Context, UpdateStudentWork models.StudentWork) (models.StudentWork, error)
 	GetWorkByRepoName(ctx context.Context, repoName string) (models.StudentWork, error)
 }
@@ -80,6 +81,7 @@ type AssignmentOutline interface {
 	GetTotalWorkCommits(ctx context.Context, assignmentID int) (int, error)
 	GetAssignmentByToken(ctx context.Context, token string) (models.AssignmentOutline, error)
 	CreateAssignmentToken(ctx context.Context, tokenData models.AssignmentToken) (models.AssignmentToken, error)
+	GetAssignmentByRepoName(ctx context.Context, repoName string) (*models.AssignmentOutline, error)
 }
 
 type AssignmentTemplate interface {

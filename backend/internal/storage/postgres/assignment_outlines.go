@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
@@ -131,7 +133,6 @@ func (db *DB) CreateAssignment(ctx context.Context, assignmentRequestData models
 	if err != nil {
 		return assignmentOutline, errs.NewDBError(err)
 	}
-
 	return assignmentOutline, nil
 }
 
@@ -266,4 +267,29 @@ func (db *DB) CountWorksByState(ctx context.Context, assignmentID int) (map[mode
 	}
 
 	return workStateCounts, nil
+}
+
+func (db *DB) GetAssignmentByRepoName(ctx context.Context, repoName string) (*models.AssignmentOutline, error){
+	var outline models.AssignmentOutline
+	 row := db.connPool.QueryRow(ctx, `SELECT ao.id, ao.template_id, ao.base_repo_id, ao.classroom_id, ao.created_at, ao.released_at, ao.name, ao.rubric_id, ao.group_assignment, ao.default_score, ao.main_due_date
+			FROM assignment_outlines ao
+			JOIN assignment_base_repos at ON ao.base_repo_id = at.base_repo_id
+			WHERE at.base_repo_name ILIKE $1;`, strings.ToLower(repoName))
+	err := row.Scan(&outline.ID,
+				&outline.TemplateID,
+				&outline.BaseRepoID,
+				&outline.ClassroomID,
+				&outline.CreatedAt,
+				&outline.ReleasedAt,
+				&outline.Name,
+				&outline.RubricID,
+				&outline.GroupAssignment,
+				&outline.DefaultScore,
+				&outline.MainDueDate)																					
+	if err != nil {
+		fmt.Println("oof")
+		fmt.Println(err)
+		return nil, err
+	}
+	return &outline, nil
 }
