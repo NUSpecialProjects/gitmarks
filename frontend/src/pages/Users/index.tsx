@@ -131,7 +131,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
 
   useEffect(() => {
     const handleCreateToken = async () => {
-      if (!selectedClassroom || !showActionsColumn) {
+      if (!selectedClassroom) {
         return;
       }
       await postClassroomToken(selectedClassroom.id, role_type)
