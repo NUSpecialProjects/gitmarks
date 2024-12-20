@@ -99,6 +99,29 @@ export const getAssignment = async (
   return data;
 };
 
+export const getAssignmentTemplate = async (
+  classroomID: number,
+  assignmentID: number
+): Promise<IAssignmentTemplate> => {
+  const result = await fetch(
+    `${base_url}/classrooms/classroom/${classroomID}/assignments/assignment/${assignmentID}/template`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!result.ok) {
+    throw new Error("Network response was not ok");
+  }
+
+  const data: IAssignmentTemplate = (await result.json()).assignment_template;
+  return data;
+};
+
 export const createAssignment = async (
   templateRepoID: number,
   assignment: IAssignmentFormData

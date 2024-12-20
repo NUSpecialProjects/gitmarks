@@ -57,4 +57,15 @@
     font-size: var(--font-size-xs);
     padding: 12px 30px;
   }
+
+  &--disabled {
+    background: var(--page-background);
+    color: var(--secondary-text);
+    border-width: var(--border-width);
+    border-style: var(--border-style);
+    border-color: var(--button-border-color);
+    cursor: not-allowed;
+    opacity: 0.6;
+    pointer-events: none;
+  }
 }

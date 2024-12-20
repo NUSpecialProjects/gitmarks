@@ -25,7 +25,7 @@ resource "aws_iam_role" "github_actions_deploy_role" {
             "token.actions.githubusercontent.com:aud" : "sts.amazonaws.com"
           },
           "StringLike" : {
-            "token.actions.githubusercontent.com:sub" : "repo:NUSpecialProjects/khoury-classroom-plugin:*"
+            "token.actions.githubusercontent.com:sub" : "repo:NUSpecialProjects/gitmarks:*"
           }
         }
       }

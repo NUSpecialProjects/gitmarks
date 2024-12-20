@@ -59,7 +59,7 @@ export async function getClassroomsInOrg(
 }
 
 export async function postClassroom(
-  classroom: Omit<IClassroom, "id">
+  classroom: Omit<IClassroom, "id" | "created_at">
 ): Promise<IClassroom> {
   const response = await fetch(`${base_url}/classrooms`, {
     method: "POST",

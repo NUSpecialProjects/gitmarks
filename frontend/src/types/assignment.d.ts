@@ -15,6 +15,13 @@ interface IAssignmentOutlineResponse {
   assignment_outline: IAssignmentOutline;
 }
 
+interface IAssignmentTemplate {
+  template_id: number;
+  template_repo_owner: string;
+  template_repo_name: string;
+  created_at: Date;
+}
+
 interface IAssignmentToken {
   assignment_id: number;
   token: string;

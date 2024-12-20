@@ -6,6 +6,7 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { postClassroomToken } from "@/api/classrooms";
 
 import "../styles.css";
+import { ClassroomRole } from "@/types/enums";
 
 const InviteStudents: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
@@ -19,7 +20,7 @@ const InviteStudents: React.FC = () => {
       if (!selectedClassroom) {
         return;
       }
-      await postClassroomToken(selectedClassroom.id, "STUDENT")
+      await postClassroomToken(selectedClassroom.id, ClassroomRole.STUDENT)
         .then((data: ITokenResponse) => {
           const url = `${base_url}/app/token/classroom/join?token=${data.token}`;
           setLink(url);

@@ -10,6 +10,9 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { setAssignmentRubric } from "@/api/assignments";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaRegTrashAlt } from "react-icons/fa";
+import { ClassroomRole } from "@/types/enums";
+import { useClassroomUser } from "@/hooks/useClassroomUser";
+import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 
 interface IEditableItem {
     frontFacingIndex: number;
@@ -29,6 +32,7 @@ const RubricEditor: React.FC = () => {
     const navigate = useNavigate();
 
     const { selectedClassroom } = useContext(SelectedClassroomContext)
+    useClassroomUser(selectedClassroom?.id, ClassroomRole.PROFESSOR, "/access-denied");
 
     // potential data for the assignment
     const [assignmentData, setAssignmentData] = useState<IAssignmentOutline>()
@@ -297,96 +301,105 @@ const RubricEditor: React.FC = () => {
         }
     }, [rubricData])
 
+    const pageTitle = rubricData !== null && rubricData !== undefined ? "Edit Rubric" : "New Rubric"
+
     return (
-        <div className="NewRubric__body">
-            <div className="NewRubric__title">
-                {assignmentData !== null && assignmentData !== undefined ? `${assignmentData.name} > ` : ""}
-                {rubricData !== null && rubricData !== undefined ? "Edit Rubric" : "New Rubric"}
-                {rubricEdited ? "*" : ""}
-            </div>
-
-            {failedToSave &&
-                <div className="NewRubric__title__FailedSave">
-                    {"Couldn't save rubric. Please try again."}
+        <>
+        <SubPageHeader
+            pageTitle={pageTitle}
+            chevronLink={"/app/rubrics"}
+        >
+        </SubPageHeader>
+            <div className="NewRubric__body">
+                <div className="NewRubric__title">
+                    {assignmentData !== null && assignmentData !== undefined ? `${assignmentData.name} > ` : ""}
+                    {pageTitle}
+                    {rubricEdited ? "*" : ""}
                 </div>
-            }
 
-            {failedToSave && invalidExplanation &&
-                <div className="NewRubric__title__FailedSave">
-                    {" - Item explanations cannot be empty."}
-                </div>
-            }
-
-            {failedToSave && invalidPointValue &&
-                <div className="NewRubric__title__FailedSave">
-                    {" - Point values cannot be empty."}
-                </div>
-            }
-
-            {failedToSave && invalidPointImpact &&
-                <div className="NewRubric__title__FailedSave">
-                    {" - Point impact cannot be empty for non-zero values."}
-                </div>
-            }
-            
-            {failedToSave && emptyRubric &&
-                <div className="NewRubric__title__FailedSave">
-                    {" - A rubric cannot have no items."}
-                </div>
-            }
-
-            <Input
-                label="Rubric name"
-                name="rubric-name"
-                placeholder="Enter a name for your classroom..."
-                required
-                value={rubricName}
-                onChange={(n) => { handleNameChange(n.target.value) }}
-            />
-
-            <div className="NewRubric__itemsTitle"> Rubric Items </div>
-
-            {rubricItemData && rubricItemData.length > 0 &&
-                rubricItemData.map((item, i) => (
-                    <div key={i}>
-                        {!item.hidden && (
-                            <div key={`item_display_${i}`} className="NewRubric__itemDisplay">
-                                <RubricItem
-                                    key={`itemID_${item.frontFacingIndex}`}
-                                    name={item.rubricItem.explanation}
-                                    points={item.rubricItem.point_value !== undefined && item.rubricItem.point_value !== null
-                                        ? Math.abs(item.rubricItem.point_value).toString() : ""}
-                                    impact={item.impact}
-                                    onChange={(newItem) => handleItemChange(item.frontFacingIndex, newItem)}
-                                />
-
-
-                                <Button
-                                    key={`delete_id${item.frontFacingIndex}`}
-                                    href=""
-                                    variant="secondary"
-                                    onClick={() => { deleteItem(item.frontFacingIndex) }}>
-                                    <FaRegTrashAlt />
-                                </Button>
-
-
-                            </div>
-                        )}
+                {failedToSave &&
+                    <div className="NewRubric__title__FailedSave">
+                        {"Couldn't save rubric. Please try again."}
                     </div>
-                ))
-            }
+                }
+
+                {failedToSave && invalidExplanation &&
+                    <div className="NewRubric__title__FailedSave">
+                        {" - Item explanations cannot be empty."}
+                    </div>
+                }
+
+                {failedToSave && invalidPointValue &&
+                    <div className="NewRubric__title__FailedSave">
+                        {" - Point values cannot be empty."}
+                    </div>
+                }
+
+                {failedToSave && invalidPointImpact &&
+                    <div className="NewRubric__title__FailedSave">
+                        {" - Point impact cannot be empty for non-zero values."}
+                    </div>
+                }
+                
+                {failedToSave && emptyRubric &&
+                    <div className="NewRubric__title__FailedSave">
+                        {" - A rubric cannot have no items."}
+                    </div>
+                }
+
+                <Input
+                    label="Rubric name"
+                    name="rubric-name"
+                    placeholder="Enter a name for your classroom..."
+                    required
+                    value={rubricName}
+                    onChange={(n) => { handleNameChange(n.target.value) }}
+                />
+
+                <div className="NewRubric__itemsTitle"> Rubric Items </div>
+
+                {rubricItemData && rubricItemData.length > 0 &&
+                    rubricItemData.map((item, i) => (
+                        <div key={i}>
+                            {!item.hidden && (
+                                <div key={`item_display_${i}`} className="NewRubric__itemDisplay">
+                                    <RubricItem
+                                        key={`itemID_${item.frontFacingIndex}`}
+                                        name={item.rubricItem.explanation}
+                                        points={item.rubricItem.point_value !== undefined && item.rubricItem.point_value !== null
+                                            ? Math.abs(item.rubricItem.point_value).toString() : ""}
+                                        impact={item.impact}
+                                        onChange={(newItem) => handleItemChange(item.frontFacingIndex, newItem)}
+                                    />
+
+
+                                    <Button
+                                        key={`delete_id${item.frontFacingIndex}`}
+                                        href=""
+                                        variant="secondary"
+                                        onClick={() => { deleteItem(item.frontFacingIndex) }}>
+                                        <FaRegTrashAlt />
+                                    </Button>
+
+
+                                </div>
+                            )}
+                        </div>
+                    ))
+                }
 
 
 
 
-            <Button href="" variant="secondary" onClick={addNewItem}> + Add a new item </Button>
+                <Button href="" variant="secondary" onClick={addNewItem}> + Add a new item </Button>
 
 
-            <div className="NewRubric__decisionButtons">
-                <Button href="" variant="secondary" onClick={backButton}> Cancel </Button>
-                <Button href="" onClick={saveRubric}> Save rubric </Button>
+                <div className="NewRubric__decisionButtons">
+                    <Button href="" variant="secondary" onClick={backButton}> Cancel </Button>
+                    <Button href="" onClick={saveRubric}> Save rubric </Button>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

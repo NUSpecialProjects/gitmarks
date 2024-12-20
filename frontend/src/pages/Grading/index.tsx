@@ -17,6 +17,8 @@ import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
 import Button from "@/components/Button";
 
 import "./styles.css";
+import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { ClassroomRole, StudentWorkState } from "@/types/enums";
 
 interface IGradingAssignmentRow extends React.HTMLProps<HTMLDivElement> {
   assignment: IAssignmentOutline;
@@ -33,6 +35,7 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
   const { selectedClassroom: selectedClassroom } = useContext(
     SelectedClassroomContext
   );
+  useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
   const navigate = useNavigate();
 
   const downloadGrades = () => {
@@ -101,7 +104,13 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
                   <TableCell>Manual Feedback Score</TableCell>
                   <TableCell>Overall Score</TableCell>
                 </TableRow>
-                {studentAssignments.map((studentAssignment, i: number) => (
+                {studentAssignments
+                .filter(
+                  (studentAssignment) =>
+                    studentAssignment.work_state !==
+                    StudentWorkState.NOT_ACCEPTED
+                )
+                .map((studentAssignment, i: number) => (
                   <TableRow
                     key={i}
                     onClick={() => {
@@ -111,7 +120,7 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
                     }}
                   >
                     <TableCell>
-                      {studentAssignment.contributors.join(", ")}
+                      {studentAssignment.contributors.map(c => `${c.full_name}`).join(", ")}
                     </TableCell>
                     <TableCell style={{ justifyContent: "end" }}>
                       {studentAssignment.auto_grader_score ?? "-"}
@@ -149,6 +158,7 @@ const Grading: React.FC = () => {
   const { selectedClassroom: selectedClassroom } = useContext(
     SelectedClassroomContext
   );
+  useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/app/organization/select");
   useEffect(() => {
     if (!selectedClassroom) return;
     getAssignments(selectedClassroom.id)

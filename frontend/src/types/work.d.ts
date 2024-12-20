@@ -11,9 +11,17 @@ interface IStudentWork {
   auto_grader_score?: number;
   submission_timestamp?: Date;
   grades_published_timestamp?: Date;
-  work_state: string;
+  work_state: StudentWorkState;
   created_at: Date;
-  contributors: string[];
+  commit_amount: number;
+  first_commit_date?: Date;
+  last_commit_date?: Date;
+  contributors: IWorkContributor[];
+}
+
+interface IWorkContributor {
+  full_name: string;
+  github_username: string;
 }
 
 interface IPaginatedStudentWork extends IStudentWork {
@@ -30,4 +38,9 @@ interface IStudentWorkResponses {
 interface IPaginatedStudentWorkResponse {
   student_work: IPaginatedStudentWork;
   feedback: IGraderFeedback[];
+}
+
+
+interface ICommitsPerDayResponse {
+  dated_commits: Map<Date, number>;
 }

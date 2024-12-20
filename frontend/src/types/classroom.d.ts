@@ -3,7 +3,7 @@ interface IClassroom {
   name: string;
   org_id: number;
   org_name: string;
-  created_at?: Date;
+  created_at: Date;
 }
 
 interface IClassroomResponse {

@@ -17,11 +17,13 @@ type StudentWork struct {
 	CreatedAt                time.Time  `json:"created_at" db:"created_at"`
 	CommitAmount             int        `json:"commit_amount" db:"commit_amount"`
 	FirstCommitDate          *time.Time `json:"first_commit_date" db:"first_commit_date"`
+	LastCommitDate           *time.Time `json:"last_commit_date" db:"last_commit_date"`
 }
 
 type WorkState string
 
 const (
+	WorkStateNotAccepted      WorkState = "NOT_ACCEPTED" // additional option outside of the DB enum
 	WorkStateAccepted         WorkState = "ACCEPTED"
 	WorkStateStarted          WorkState = "STARTED"
 	WorkStateSubmitted        WorkState = "SUBMITTED"
@@ -55,49 +57,59 @@ type PaginatedStudentWork struct {
 
 type RawStudentWork struct {
 	StudentWork
-	FirstName string `json:"first_name" db:"first_name"`
-	LastName  string `json:"last_name" db:"last_name"`
+	FirstName      string `json:"first_name" db:"first_name"`
+	LastName       string `json:"last_name" db:"last_name"`
+	GithubUsername string `json:"github_username" db:"github_username"`
 }
 
 type RawPaginatedStudentWork struct {
 	PaginatedStudentWork
-	FirstName string `json:"first_name" db:"first_name"`
-	LastName  string `json:"last_name" db:"last_name"`
+	FirstName      string `json:"first_name" db:"first_name"`
+	LastName       string `json:"last_name" db:"last_name"`
+	GithubUsername string `json:"github_username" db:"github_username"`
 }
 
 // a formatted (squashed) view of a student work: combine separate contributor entries on a common student work
 type StudentWorkWithContributors struct {
 	StudentWork
-	Contributors []string `json:"contributors"`
+	Contributors []IWorkContributor `json:"contributors"`
 }
 
 type PaginatedStudentWorkWithContributors struct {
 	PaginatedStudentWork
-	Contributors []string `json:"contributors"`
+	Contributors []IWorkContributor `json:"contributors"`
+}
+
+type IWorkContributor struct {
+	FullName       string `json:"full_name"`
+	GithubUsername string `json:"github_username"`
 }
 
 type IStudentWork interface {
 	GetID() int
 	GetFirstName() string
 	GetLastName() string
+	GetGithubUsername() string
 }
 
 type IFormattedStudentWork interface {
-	AddContributor(contributor string)
+	AddContributor(contributor IWorkContributor)
 }
 
-func (w RawStudentWork) GetID() int           { return w.ID }
-func (w RawStudentWork) GetFirstName() string { return w.FirstName }
-func (w RawStudentWork) GetLastName() string  { return w.LastName }
+func (w RawStudentWork) GetID() int                { return w.ID }
+func (w RawStudentWork) GetFirstName() string      { return w.FirstName }
+func (w RawStudentWork) GetLastName() string       { return w.LastName }
+func (w RawStudentWork) GetGithubUsername() string { return w.GithubUsername }
 
-func (w RawPaginatedStudentWork) GetID() int           { return w.ID }
-func (w RawPaginatedStudentWork) GetFirstName() string { return w.FirstName }
-func (w RawPaginatedStudentWork) GetLastName() string  { return w.LastName }
+func (w RawPaginatedStudentWork) GetID() int                { return w.ID }
+func (w RawPaginatedStudentWork) GetFirstName() string      { return w.FirstName }
+func (w RawPaginatedStudentWork) GetLastName() string       { return w.LastName }
+func (w RawPaginatedStudentWork) GetGithubUsername() string { return w.GithubUsername }
 
-func (w *StudentWorkWithContributors) AddContributor(contributor string) {
+func (w *StudentWorkWithContributors) AddContributor(contributor IWorkContributor) {
 	w.Contributors = append(w.Contributors, contributor)
 }
 
-func (w *PaginatedStudentWorkWithContributors) AddContributor(contributor string) {
+func (w *PaginatedStudentWorkWithContributors) AddContributor(contributor IWorkContributor) {
 	w.Contributors = append(w.Contributors, contributor)
 }

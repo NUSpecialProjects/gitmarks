@@ -112,6 +112,8 @@ export default function App(): React.JSX.Element {
               </Route>
             </Route>
 
+            <Route path="access-denied" element={<Pages.AccessDenied />} />
+
             {/******* 404 CATCH ALL *******/}
             <Route path="404" element={<Pages.PageNotFound />} />
           </Routes>

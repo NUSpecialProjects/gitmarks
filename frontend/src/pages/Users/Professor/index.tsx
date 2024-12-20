@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import GenericRolePage from "..";
-import { ClassroomRole } from "@/types/users";
+import { ClassroomRole } from "@/types/enums";
 
 const ProfessorListPage: React.FC = () => {
   const location = useLocation();

@@ -21,7 +21,7 @@ func (s *WebHookService) WebhookHandler(c *fiber.Ctx) error {
 
 	handler, exists := dispatch[event]
 	if !exists {
-		return c.SendStatus(400)
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return handler(c)
@@ -29,7 +29,7 @@ func (s *WebHookService) WebhookHandler(c *fiber.Ctx) error {
 
 func (s *WebHookService) PR(c *fiber.Ctx) error {
 	println("PR webhook event")
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 // todo: finish regrade request handling
@@ -41,12 +41,12 @@ func (s *WebHookService) PRComment(c *fiber.Ctx) error {
 	if payload.Comment.AuthorAssociation == "COLLABORATOR" {
 		println("regrade request")
 	}
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (s *WebHookService) PRThread(c *fiber.Ctx) error {
 	println("PR thread webhook event")
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (s *WebHookService) PushEvent(c *fiber.Ctx) error {
@@ -117,7 +117,7 @@ func (s *WebHookService) baseRepoInitialization(c *fiber.Ctx, pushEvent github.P
 		return errs.InternalServerError()
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (s *WebHookService) updateWorkStateOnStudentCommit(c *fiber.Ctx, pushEvent github.PushEvent) error {
@@ -130,10 +130,17 @@ func (s *WebHookService) updateWorkStateOnStudentCommit(c *fiber.Ctx, pushEvent 
 	// Mark the project as started if this is our first student commit
 	if studentWork.WorkState == models.WorkStateAccepted {
 		studentWork.WorkState = models.WorkStateStarted
-		studentWork.FirstCommitDate = &pushEvent.Commits[0].Timestamp.Time
+		firstCommitDate := pushEvent.Commits[0].Timestamp.Time.UTC()
+		studentWork.FirstCommitDate = &firstCommitDate
 	}
 
 	if pushEvent.Ref != nil {
+		// Update the last commit date
+		if len(pushEvent.Commits) > 0 {
+			lastCommitDate := pushEvent.Commits[0].Timestamp.Time.UTC()
+			studentWork.LastCommitDate = &lastCommitDate
+		}
+
 		// TODO: Dynamically determine branch names once parameterized
 		// If commiting to main branch, mark as submitted
 		if *pushEvent.Ref == "refs/heads/"+*pushEvent.Repo.DefaultBranch {
@@ -150,7 +157,7 @@ func (s *WebHookService) updateWorkStateOnStudentCommit(c *fiber.Ctx, pushEvent 
 		return errs.InternalServerError()
 	}
 
-	return c.SendStatus(200)
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func isInitialCommit(pushEvent github.PushEvent) bool {

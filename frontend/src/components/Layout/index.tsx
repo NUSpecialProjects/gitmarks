@@ -9,9 +9,13 @@ import { useClassroomUser } from "@/hooks/useClassroomUser";
 
 import LeftNav from "./LeftNav";
 import TopNav from "./TopNav";
-import Button from "@/components/Button";
 
 import "./styles.css";
+import { FaTachometerAlt } from "react-icons/fa";
+import { MdEditDocument } from "react-icons/md";
+import { MdFactCheck } from "react-icons/md";
+import { FaGear } from "react-icons/fa6";
+import { ClassroomRole } from "@/types/enums";
 
 const Layout: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
@@ -38,6 +42,19 @@ const Layout: React.FC = () => {
     navigate,
   ]);
 
+  const professorNavItems = [
+    { name: "Rubrics", dest: "/app/rubrics", Icon: MdFactCheck }
+  ];
+
+  const navItems = [
+    { name: "Dashboard", dest: "/app/dashboard", Icon: FaTachometerAlt },
+    { name: "Grading", dest: "/app/grading", Icon: MdEditDocument },
+    ...(classroomUser?.classroom_role === ClassroomRole.PROFESSOR
+      ? professorNavItems
+      : []),
+    { name: "Settings", dest: "/app/settings", Icon: FaGear }
+  ];
+
   if (loadingCurrentClassroomUser) {
     return (
       <div className="Layout__loading">
@@ -46,28 +63,10 @@ const Layout: React.FC = () => {
     );
   }
 
-  if (classroomUser?.classroom_role === "STUDENT") {
-    return (
-      <div className="Dashboard__unauthorized">
-        <h2>Access Denied</h2>
-        <p>
-          You do not have permission to view the classroom management dashboard.
-        </p>
-        <p>Please contact your professor if you believe this is an error.</p>
-        <Button
-          variant="primary"
-          href={`/app/classroom/select?org_id=${selectedClassroom?.org_id}`}
-        >
-          Return to Classroom Selection
-        </Button>
-      </div>
-    );
-  }
-
   return selectedClassroom ? (
     <div className="Layout">
       <div className="Layout__left">
-        <LeftNav />
+        <LeftNav navItems={navItems} />
       </div>
 
       <SimpleBar className="Layout__right">
