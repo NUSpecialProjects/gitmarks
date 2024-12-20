@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import SimpleBar from "simplebar-react";
+import ClipLoader from "react-spinners/ClipLoader";
 
 import ResizablePanel from "../ResizablePanel";
 import Button from "@/components/Button";
@@ -8,8 +9,14 @@ import { GraderContext } from "@/contexts/grader";
 import "./styles.css";
 
 const RubricTree: React.FC = () => {
-  const { studentWork, rubric, stagedFeedback, postFeedback } =
-    useContext(GraderContext);
+  const {
+    assignment,
+    rubric,
+    feedback,
+    stagedFeedback,
+    postingFeedback,
+    postFeedback,
+  } = useContext(GraderContext);
 
   return (
     <ResizablePanel border="left">
@@ -31,13 +38,40 @@ const RubricTree: React.FC = () => {
       <div className="RubricTree__foot">
         <div className="RubricTree__score">
           <span>Total Score:</span>
-          {(studentWork?.manual_feedback_score ?? 0) +
+          {(assignment?.default_score ?? 0) +
+            (feedback
+              ? Object.values(feedback).reduce(
+                  (s: number, fb: IGraderFeedback) =>
+                    s + (fb.rubric_item_id != 1 ? fb.points : 0),
+                  0
+                )
+              : 0) +
             Object.values(stagedFeedback).reduce(
-              (s: number, fb: IGraderFeedback) => s + fb.points,
+              (s: number, fb: IGraderFeedback) => {
+                switch (fb.action) {
+                  case "CREATE":
+                    return s + fb.points;
+                  case "DELETE":
+                    return s - fb.points;
+                  default:
+                    return 0;
+                }
+              },
               0
             )}
         </div>
-        <Button onClick={postFeedback}>Submit Grade</Button>
+        <Button
+          onClick={postFeedback}
+          variant={
+            Object.values(stagedFeedback).length == 0 ? "disabled" : "primary"
+          }
+        >
+          {postingFeedback ? (
+            <ClipLoader size={40} color={"white"} loading={true} />
+          ) : (
+            "Submit Comments"
+          )}
+        </Button>
       </div>
     </ResizablePanel>
   );

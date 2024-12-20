@@ -447,3 +447,33 @@ func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Reposit
 
 	return len(branches) == len(srcBranches)
 }
+
+func (api *CommonAPI) GetPRReviewComments(ctx context.Context, owner string, repo string, reviewID int64) ([]*github.PullRequestComment, error) {
+	comments, _, err := api.Client.PullRequests.ListReviewComments(ctx, owner, repo, 1, reviewID, nil)
+	if err != nil {
+		return nil, errs.GithubAPIError(err)
+	}
+
+	return comments, nil
+}
+
+func (api *CommonAPI) EditPRReviewComment(ctx context.Context, owner string, repo string, commentID int, body string) error {
+	endpoint := fmt.Sprintf("/repos/%s/%s/pulls/comments/%d", owner, repo, commentID)
+
+	requestBody := map[string]interface{}{
+		"body": body,
+	}
+
+	req, err := api.Client.NewRequest("PATCH", endpoint, requestBody)
+	if err != nil {
+		return err
+	}
+
+	_, err = api.Client.Do(ctx, req, nil)
+	return err
+}
+
+func (api *CommonAPI) DeletePRReviewComment(ctx context.Context, owner string, repo string, commentID int) error {
+	_, err := api.Client.PullRequests.DeleteComment(ctx, owner, repo, int64(commentID))
+	return err
+}

@@ -126,4 +126,13 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 
 	// Check if a fork has finished initializing
 	CheckForkIsReady(ctx context.Context, repo *github.Repository) bool
+
+	// Lists the comments in a PR review in the feedback PR
+	GetPRReviewComments(ctx context.Context, owner string, repo string, reviewID int64) ([]*github.PullRequestComment, error)
+
+	// Edits the content of a PR review comment
+	EditPRReviewComment(ctx context.Context, owner string, repo string, commentID int, body string) error
+
+	// Deletes a PR review comment
+	DeletePRReviewComment(ctx context.Context, owner string, repo string, commentID int) error
 }

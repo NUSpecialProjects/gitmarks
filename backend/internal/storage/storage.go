@@ -22,9 +22,12 @@ type Storage interface {
 }
 
 type FeedbackComment interface {
-	GetFeedbackOnWork(ctx context.Context, studentWorkID int) ([]models.PRReviewCommentResponse, error)
-	CreateFeedbackComment(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentResponse) error
-	CreateFeedbackCommentFromRubricItem(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentResponse) error
+	GetFeedbackOnWork(ctx context.Context, studentWorkID int) ([]models.FeedbackComment, error)
+	CreateFeedbackComment(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) (int, error)
+	CreateFeedbackCommentFromRubricItem(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) (int, error)
+	EditFeedbackComment(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) error
+	DeleteFeedbackComment(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) error
+	LinkFeedbackCommentWithGitHub(ctx context.Context, feedbackCommentID, gitHubCommentID int64) error
 }
 
 type Works interface {

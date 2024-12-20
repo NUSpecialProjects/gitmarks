@@ -73,7 +73,7 @@ export const getAssignments = async (
   return data.assignment_outlines as IAssignmentOutline[];
 };
 
-export const getAssignmentIndirectNav = async (
+export const getAssignment = async (
   classroomID: number,
   assignmentID: number
 ): Promise<IAssignmentOutline> => {

@@ -8,7 +8,7 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import {
-  getAssignmentIndirectNav,
+  getAssignment,
   getAssignmentTemplate,
   postAssignmentToken,
 } from "@/api/assignments";
@@ -133,7 +133,7 @@ const Assignment: React.FC = () => {
       if (assignmentID && selectedClassroom !== null && selectedClassroom !== undefined) {
         (async () => {
           try {
-            const fetchedAssignment = await getAssignmentIndirectNav(
+            const fetchedAssignment = await getAssignment(
               selectedClassroom.id,
               +assignmentID
             );

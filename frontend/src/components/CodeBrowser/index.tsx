@@ -10,25 +10,19 @@ import {
   dependencies,
 } from "@/utils/prism-lang-loader";
 import { getFileBlob } from "@/api/grader";
+import { GraderContext } from "@/contexts/grader";
 import CodeLine from "./CodeLine";
 
 import "@/assets/prism-vs-dark.css";
 import "./styles.css";
 
 interface ICodeBrowser extends React.HTMLProps<HTMLDivElement> {
-  assignmentID: string | undefined;
-  studentWorkID: string | undefined;
   file: IFileTreeNode | null;
 }
 
-const CodeBrowser: React.FC<ICodeBrowser> = ({
-  assignmentID,
-  studentWorkID,
-  file,
-  className,
-  ...props
-}) => {
+const CodeBrowser: React.FC<ICodeBrowser> = ({ file, className, ...props }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
+  const { assignment, studentWork } = useContext(GraderContext);
 
   const [fileContents, setFileContents] = useState<React.ReactNode>();
   const [cachedFileContents, setCachedFileContents] = useState<
@@ -37,7 +31,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
 
   // get file contents
   useEffect(() => {
-    if (!selectedClassroom || !assignmentID || !studentWorkID || !file) return;
+    if (!selectedClassroom || !assignment || !studentWork || !file) return;
 
     // Check if the content is already cached
     if (file.sha in cachedFileContents) {
@@ -46,13 +40,13 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
     }
 
     (async () => {
-      if (!selectedClassroom || !assignmentID || !studentWorkID) return;
+      if (!selectedClassroom || !assignment || !studentWork) return;
       let wrapped: React.ReactNode;
       try {
         const blob = await getFileBlob(
           selectedClassroom.id,
-          Number(assignmentID),
-          Number(studentWorkID),
+          Number(assignment.id),
+          Number(studentWork.student_work_id),
           file.sha
         );
 
@@ -68,7 +62,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
         }));
       }
     })();
-  }, [assignmentID, studentWorkID, file]);
+  }, [assignment, studentWork, file]);
 
   // when a new file is selected, import any necessary
   // prismjs language syntax files and trigger a rehighlight

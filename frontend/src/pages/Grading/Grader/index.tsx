@@ -21,13 +21,8 @@ const GraderWrapper: React.FC = () => {
 };
 
 const Grader: React.FC = () => {
-  const {
-    assignmentID,
-    studentWorkID,
-    studentWork,
-    selectedFile,
-    setSelectedFile,
-  } = useContext(GraderContext);
+  const { assignment, studentWork, selectedFile, setSelectedFile } =
+    useContext(GraderContext);
   const [graderFontSize, setGraderFontSize] = useState(13);
 
   const zoomIn = () => {
@@ -39,6 +34,7 @@ const Grader: React.FC = () => {
   };
 
   return (
+    assignment &&
     studentWork && (
       <div className="Grader">
         <div className="Grader__head">
@@ -61,7 +57,7 @@ const Grader: React.FC = () => {
                 {studentWork.previous_student_work_id && (
                   <Button
                     variant="secondary"
-                    href={`/app/grading/assignment/${assignmentID}/student/${studentWork.previous_student_work_id}`}
+                    href={`/app/grading/assignment/${assignment.id}/student/${studentWork.previous_student_work_id}`}
                   >
                     <FaChevronLeft />
                     Previous
@@ -70,7 +66,7 @@ const Grader: React.FC = () => {
                 {studentWork.next_student_work_id && (
                   <Button
                     variant="secondary"
-                    href={`/app/grading/assignment/${assignmentID}/student/${studentWork.next_student_work_id}`}
+                    href={`/app/grading/assignment/${assignment.id}/student/${studentWork.next_student_work_id}`}
                   >
                     Next
                     <FaChevronRight />
@@ -102,11 +98,7 @@ const Grader: React.FC = () => {
               className="Grader__files"
               selectFileCallback={setSelectedFile}
             />
-            <CodeBrowser
-              assignmentID={assignmentID}
-              studentWorkID={studentWorkID}
-              file={selectedFile}
-            />
+            <CodeBrowser file={selectedFile} />
             <RubricTree />
           </div>
         </div>

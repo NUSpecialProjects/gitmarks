@@ -85,6 +85,9 @@ CREATE TABLE IF NOT EXISTS rubric_items (
     deleted BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (rubric_id) REFERENCES rubrics(id)
 );
+-- Generic "deleted" message. Do not delete!!
+INSERT INTO rubric_items (id, point_value, explanation) VALUES (1, 0, 'This comment has been deleted.');
+SELECT setval('rubric_items_id_seq', (SELECT MAX(id) FROM rubric_items));
 
 CREATE TABLE IF NOT EXISTS assignment_outlines (
     id SERIAL PRIMARY KEY,
@@ -155,12 +158,16 @@ CREATE TABLE IF NOT EXISTS feedback_comment (
     student_work_id INTEGER NOT NULL,
     rubric_item_id INTEGER NOT NULL,
     ta_user_id INTEGER NOT NULL,
+    github_comment_id INTEGER,
     file_path VARCHAR(255),
     file_line INTEGER,
     created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    superseded_by INTEGER,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (student_work_id) REFERENCES student_works(id),
     FOREIGN KEY (rubric_item_id) REFERENCES rubric_items(id),
     FOREIGN KEY (ta_user_id) REFERENCES users(id),
+    FOREIGN KEY (superseded_by) REFERENCES feedback_comment(id),
     -- if file path exists, enforce that file line also exists.
     -- cannot comment on an entire file (for now), only lines and entire work
     CONSTRAINT if_file_path_then_file_line
@@ -177,7 +184,11 @@ SELECT sw.*,
     END AS manual_feedback_score,
     NULL AS auto_grader_score -- TODO REPLACE WITH MAXIMUM AUTO GRADER SCORE
 FROM student_works sw
-LEFT JOIN feedback_comment fc ON sw.id = fc.student_work_id
+LEFT JOIN (
+    SELECT * 
+    FROM feedback_comment 
+    WHERE superseded_by IS NULL
+) fc ON sw.id = fc.student_work_id
 LEFT JOIN rubric_items ri ON fc.rubric_item_id = ri.id
 LEFT JOIN assignment_outlines ao ON ao.id = sw.assignment_outline_id
 GROUP BY sw.id, ao.default_score;

@@ -2,23 +2,40 @@ import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { SelectedClassroomContext } from "./selectedClassroom";
+import { AuthContext } from "./auth";
 import { getPaginatedStudentWork } from "@/api/student_works";
+import { getAssignment } from "@/api/assignments";
 import { gradeWork } from "@/api/grader";
 import { getAssignmentRubric } from "@/api/assignments";
 
 interface IGraderContext {
-  assignmentID: string | undefined;
-  studentWorkID: string | undefined;
+  assignment: IAssignmentOutline | null;
   studentWork: IPaginatedStudentWork | null;
   selectedFile: IFileTreeNode | null;
   feedback: IGraderFeedbackMap;
+  /*************************************************************
+   * - staged feedback is essentially a list of "commands."
+   * - each staged fb has an action: create, edit, or delete
+   * - when rendering comments in the ui, only render the
+   *   comments from "create" actions.
+   * - the regular feedback list will also store edit/delete
+   *   states in order to visualize this e.g. when you edit
+   *   a comment, you would want the same one to display the
+   *   change, not append a new staged comment with the changes.
+   *************************************************************/
   stagedFeedback: IGraderFeedbackMap;
   rubric: IFullRubric | null;
   selectedRubricItems: number[];
+  postingFeedback: boolean;
   setSelectedFile: React.Dispatch<React.SetStateAction<IFileTreeNode | null>>;
   addFeedback: (feedback: IGraderFeedback[]) => void;
-  editFeedback: (feedbackID: number, feedback: IGraderFeedback) => void;
-  removeFeedback: (feedbackID: number) => void;
+  editFeedback: (
+    action: IGraderAction,
+    feedbackID: number,
+    feedback?: IGraderFeedback
+  ) => void;
+  discardAddFeedback: (feedbackID: number) => void;
+  discardEditFeedback: (feedbackID: number) => void;
   postFeedback: () => void;
   selectRubricItem: (riID: number) => void;
   deselectRubricItem: (riID: number) => void;
@@ -26,18 +43,19 @@ interface IGraderContext {
 
 export const GraderContext: React.Context<IGraderContext> =
   createContext<IGraderContext>({
-    assignmentID: undefined,
-    studentWorkID: undefined,
+    assignment: null,
     studentWork: null,
     selectedFile: null,
     feedback: {},
     stagedFeedback: {},
     rubric: null,
     selectedRubricItems: [],
+    postingFeedback: false,
     setSelectedFile: () => {},
     addFeedback: () => 0,
     editFeedback: () => {},
-    removeFeedback: () => {},
+    discardAddFeedback: () => {},
+    discardEditFeedback: () => {},
     postFeedback: () => {},
     selectRubricItem: () => {},
     deselectRubricItem: () => {},
@@ -49,18 +67,33 @@ export const GraderProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ assignmentID, studentWorkID, children }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
+  const { currentUser } = useContext(AuthContext);
 
   const nextFeedbackID = useRef(0);
   const [feedback, setFeedback] = useState<IGraderFeedbackMap>({});
   const [stagedFeedback, setStagedFeedback] = useState<IGraderFeedbackMap>({});
+  const [assignment, setAssignment] = useState<IAssignmentOutline | null>(null);
   const [studentWork, setStudentWork] = useState<IPaginatedStudentWork | null>(
     null
   );
   const [selectedRubricItems, setSelectedRubricItems] = useState<number[]>([]);
   const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
   const [rubric, setRubric] = useState<IFullRubric | null>(null);
+  const [postingFeedback, setPostingFeedback] = useState(false);
 
   const navigate = useNavigate();
+
+  // fetch requested assignment
+  useEffect(() => {
+    // reset states
+    setRubric(null);
+
+    if (!selectedClassroom || !assignmentID) return;
+
+    getAssignment(selectedClassroom.id, Number(assignmentID)).then((resp) => {
+      setAssignment(resp);
+    });
+  }, [assignmentID]);
 
   // fetch rubric from requested assignment
   useEffect(() => {
@@ -99,15 +132,21 @@ export const GraderProvider: React.FC<{
       });
   }, [studentWorkID]);
 
+  // an increasing ID just for local so we can easily reference and never overwrite
   const getNextFeedbackID = () => {
     const tmp = nextFeedbackID.current;
     nextFeedbackID.current = nextFeedbackID.current + 1;
     return tmp;
   };
 
-  const addFeedback = (feedback: IGraderFeedback[]) => {
+  /****************************************
+   * CREATE ACTION
+   * - create the "create" staging feedback
+   *   which WILL be rendered
+   ****************************************/
+  const addFeedback = (fbs: IGraderFeedback[]) => {
     const newFeedback: { [id: number]: IGraderFeedback } = {};
-    for (const fb of feedback) {
+    for (const fb of fbs) {
       newFeedback[getNextFeedbackID()] = {
         ...fb,
         action: "CREATE",
@@ -120,39 +159,126 @@ export const GraderProvider: React.FC<{
     }));
   };
 
-  const editFeedback = (_feedbackID: number, _feedback: IGraderFeedback) => {};
+  /****************************************
+   * EDIT ACTION
+   * - create the "action" staging feedback
+   *   which WONT be rendered
+   * - modify the existing feedback in order
+   *   to reflect the changes in grader UI
+   ****************************************/
+  const editFeedback = (
+    action: IGraderAction,
+    feedbackID: number,
+    fb?: IGraderFeedback
+  ) => {
+    if (!fb) fb = feedback[feedbackID];
+    fb.ta_username = currentUser?.login;
 
-  const removeFeedback = (_feedbackID: number) => {};
+    setStagedFeedback((prevFeedback) => ({
+      ...prevFeedback,
+      [feedbackID]: {
+        ...fb,
+        // only overwrite action if preexisting. if editing a purely
+        // staged comment, it will still need to be a create command.
+        action: feedbackID in feedback ? action : fb.action,
+      },
+    }));
+    if (!(feedbackID in feedback)) return;
+    setFeedback((prevFeedback) => {
+      // push last state to history before overwriting
+      const currentFeedback = prevFeedback[feedbackID];
+      const newHistory = currentFeedback.history
+        ? [{ ...currentFeedback }, ...currentFeedback.history]
+        : [{ ...currentFeedback }];
+
+      return {
+        ...prevFeedback,
+        [feedbackID]: {
+          ...fb,
+          action,
+          history: newHistory,
+        },
+      };
+    });
+  };
+
+  /****************************************
+   * ROLLBACK EDIT ACTION
+   * - create the "action" staging feedback
+   *   which WONT be rendered
+   * - modify the existing feedback in order
+   *   to reflect the changes in grader UI
+   ****************************************/
+  const discardEditFeedback = (feedbackID: number) => {
+    setFeedback((prevFeedback) => {
+      const currentFeedback = prevFeedback[feedbackID];
+
+      if (currentFeedback.history && currentFeedback.history.length > 0) {
+        const restoredFeedback = {
+          ...currentFeedback.history[0], // pop the latest from history
+          history: currentFeedback.history.slice(1),
+        };
+
+        return {
+          ...prevFeedback,
+          [feedbackID]: restoredFeedback,
+        };
+      }
+
+      return prevFeedback;
+    });
+    setStagedFeedback((prevFeedback) => {
+      const { [feedbackID]: _, ...remainingFeedback } = prevFeedback;
+      return remainingFeedback;
+    });
+  };
+
+  const discardAddFeedback = (feedbackID: number) => {
+    setStagedFeedback((prevFeedback) => {
+      const { [feedbackID]: _, ...remainingFeedback } = prevFeedback;
+      return remainingFeedback;
+    });
+  };
 
   const postFeedback = () => {
-    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
+    if (
+      !selectedClassroom ||
+      !assignmentID ||
+      !studentWorkID ||
+      postingFeedback
+    )
+      return;
+
+    setPostingFeedback(true);
+
+    // strip history from feedback before posting to backend (backend does not need to know)
+    const stagedFeedbackWithoutHistory: IGraderFeedback[] = Object.values(
+      stagedFeedback
+    ).map((fb: IGraderFeedbackWithHistory) => {
+      const { history: _, ...fbWithoutHistory } = fb;
+      return fbWithoutHistory;
+    });
 
     gradeWork(
       selectedClassroom.id,
       Number(assignmentID),
       Number(studentWorkID),
-      stagedFeedback
-    ).then(() => {
-      setStudentWork((prevStudentWork) => {
-        if (prevStudentWork) {
-          return {
-            ...prevStudentWork,
-            manual_feedback_score:
-              prevStudentWork.manual_feedback_score +
-              Object.values(stagedFeedback).reduce(
-                (s: number, fb: IGraderFeedback) => s + fb.points,
-                0
-              ),
-          };
-        }
-        return prevStudentWork;
+      stagedFeedbackWithoutHistory
+    )
+      .then(() => {
+        getPaginatedStudentWork(
+          selectedClassroom.id,
+          Number(assignmentID),
+          Number(studentWorkID)
+        ).then((resp) => {
+          setStudentWork(resp.student_work);
+          setFeedback(resp.feedback);
+          setStagedFeedback({});
+        });
+      })
+      .finally(() => {
+        setPostingFeedback(false);
       });
-      setFeedback((prevFeedback) => ({
-        ...prevFeedback,
-        ...stagedFeedback,
-      }));
-      setStagedFeedback({});
-    });
   };
 
   const selectRubricItem = (riID: number) => {
@@ -173,18 +299,19 @@ export const GraderProvider: React.FC<{
   return (
     <GraderContext.Provider
       value={{
-        assignmentID,
-        studentWorkID,
+        assignment,
         studentWork,
         selectedFile,
         feedback,
         stagedFeedback,
         rubric,
         selectedRubricItems,
+        postingFeedback,
         setSelectedFile,
         addFeedback,
         editFeedback,
-        removeFeedback,
+        discardAddFeedback,
+        discardEditFeedback,
         postFeedback,
         selectRubricItem,
         deselectRubricItem,
