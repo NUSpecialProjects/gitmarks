@@ -59,6 +59,7 @@ const CodeLine: React.FC<ICodeLine> = ({ path, line, isDiff, code }) => {
             body: ri.explanation,
             points: ri.point_value ?? 0,
             ta_username: currentUser.login,
+            deleted: false,
           });
         }
         return selected;

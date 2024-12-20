@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { SelectedClassroomContext } from "./selectedClassroom";
+import { AuthContext } from "./auth";
 import { getPaginatedStudentWork } from "@/api/student_works";
 import { getAssignment } from "@/api/assignments";
 import { gradeWork } from "@/api/grader";
@@ -64,6 +65,7 @@ export const GraderProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ assignmentID, studentWorkID, children }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
+  const { currentUser } = useContext(AuthContext);
 
   const nextFeedbackID = useRef(0);
   const [feedback, setFeedback] = useState<IGraderFeedbackMap>({});
@@ -167,6 +169,7 @@ export const GraderProvider: React.FC<{
     fb?: IGraderFeedback
   ) => {
     if (!fb) fb = feedback[feedbackID];
+    fb.ta_username = currentUser?.login;
 
     setStagedFeedback((prevFeedback) => ({
       ...prevFeedback,
@@ -250,43 +253,15 @@ export const GraderProvider: React.FC<{
       Number(studentWorkID),
       stagedFeedbackWithoutHistory
     ).then(() => {
-      setStudentWork((prevStudentWork) => {
-        if (prevStudentWork) {
-          const total =
-            (prevStudentWork.manual_feedback_score ??
-              assignment?.default_score) +
-            Object.values(stagedFeedback).reduce(
-              (s: number, fb: IGraderFeedback) => s + fb.points,
-              0
-            );
-          return {
-            ...prevStudentWork,
-            manual_feedback_score: total,
-          };
-        }
-        return prevStudentWork;
+      getPaginatedStudentWork(
+        selectedClassroom.id,
+        Number(assignmentID),
+        Number(studentWorkID)
+      ).then((resp) => {
+        setStudentWork(resp.student_work);
+        setFeedback(resp.feedback);
+        setStagedFeedback({});
       });
-      setFeedback((prevFeedback) => {
-        const merged: IGraderFeedbackMap = {
-          ...prevFeedback,
-          ...Object.fromEntries(
-            Object.entries(stagedFeedback).filter(
-              ([_, fb]: [string, IGraderFeedback]) => fb.action == "CREATE"
-            )
-          ),
-        };
-
-        return {
-          ...Object.fromEntries(
-            Object.entries(merged).map(([i, fb]: [string, IGraderFeedback]) => {
-              const { action, ...fbWithoutAction } = fb;
-              if (action == "DELETE") fb.rubric_item_id = 1;
-              return [Number(i), fbWithoutAction];
-            })
-          ),
-        };
-      });
-      setStagedFeedback({});
     });
   };
 

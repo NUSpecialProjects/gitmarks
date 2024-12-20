@@ -29,7 +29,6 @@ export const CodeComment: React.FC<ICodeComment> = ({
   readOnly = false,
   localFeedbackID,
 }) => {
-  const { currentUser } = useContext(AuthContext);
   const { editFeedback, discardEditFeedback, discardAddFeedback } =
     useContext(GraderContext);
   const [editing, setEditing] = useState(false);
@@ -39,11 +38,11 @@ export const CodeComment: React.FC<ICodeComment> = ({
       <div className="CodeComment">
         <div className="CodeComment__head">
           <div>
-            <img src={currentUser?.avatar_url} alt="new" />
+            <img src={`https://github.com/${fb.ta_username}.png`} alt="new" />
             <div>
               <span>{fb.ta_username}</span>
               <span className="CodeComment__date">
-                {fb.action == "DELETE" || fb.rubric_item_id == 1
+                {fb.action == "DELETE" || fb.deleted
                   ? "deleted "
                   : fb.history
                     ? "updated "
@@ -82,7 +81,7 @@ export const CodeComment: React.FC<ICodeComment> = ({
                   </div>
                 </div>
               )}
-              {fb.rubric_item_id != 1 && (
+              {!fb.deleted && (
                 <div className="CodeComment__menu" tabIndex={0}>
                   <FaEllipsisV />
                   <div className="CodeComment__menu__dropdown">
@@ -155,7 +154,7 @@ export const CodeComment: React.FC<ICodeComment> = ({
           />
         ) : (
           fb.action != "DELETE" &&
-          fb.rubric_item_id != 1 && (
+          !fb.deleted && (
             <div className="CodeComment__body">
               <div
                 className={`CodeComment__points CodeComment__points--${fb.points > 0 ? "positive" : fb.points < 0 ? "negative" : "neutral"}`}
@@ -215,6 +214,7 @@ export const CodeCommentForm: React.FC<ICodeCommentForm> = ({
       body: String(data.get("comment")).trim(),
       points: Number(data.get("points")),
       ta_username: currentUser.login,
+      deleted: false,
     };
 
     if (fb.points == 0 && fb.body == "") return;

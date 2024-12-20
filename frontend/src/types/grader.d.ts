@@ -22,6 +22,7 @@ interface IGraderFeedback {
   points: number;
   ta_username?: string;
   created_at?: Date;
+  deleted: boolean;
 }
 interface IGraderFeedbackWithHistory extends IGraderFeedback {
   history?: IGraderFeedbackWithHistory[];

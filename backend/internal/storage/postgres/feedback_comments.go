@@ -112,8 +112,8 @@ func (db *DB) DeleteFeedbackComment(ctx context.Context, TAUserID int64, student
 	_, err := db.connPool.Exec(ctx,
 		`WITH fc AS (
 			INSERT INTO feedback_comment
-			(rubric_item_id, file_path, file_line, student_work_id, ta_user_id, github_comment_id)
-			VALUES (1, $1, $2, $3, $4, $5)
+			(rubric_item_id, file_path, file_line, student_work_id, ta_user_id, github_comment_id, deleted)
+			VALUES (1, $1, $2, $3, $4, $5, true)
 			RETURNING id
 		)
 		UPDATE feedback_comment
