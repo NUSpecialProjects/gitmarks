@@ -35,9 +35,9 @@ GitMarks is a Git-based grading platform that streamlines the academic assessmen
 <table>
   <tr>
     <td align="center" width="33%">
-      <a href="https://github.com/alexangione419">
-        <img src="/frontend/public/images/alexander-angione.jpg" width="150" height="150" style="border-radius: 50%"><br>
-        <strong>Alex Angione</strong><br>
+      <a href="https://github.com/ntietje1">
+        <img src="/frontend/public/images/nick-tietje.jpg" width="150" height="150" style="border-radius: 50%"><br>
+        <strong>Nick Tietje</strong><br>
       </a>
       Full Stack Developer
     </td>
@@ -65,9 +65,9 @@ GitMarks is a Git-based grading platform that streamlines the academic assessmen
       Designer & Frontend Developer
     </td>
     <td align="center" width="33%">
-      <a href="https://github.com/ntietje1">
-        <img src="/frontend/public/images/nick-tietje.jpg" width="150" height="150" style="border-radius: 50%"><br>
-        <strong>Nick Tietje</strong><br>
+      <a href="https://github.com/alexangione419">
+        <img src="/frontend/public/images/alexander-angione.jpg" width="150" height="150" style="border-radius: 50%"><br>
+        <strong>Alex Angione</strong><br>
       </a>
       Full Stack Developer
     </td>
