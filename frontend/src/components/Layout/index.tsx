@@ -9,7 +9,6 @@ import { useClassroomUser } from "@/hooks/useClassroomUser";
 
 import LeftNav from "./LeftNav";
 import TopNav from "./TopNav";
-import Footer from "./Footer";
 
 import "./styles.css";
 import { FaInfoCircle, FaTachometerAlt } from "react-icons/fa";
