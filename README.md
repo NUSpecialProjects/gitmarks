@@ -1,6 +1,6 @@
 ![Banner](https://github.com/user-attachments/assets/84169d26-84f0-4786-bf37-87484ef475bb)
 
-# GitMarks
+## GitMarks Overview
 
 GitMarks is a Git-based grading platform that streamlines the academic assessment process by leveraging industry-standard workflows. It provides a comprehensive solution for both educational staff and students, combining automated grading capabilities with professional development practices.
 
