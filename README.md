@@ -1,11 +1,18 @@
-<div align="center">
-<h1>Khoury Classroom</h1>
-  <div>
-      A grading platform for TA's, by TA's
-  </div>
-</div>
+![Banner](https://github.com/user-attachments/assets/84169d26-84f0-4786-bf37-87484ef475bb)
 
-## Stack
+# GitMarks
+GitMarks is a Git-based grading platform designed to mirror industry standard workflows and provide support for both students and teaching staff.
+
+*Developed in 2024 by:*
+
+- [Alex Angione](https://github.com/alexangione419)
+- [Cam Plume](https://github.com/CamPlume1)
+- [Kenny Chen](https://github.com/kennybc)
+- [Nandini Ghosh](https://github.com/nandini-ghosh)
+- [Nick Tietje](https://github.com/ntietje1)
+- [Seby Tremblay](https://github.com/sebytremblay)
+
+## Tech Stack
 
 [![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/doc/)
 [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)

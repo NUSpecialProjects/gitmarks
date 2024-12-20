@@ -11,7 +11,7 @@ import Button from "@/components/Button";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { MdAdd } from "react-icons/md";
-import { ClassroomRole, OrgRole } from "@/types/users";
+import { ClassroomRole, OrgRole, toClassroom } from "@/types/enums";
 
 const ClassroomSelection: React.FC = () => {
   const [classrooms, setClassrooms] = useState<IClassroomUser[]>([]);
@@ -51,12 +51,7 @@ const ClassroomSelection: React.FC = () => {
   }, [orgID]);
 
   const handleClassroomSelect = (classroomUser: IClassroomUser) => {
-    const classroom: IClassroom = {
-      id: classroomUser.classroom_id,
-      name: classroomUser.classroom_name,
-      org_id: classroomUser.org_id,
-      org_name: classroomUser.org_name,
-    }
+    const classroom: IClassroom = toClassroom(classroomUser);
     setSelectedClassroom(classroom);
     navigate(`/app/dashboard`);
   };
@@ -88,7 +83,7 @@ const ClassroomSelection: React.FC = () => {
               </TableCell>
             </TableRow>
             {/* If the org has classrooms, populate table, else display a message TODO make alert for no classes*/}
-            {hasClassrooms ? (
+            {hasClassrooms && (
               classrooms.map((classroomUser, i) => (
                 <TableRow key={i} className="Selection__tableRow">
                   <TableCell>
@@ -114,23 +109,12 @@ const ClassroomSelection: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ))
-            ) : (
-              <EmptyDataBanner>
-                <div className="emptyDataBannerMessage">
-                  You have no classes in this organization.
-                  <br></br>
-                  Please create a new classroom to get started.
-                </div>
-                <Button variant="secondary" href={`/app/classroom/create?org_id=${orgID}`}>
-                  <MdAdd /> New Classroom
-                </Button>
-              </EmptyDataBanner>
             )}
           </Table>
           {!hasClassrooms && (
             orgRole === OrgRole.ADMIN ? 
             (
-              <TableRow className="Selection__tableRow">
+              <TableRow className="Selection__tableRow--emptyData">
                  <EmptyDataBanner>
                    <div className="emptyDataBannerMessage">
                       You have no classes in this organization.
@@ -144,7 +128,7 @@ const ClassroomSelection: React.FC = () => {
        
               </TableRow>
             ) : (
-              <TableRow className="Selection__tableRow">
+              <TableRow className="Selection__tableRow--emptyData">
                   <EmptyDataBanner>
                     You have no classes in this organization.
                     Your professor will need to invite you to a classroom.
@@ -152,8 +136,6 @@ const ClassroomSelection: React.FC = () => {
               </TableRow>
             )
           )}
-            
-            <br></br>
           </>
         )}
       </div>

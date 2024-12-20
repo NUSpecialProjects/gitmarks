@@ -53,6 +53,23 @@ func (s *AssignmentService) getAssignment() fiber.Handler {
 	}
 }
 
+// Returns the template of an assignment.
+func (s *AssignmentService) getAssignmentTemplate() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		assignmentID, err := strconv.ParseInt(c.Params("assignment_id"), 10, 64)
+		if err != nil {
+			return errs.BadRequest(err)
+		}
+
+		assignmentTemplate, err := s.store.GetAssignmentTemplateByAssignmentID(c.Context(), assignmentID)
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+		return c.Status(http.StatusOK).JSON(fiber.Map{"assignment_template": assignmentTemplate})
+	}
+}
+
 func (s *AssignmentService) createAssignment() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Parse request body
@@ -163,13 +180,13 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		// Get assignment using the token
 		assignment, err := s.store.GetAssignmentByToken(c.Context(), token)
 		if err != nil {
-			return err
+			return errs.BadRequest(errors.New("invalid token"))
 		}
 
 		// Get assignment base repository
 		baseRepo, err := s.store.GetBaseRepoByID(c.Context(), assignment.BaseRepoID)
 		if err != nil {
-			return err
+			return errs.InternalServerError()
 		}
 
 		// Retrieve user client and session
@@ -177,6 +194,8 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		if err != nil {
 			return errs.AuthenticationError()
 		}
+
+		// Get user
 		user, err := client.GetCurrentUser(c.Context())
 		if err != nil {
 			return errs.GithubAPIError(err)
@@ -202,6 +221,24 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, forkName)
 			if err != nil {
 				return errs.GithubAPIError(err)
+			}
+
+			// Get the student work
+			studentWork, err := s.store.GetWorkByRepoName(c.Context(), *studentWorkRepo.Name)
+			if err != nil {
+				// Recover from the case where the student work does not exist, but the repo does exist
+				studentWork, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
+				if err != nil {
+					return errs.InternalServerError()
+				}
+			} else if studentWork.WorkState == models.WorkStateNotAccepted {
+				// Recover from the case where the workstate is out of sync with the github state (repo exists but student work is not accepted)
+				updatedStudentWork := studentWork
+				updatedStudentWork.WorkState = models.WorkStateAccepted
+				_, err = s.store.UpdateStudentWork(c.Context(), updatedStudentWork)
+				if err != nil {
+					return errs.InternalServerError()
+				}
 			}
 
 			return c.Status(http.StatusOK).JSON(fiber.Map{

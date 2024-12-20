@@ -12,15 +12,18 @@ interface IGitHubUserResponse {
   user: IGitHubUser;
 }
 
-interface IClassroomUser {
+interface IUser {
   id: number;
   first_name: string;
   last_name: string;
   github_username: string;
   github_user_id: number;
+}
+
+interface IClassroomUser extends IUser {
   classroom_id: number;
   classroom_name: string;
-  classroom_created_at: string;
+  classroom_created_at: Date;
   classroom_role: ClassroomRole;
   status: ClassroomUserStatus;
   org_id: number;

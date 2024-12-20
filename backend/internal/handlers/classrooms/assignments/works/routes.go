@@ -31,5 +31,8 @@ func WorkRoutes(router fiber.Router, service *WorkService) fiber.Router {
 	// Get the total number of commits in the student work
 	workRouter.Get("/work/:work_id/commit-count", service.GetCommitCount())
 
+	//Get the number of commits per day in the student work repo
+	workRouter.Get("/work/:work_id/commits-per-day", service.GetCommitsPerDay())
+
 	return workRouter
 }

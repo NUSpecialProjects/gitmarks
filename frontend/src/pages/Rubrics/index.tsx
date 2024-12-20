@@ -9,10 +9,13 @@ import RubricList from "@/components/RubricList";
 import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
 
 import "./styles.css";
+import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { ClassroomRole } from "@/types/enums";
 
 const Rubrics: React.FC = () => {
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const [rubrics, setRubricsData] = useState<IFullRubric[]>([]);
+    const { selectedClassroom } = useContext(SelectedClassroomContext)
+    useClassroomUser(selectedClassroom?.id, ClassroomRole.PROFESSOR, "/access-denied");
+    const [rubrics, setRubricsData] = useState<IFullRubric[]>([])
 
   const [loading, setLoading] = useState(false);
   const [failedRurbicRetrival, setfailedRurbicRetrival] = useState(false);

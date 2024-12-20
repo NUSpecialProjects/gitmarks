@@ -7,6 +7,13 @@
   gap: 20px;
   padding-bottom: 50px;
 
+  &__centerAlignedCell {
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   &__dates {
     display: flex;
     width: fit-content;

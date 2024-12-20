@@ -60,9 +60,13 @@
   }
 
   &--disabled {
-    background: gray;
-    border-color: rgb(105, 105, 105);
-    color: rgb(197, 197, 197);
+    background: var(--page-background);
+    color: var(--secondary-text);
+    border-width: var(--border-width);
+    border-style: var(--border-style);
+    border-color: var(--button-border-color);
     cursor: not-allowed;
+    opacity: 0.6;
+    pointer-events: none;
   }
 }

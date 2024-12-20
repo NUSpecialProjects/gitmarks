@@ -1,20 +1,14 @@
-import { FaTachometerAlt } from "react-icons/fa";
-import { FaGear } from "react-icons/fa6";
-import { MdFactCheck, MdEditDocument } from "react-icons/md";
 import { NavLink } from "react-router-dom";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import Button from "../../Button";
 import { useContext } from "react";
 import "./styles.css";
 
-const LeftNav: React.FC = () => {
-  const navItems = [
-    { name: "Dashboard", dest: "/app/dashboard", Icon: FaTachometerAlt },
-    { name: "Grading", dest: "/app/grading", Icon: MdEditDocument },
-    { name: "Rubrics", dest: "/app/rubrics", Icon: MdFactCheck },
-    { name: "Settings", dest: "/app/settings", Icon: FaGear },
-  ];
+interface ILeftNavProps {
+  navItems: { name: string; dest: string; Icon: React.ElementType }[];
+}
 
+const LeftNav: React.FC<ILeftNavProps> = ({ navItems }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
 
   return (

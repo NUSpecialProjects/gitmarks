@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
@@ -99,7 +98,6 @@ func (db *DB) UpdateRubric(ctx context.Context, rubricID int64, rubricData model
 
 func (db *DB) UpdateRubricItem(ctx context.Context, rubricItemData models.RubricItem) (models.RubricItem, error) {
 	var updatedItem models.RubricItem
-	fmt.Println(rubricItemData.ID)
 	err := db.connPool.QueryRow(ctx, `UPDATE rubric_items SET rubric_id = $1, point_value = $2, explanation = $3, created_at = $4, deleted = $5
         WHERE id = $6
         RETURNING id, rubric_id, point_value, explanation, created_at, deleted`,
@@ -107,14 +105,14 @@ func (db *DB) UpdateRubricItem(ctx context.Context, rubricItemData models.Rubric
 		rubricItemData.PointValue,
 		rubricItemData.Explanation,
 		rubricItemData.CreatedAt,
-        rubricItemData.Deleted,
+		rubricItemData.Deleted,
 		rubricItemData.ID).Scan(
 		&updatedItem.ID,
 		&updatedItem.RubricID,
 		&updatedItem.PointValue,
 		&updatedItem.Explanation,
 		&updatedItem.CreatedAt,
-        &updatedItem.Deleted)
+		&updatedItem.Deleted)
 	if err != nil {
 		return models.RubricItem{}, errs.NewDBError(err)
 	}

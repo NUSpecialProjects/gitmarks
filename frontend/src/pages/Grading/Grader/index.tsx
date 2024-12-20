@@ -43,7 +43,7 @@ const Grader: React.FC = () => {
               <FaChevronLeft />
             </Link>
             <div>
-              <h2>{studentWork.contributors.join(", ")}</h2>
+              <h2>{studentWork.contributors.map((contributor) => contributor.full_name).join(", ")}</h2>
               <span>{studentWork.assignment_name}</span>
             </div>
           </div>

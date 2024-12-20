@@ -11,14 +11,16 @@ interface IButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "default" | "small";
   newTab?: boolean;
   state?: object;
+  disabled?: boolean;
 }
 const ButtonWrapper: React.FC<IButtonProps> = ({
   children,
   href,
   newTab = false,
   state,
+  disabled = false,
 }) => {
-  return href ? (
+  return href && !disabled ? (
     <Link to={href} target={newTab ? "_blank" : "_self"} state={state}>
       {children}
     </Link>
@@ -37,7 +39,12 @@ const Button: React.FC<IButtonProps> = ({
   ...props
 }) => {
   return (
-    <ButtonWrapper href={href} newTab={newTab} state={state}>
+    <ButtonWrapper
+      href={href}
+      newTab={newTab}
+      state={state}
+      disabled={variant == "disabled"}
+    >
       <button
         disabled={variant == "disabled"}
         className={`Button Button--${variant} Button--${size} ${className ?? ""}`}

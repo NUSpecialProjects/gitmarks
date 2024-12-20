@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS classrooms (
     org_id INTEGER NOT NULL,
     org_name VARCHAR(255) NOT NULL,
     student_team_name VARCHAR(255),
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     UNIQUE (name, org_id)
 );
 
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(255), --TODO: this should be not null eventually
     github_username VARCHAR(255) NOT NULL, 
     github_user_id INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 -- TODO: Impose length on tokens
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS classroom_tokens (
     expires_at TIMESTAMP,
     classroom_id INTEGER NOT NULL,
     classroom_role USER_ROLE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     FOREIGN KEY (classroom_id) REFERENCES classrooms(id)
 );
 
@@ -45,25 +45,25 @@ CREATE TABLE IF NOT EXISTS classroom_membership (
     user_id INTEGER NOT NULL,
     classroom_id INTEGER NOT NULL,
     classroom_role USER_ROLE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     status USER_STATUS NOT NULL, -- represents whether the user has "requested" to join the org, been invited to the org, or is in the org
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (classroom_id) REFERENCES classrooms(id),
-    UNIQUE (user_id, classroom_id)
+    PRIMARY KEY (user_id, classroom_id)
 );
 
 CREATE TABLE IF NOT EXISTS assignment_templates (
     template_repo_id INTEGER PRIMARY KEY,
     template_repo_owner VARCHAR(255) NOT NULL,
     template_repo_name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE TABLE IF NOT EXISTS assignment_base_repos (
     base_repo_id INTEGER PRIMARY KEY,
     base_repo_owner VARCHAR(255) NOT NULL,
     base_repo_name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE TABLE IF NOT EXISTS rubrics (
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS rubrics (
     org_id INTEGER NOT NULL,
     classroom_id INTEGER NOT NULL,
     reusable BOOLEAN NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     FOREIGN KEY (classroom_id) REFERENCES classrooms(id)
 );
 
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS rubric_items (
     rubric_id INTEGER,
     point_value INTEGER NOT NULL,
     explanation VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     deleted BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (rubric_id) REFERENCES rubrics(id)
 );
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS assignment_outlines (
     id SERIAL PRIMARY KEY,
     template_id INTEGER,
     base_repo_id INTEGER UNIQUE,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     released_at TIMESTAMP,
     name VARCHAR(255) NOT NULL,
     classroom_id INTEGER NOT NULL,
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS assignment_outline_tokens (
     token VARCHAR(255) PRIMARY KEY, 
     expires_at TIMESTAMP,
     assignment_outline_id INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     FOREIGN KEY (assignment_outline_id) REFERENCES assignment_outlines(id)
 );
 
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS assignment_tokens (
     token VARCHAR(255) PRIMARY KEY,
     expires_at TIMESTAMP,
     assignment_outline_id INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     FOREIGN KEY (assignment_outline_id) REFERENCES assignment_outlines(id)
 );
 
@@ -137,18 +137,20 @@ CREATE TABLE IF NOT EXISTS student_works (
     unique_due_date TIMESTAMP,
     grades_published_timestamp TIMESTAMP,
     work_state WORK_STATE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     commit_amount INTEGER DEFAULT 0,
     first_commit_date TIMESTAMP,
+    last_commit_date TIMESTAMP,
     FOREIGN KEY (assignment_outline_id) REFERENCES assignment_outlines(id)
 );
 
 CREATE TABLE IF NOT EXISTS work_contributors (
     user_id INTEGER NOT NULL,
     student_work_id INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (student_work_id) REFERENCES student_works(id)
+    FOREIGN KEY (student_work_id) REFERENCES student_works(id),
+    PRIMARY KEY (user_id, student_work_id)
 );
 
 CREATE TABLE IF NOT EXISTS feedback_comment (
@@ -159,7 +161,7 @@ CREATE TABLE IF NOT EXISTS feedback_comment (
     github_comment_id INTEGER,
     file_path VARCHAR(255),
     file_line INTEGER,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     superseded_by INTEGER,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (student_work_id) REFERENCES student_works(id),
@@ -205,7 +207,7 @@ CREATE TABLE IF NOT EXISTS regrade_requests (
     feedback_comment_id INTEGER NOT NULL,
     regrade_state REGRADE_STATE NOT NULL,
     student_comment TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     FOREIGN KEY (feedback_comment_id) REFERENCES feedback_comment(id)
 );
 
@@ -215,5 +217,5 @@ CREATE TABLE IF NOT EXISTS sessions (
     token_type VARCHAR(255),
     refresh_token VARCHAR(255),
     expires_in INTEGER,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );

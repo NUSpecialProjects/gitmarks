@@ -25,8 +25,10 @@ const DesiredFields = `
 	sw.created_at,
 	sw.commit_amount,
 	sw.first_commit_date,
+	sw.last_commit_date,
 	u.first_name,
-	u.last_name
+	u.last_name,
+	u.github_username
 `
 
 const JoinedTable = `
@@ -53,7 +55,8 @@ func formatWorks[T models.IStudentWork, F models.IFormattedStudentWork](rawWorks
 
 		// combine first and last names into a full name and add to list of contributors
 		fullName := fmt.Sprintf("%s %s", work.GetFirstName(), work.GetLastName())
-		workMap[work.GetID()].AddContributor(fullName)
+		githubUsername := work.GetGithubUsername()
+		workMap[work.GetID()].AddContributor(models.IWorkContributor{FullName: fullName, GithubUsername: githubUsername})
 	}
 
 	// convert map values to a slice
@@ -89,7 +92,7 @@ ORDER BY u.last_name, u.first_name;
 	}
 
 	return formatWorks(rawWorks, func(work models.RawStudentWork) *models.StudentWorkWithContributors {
-		return &models.StudentWorkWithContributors{StudentWork: work.StudentWork, Contributors: []string{}}
+		return &models.StudentWorkWithContributors{StudentWork: work.StudentWork, Contributors: []models.IWorkContributor{}}
 	}), nil
 }
 
@@ -129,7 +132,7 @@ WHERE student_work_id = $3
 	}
 
 	formatted := formatWorks(rawWorks, func(work models.RawPaginatedStudentWork) *models.PaginatedStudentWorkWithContributors {
-		return &models.PaginatedStudentWorkWithContributors{PaginatedStudentWork: work.PaginatedStudentWork, Contributors: []string{}}
+		return &models.PaginatedStudentWorkWithContributors{PaginatedStudentWork: work.PaginatedStudentWork, Contributors: []models.IWorkContributor{}}
 	})
 
 	if len(formatted) == 0 {
@@ -218,20 +221,24 @@ func (db *DB) UpdateStudentWork(ctx context.Context, studentWork models.StudentW
 		SET assignment_outline_id = $1,
 			repo_name = $2,
 			unique_due_date = $3,
-			grades_published_timestamp = $4,
-			work_state = $5,
-			created_at = $6,
-			commit_amount = $7,
-			first_commit_date = $8
-		WHERE id = $9
+			manual_feedback_score = $4,
+			auto_grader_score = $5,
+			grades_published_timestamp = $6,
+			work_state = $7,
+			commit_amount = $8,
+			first_commit_date = $9,
+			last_commit_date = $10
+		WHERE id = $11
 	`, studentWork.AssignmentOutlineID,
 		studentWork.RepoName,
 		studentWork.UniqueDueDate,
+		studentWork.ManualFeedbackScore,
+		studentWork.AutoGraderScore,
 		studentWork.GradesPublishedTimestamp,
 		studentWork.WorkState,
-		studentWork.CreatedAt,
 		studentWork.CommitAmount,
 		studentWork.FirstCommitDate,
+		studentWork.LastCommitDate,
 		studentWork.ID,
 	)
 

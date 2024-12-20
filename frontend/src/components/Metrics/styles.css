@@ -4,6 +4,7 @@
   align-items: center;
   flex-grow: 1;
   flex-basis: 200px;
+  flex-wrap: wrap;
 
   &__title {
     font-size: var(--font-size-xs);
@@ -11,6 +12,7 @@
     text-align: center;
     padding-bottom: 10px;
   }
+
   &__content {
     font-size: 2em;
     display: flex;
@@ -18,4 +20,16 @@
     width: 100%;
     flex: 1;
   }
+
+  &__bigContent {
+    flex: 1 0 100%;
+    flex-direction: column;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    
+  }
+
+
 }
