@@ -87,19 +87,43 @@ func (db *DB) EditFeedbackComment(ctx context.Context, TAUserID int64, studentWo
 		),
 		new AS (
 			INSERT INTO feedback_comment
-			(rubric_item_id, file_path, file_line, student_work_id, ta_user_id)
-			VALUES ((SELECT id FROM ri), $3, $4, $5, $6)
+			(rubric_item_id, file_path, file_line, student_work_id, ta_user_id, github_comment_id)
+			VALUES ((SELECT id FROM ri), $3, $4, $5, $6, $7)
 			RETURNING id
 		)
 		UPDATE feedback_comment
 			SET superseded_by = (SELECT id FROM new)
-			WHERE id = $7`,
+			WHERE id = $8`,
 		comment.Points,
 		comment.Body,
 		comment.Path,
 		comment.Line,
 		studentWorkID,
 		TAUserID,
+		comment.GitHubCommentID,
+		comment.FeedbackCommentID,
+	)
+
+	return err
+}
+
+// delete a feedback comment
+func (db *DB) DeleteFeedbackComment(ctx context.Context, TAUserID int64, studentWorkID int, comment models.PRReviewCommentWithMetaData) error {
+	_, err := db.connPool.Exec(ctx,
+		`WITH fc AS (
+			INSERT INTO feedback_comment
+			(rubric_item_id, file_path, file_line, student_work_id, ta_user_id, github_comment_id)
+			VALUES (1, $1, $2, $3, $4, $5)
+			RETURNING id
+		)
+		UPDATE feedback_comment
+			SET superseded_by = (SELECT id FROM fc)
+			WHERE id = $6`,
+		comment.Path,
+		comment.Line,
+		studentWorkID,
+		TAUserID,
+		comment.GitHubCommentID,
 		comment.FeedbackCommentID,
 	)
 

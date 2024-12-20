@@ -46,9 +46,9 @@ SELECT setval('rubrics_id_seq', (SELECT MAX(id) FROM rubrics));
 -- Rubric Item Data
 INSERT INTO rubric_items (id, rubric_id, point_value, explanation, created_at)
 VALUES
-(1, 1, 1, 'The code works well', NOW()),
-(2, 1, -1, 'The code is really bad', NOW()),
-(3, 1, 0, 'You wrote code', NOW());
+(2, 1, 1, 'The code works well', NOW()),
+(3, 1, -1, 'The code is really bad', NOW()),
+(4, 1, 0, 'You wrote code', NOW());
 SELECT setval('rubric_items_id_seq', (SELECT MAX(id) FROM rubric_items));
 
 -- Assignment Template Data

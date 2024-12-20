@@ -85,6 +85,9 @@ CREATE TABLE IF NOT EXISTS rubric_items (
     deleted BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (rubric_id) REFERENCES rubrics(id)
 );
+-- Generic "deleted" message. Do not delete!!
+INSERT INTO rubric_items (id, point_value, explanation) VALUES (1, 0, 'This comment has been deleted.');
+SELECT setval('rubric_items_id_seq', (SELECT MAX(id) FROM rubric_items));
 
 CREATE TABLE IF NOT EXISTS assignment_outlines (
     id SERIAL PRIMARY KEY,
@@ -158,6 +161,7 @@ CREATE TABLE IF NOT EXISTS feedback_comment (
     file_line INTEGER,
     created_at TIMESTAMP DEFAULT NOW(),
     superseded_by INTEGER,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (student_work_id) REFERENCES student_works(id),
     FOREIGN KEY (rubric_item_id) REFERENCES rubric_items(id),
     FOREIGN KEY (ta_user_id) REFERENCES users(id),

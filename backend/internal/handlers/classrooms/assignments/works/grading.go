@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
+	"github.com/CamPlume1/khoury-classroom/internal/github"
 	"github.com/CamPlume1/khoury-classroom/internal/middleware"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/gofiber/fiber/v2"
@@ -72,16 +73,84 @@ func formatFeedbackForGitHub(comment models.PRReviewCommentWithMetaData) models.
 	return comment.PRReviewComment
 }
 
-// TODO: atomocity
-func insertFeedbackInDB(s *WorkService, c *fiber.Ctx, comment models.PRReviewCommentWithMetaData, taUserID int64, workID int) (int, error) {
-	if comment.RubricItemID == nil {
-		// create new rubric item and then attach
-		return s.store.CreateFeedbackComment(c.Context(), taUserID, workID, comment)
-
-	} else {
-		// create from existing rubric item
-		return s.store.CreateFeedbackCommentFromRubricItem(c.Context(), taUserID, workID, comment)
+func createComments(s *WorkService, c *fiber.Ctx, userClient github.GitHubUserClient, comments []models.PRReviewCommentWithMetaData, body string, work *models.PaginatedStudentWorkWithContributors, taUserID int64) error {
+	var formattedComments []models.PRReviewComment
+	// insert each comment into DB, then format for github
+	for _, comment := range comments {
+		var feedbackCommentID int
+		var err error
+		if comment.RubricItemID == nil {
+			// create new rubric item and then attach
+			feedbackCommentID, err = s.store.CreateFeedbackComment(c.Context(), taUserID, work.ID, comment)
+		} else {
+			// create from existing rubric item
+			feedbackCommentID, err = s.store.CreateFeedbackCommentFromRubricItem(c.Context(), taUserID, work.ID, comment)
+		}
+		if err != nil {
+			return err
+		}
+		comment.FeedbackCommentID = &feedbackCommentID
+		formattedComments = append(formattedComments, formatFeedbackForGitHub(comment))
 	}
+
+	// create PR review via github API
+	gitHubReview, err := userClient.CreatePRReview(c.Context(), work.OrgName, work.RepoName, body, formattedComments)
+	if err != nil {
+		return errs.GithubAPIError(err)
+	}
+
+	// fetch the comments we just created
+	gitHubComments, err := userClient.GetPRReviewComments(c.Context(), work.OrgName, work.RepoName, *gitHubReview.ID)
+	if err != nil {
+		return errs.GithubAPIError(err)
+	}
+	for _, comment := range gitHubComments {
+		pattern := `<!-- \[CID:(\d+)\] -->`
+		re := regexp.MustCompile(pattern)
+
+		// search for the CID in the string
+		match := re.FindStringSubmatch(*comment.Body)
+
+		// link the created comment to our record
+		if len(match) > 1 {
+			feedbackCommentID, _ := strconv.ParseInt(match[1], 10, 0)
+			s.store.LinkFeedbackCommentWithGitHub(c.Context(), feedbackCommentID, *comment.ID)
+		}
+	}
+
+	return nil
+}
+
+func editComments(s *WorkService, c *fiber.Ctx, userClient github.GitHubUserClient, comments []models.PRReviewCommentWithMetaData, work *models.PaginatedStudentWorkWithContributors, taUserID int64) error {
+	// create record of edit in DB
+	for _, comment := range comments {
+		err := s.store.EditFeedbackComment(c.Context(), taUserID, work.ID, comment)
+		if err != nil {
+			return err
+		}
+		err = userClient.EditPRReviewComment(c.Context(), work.OrgName, work.RepoName, comment.GitHubCommentID, formatFeedbackForGitHub(comment).Body)
+		if err != nil {
+			return errs.GithubAPIError(err)
+		}
+	}
+
+	return nil
+}
+
+func deleteComments(s *WorkService, c *fiber.Ctx, userClient github.GitHubUserClient, comments []models.PRReviewCommentWithMetaData, work *models.PaginatedStudentWorkWithContributors, taUserID int64) error {
+	// create record of edit in DB
+	for _, comment := range comments {
+		err := s.store.DeleteFeedbackComment(c.Context(), taUserID, work.ID, comment)
+		if err != nil {
+			return err
+		}
+		err = userClient.DeletePRReviewComment(c.Context(), work.OrgName, work.RepoName, comment.GitHubCommentID)
+		if err != nil {
+			return errs.GithubAPIError(err)
+		}
+	}
+
+	return nil
 }
 
 func (s *WorkService) gradeWorkByID() fiber.Handler {
@@ -111,45 +180,21 @@ func (s *WorkService) gradeWorkByID() fiber.Handler {
 			return errs.InvalidRequestBody(requestBody)
 		}
 
-		var formattedComments []models.PRReviewComment
-		// insert each comment into DB, then format for github
+		var commentsToCreate, commentsToEdit, commentsToDelete []models.PRReviewCommentWithMetaData
 		for _, comment := range requestBody.Comments {
-			feedbackCommentID, err := insertFeedbackInDB(s, c, comment, *taUser.ID, work.ID)
-			if err != nil {
-				return err
-			}
-			comment.FeedbackCommentID = &feedbackCommentID
-			formattedComments = append(formattedComments, formatFeedbackForGitHub(comment))
-		}
-
-		// create PR review via github API
-		review, err := userClient.CreatePRReview(c.Context(), work.OrgName, work.RepoName, requestBody.Body, formattedComments)
-		if err != nil {
-			return errs.GithubAPIError(err)
-		}
-
-		// fetch the comments we just created
-		comments, err := userClient.GetPRReviewComments(c.Context(), work.OrgName, work.RepoName, *review.ID)
-		if err != nil {
-			return errs.GithubAPIError(err)
-		}
-		for _, comment := range comments {
-			pattern := `<!-- \[CID:(\d+)\] -->`
-			re := regexp.MustCompile(pattern)
-
-			// search for the CID in the string
-			match := re.FindStringSubmatch(*comment.Body)
-
-			// link the created comment to our record
-			if len(match) > 1 {
-				feedbackCommentID, _ := strconv.ParseInt(match[1], 10, 0)
-				s.store.LinkFeedbackCommentWithGitHub(c.Context(), feedbackCommentID, *comment.ID)
+			switch comment.Action {
+			case "CREATE":
+				commentsToCreate = append(commentsToCreate, comment)
+			case "EDIT":
+				commentsToEdit = append(commentsToEdit, comment)
+			case "DELETE":
+				commentsToDelete = append(commentsToDelete, comment)
 			}
 		}
 
-		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"review":   review,
-			"comments": comments,
-		})
+		createComments(s, c, userClient, commentsToCreate, requestBody.Body, work, *taUser.ID)
+		editComments(s, c, userClient, commentsToEdit, work, *taUser.ID)
+		deleteComments(s, c, userClient, commentsToDelete, work, *taUser.ID)
+		return c.SendStatus(http.StatusOK)
 	}
 }

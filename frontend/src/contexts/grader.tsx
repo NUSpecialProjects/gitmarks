@@ -121,9 +121,9 @@ export const GraderProvider: React.FC<{
     return tmp;
   };
 
-  const addFeedback = (feedback: IGraderFeedback[]) => {
+  const addFeedback = (fbs: IGraderFeedback[]) => {
     const newFeedback: { [id: number]: IGraderFeedback } = {};
-    for (const fb of feedback) {
+    for (const fb of fbs) {
       newFeedback[getNextFeedbackID()] = {
         ...fb,
         action: "CREATE",
@@ -136,9 +136,9 @@ export const GraderProvider: React.FC<{
     }));
   };
 
-  const editFeedback = (feedbackID: number, feedback: IGraderFeedback) => {
+  const editFeedback = (feedbackID: number, fb: IGraderFeedback) => {
     const newFeedback: IGraderFeedback = {
-      ...feedback,
+      ...fb,
       action: "EDIT",
     };
     setFeedback((prevFeedback) => ({
@@ -181,7 +181,16 @@ export const GraderProvider: React.FC<{
     });
   };
 
-  const removeFeedback = (_feedbackID: number) => {};
+  const removeFeedback = (feedbackID: number) => {
+    const newFeedback: IGraderFeedback = {
+      ...feedback[feedbackID],
+      action: "DELETE",
+    };
+    setStagedFeedback((prevFeedback) => ({
+      ...prevFeedback,
+      [feedbackID]: newFeedback,
+    }));
+  };
 
   const postFeedback = () => {
     if (!selectedClassroom || !assignmentID || !studentWorkID) return;

@@ -26,4 +26,5 @@ type PRReviewCommentWithMetaData struct {
 	FeedbackCommentID *int                  `json:"feedback_comment_id"`
 	Points            int                   `json:"points"`
 	TAUsername        string                `json:"ta_username"`
+	GitHubCommentID   int                   `json:"github_comment_id"`
 }
