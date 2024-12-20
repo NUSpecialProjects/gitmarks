@@ -192,9 +192,18 @@ func (s *WorkService) gradeWorkByID() fiber.Handler {
 			}
 		}
 
-		createComments(s, c, userClient, commentsToCreate, requestBody.Body, work, *taUser.ID)
-		editComments(s, c, userClient, commentsToEdit, work, *taUser.ID)
-		deleteComments(s, c, userClient, commentsToDelete, work, *taUser.ID)
+		err = createComments(s, c, userClient, commentsToCreate, requestBody.Body, work, *taUser.ID)
+		if err != nil {
+			return err
+		}
+		err = editComments(s, c, userClient, commentsToEdit, work, *taUser.ID)
+		if err != nil {
+			return err
+		}
+		err = deleteComments(s, c, userClient, commentsToDelete, work, *taUser.ID)
+		if err != nil {
+			return err
+		}
 		return c.SendStatus(http.StatusOK)
 	}
 }
