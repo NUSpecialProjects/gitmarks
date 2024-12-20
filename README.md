@@ -1,16 +1,33 @@
 ![Banner](https://github.com/user-attachments/assets/84169d26-84f0-4786-bf37-87484ef475bb)
 
 # GitMarks
-GitMarks is a Git-based grading platform designed to mirror industry standard workflows and provide support for both students and teaching staff.
 
-## Key Features
- - **GitHub Integration**: Seamlessly connects with GitHub repositories for assignment submission and management
- - **Automated Grading**: Supports automated testing and grading through GitHub Actions workflows
- - **Code Review Tools**: Built-in tools for providing line-by-line feedback and annotations
- - **Assignment Management**: Easy creation and distribution of assignments built on top of GitHub Repositories
- - **Progress Tracking**: Real-time visibility into student progress and submission status
- - **Industry Standard Workflows**: Pull request-based submissions and code review processes that mirror real-world development
- - **Seamless Student Experience**: Students interact solely with GitHub while staff benefit from a consolidated grading and classroom management platform
+GitMarks is a Git-based grading platform that streamlines the academic assessment process by leveraging industry-standard workflows. It provides a comprehensive solution for both educational staff and students, combining automated grading capabilities with professional development practices.
+
+## Overview
+
+GitMarks bridges the gap between academic assessment and professional development by:
+- Integrating seamlessly with GitHub's ecosystem
+- Automating grading processes through CI/CD pipelines
+- Providing robust code review and feedback tools
+- Managing assignments through familiar Git workflows
+- Offering real-time progress tracking and analytics
+
+## Features
+
+<div align="center">
+
+| Category | Capabilities |
+|:---------|:-------------|
+| **GitHub Integration** | • Seamless repository management<br>• Native pull request workflow<br>• Automated assignment distribution |
+| **Automated Assessment** | • GitHub Actions integration<br>• Customizable test suites<br>• Immediate feedback loops |
+| **Code Review System** | • Line-by-line annotations<br>• Inline feedback tools<br>• Review history tracking |
+| **Assignment Management** | • Template-based distribution<br>• Deadline management<br>• Bulk operations support |
+| **Progress Analytics** | • Real-time submission tracking<br>• Performance metrics<br>• Completion statistics |
+
+</div>
+
+## Team
 
 <div align="center">
 
@@ -65,73 +82,83 @@ GitMarks is a Git-based grading platform designed to mirror industry standard wo
 
 </div>
 
-## Tech Stack
+## Technology Stack
 
+### Core Technologies
 [![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/doc/)
 [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://camo.githubusercontent.com/3467eb8e0dc6bdaa8fa6e979185d371ab39c105ec7bd6a01048806b74378d24c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f52656163742d3230323332413f7374796c653d666f722d7468652d6261646765266c6f676f3d7265616374266c6f676f436f6c6f723d363144414642)](https://react.dev/)
 
-## Tools
-
+### Infrastructure
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-## Development Enviroment Setup
+## Getting Started
 
-Please install the following software
+### Prerequisites
 
-[Go](https://go.dev/doc/install) our primary backend language.
+The following tools are required to run GitMarks:
 
-[Node Package Manager](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-our package manager in the frontend.
+- [Go](https://go.dev/doc/install) - Backend runtime
+- [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) - Frontend development
+- [Docker](https://www.docker.com/get-started/) and [Docker Desktop](https://www.docker.com/products/docker-desktop/) - Database containerization
+- [Ngrok](https://ngrok.com/docs/getting-started/) - Local development tunneling
 
-[Docker](https://www.docker.com/get-started/) and
-[Docker Desktop](https://www.docker.com/products/docker-desktop/) our Postgres
-Database will be containerized in Docker.
+### Configuration
 
-[Ngrok](https://ngrok.com/docs/getting-started/) Allows us to easily expose our local backend to GitHub webhook events. Make an account for a stable link!
-
-## Before Running
-
-Create an .env file in the backend directory:
-
-```
-APP_PRIVATE_KEY=<Your GitHub app private key>
-APP_ID=<Your GitHub app ID>
-APP_INSTALLATION_ID=<Your GitHub app installation ID>
-APP_WEBHOOK_SECRET=<Your GitHub app's webhook secret>
-APP_NAME=<Your GitHub app name>
-CLIENT_REDIRECT_URL=<The URL that GitHub should redirect back to>
-CLIENT_ID=<The client ID of your GitHub OAuth app>
-CLIENT_SECRET=<The client Secret of your GitHub OAuth app>
-CLIENT_URL=<The Authorization endpoint of your OAuth provider>
-CLIENT_TOKEN_URL=<The access token endpoint of your OAuth provider>
-CLIENT_JWT_SECRET=<The Json Web Token secret>
-DATABASE_URL=<Your database URL>
+1. Backend Configuration (`/backend/.env`):
+```env
+APP_PRIVATE_KEY=<GitHub App Private Key>
+APP_ID=<GitHub App ID>
+APP_INSTALLATION_ID=<GitHub App Installation ID>
+APP_WEBHOOK_SECRET=<GitHub App Webhook Secret>
+APP_NAME=<GitHub App Name>
+CLIENT_REDIRECT_URL=<OAuth Redirect URL>
+CLIENT_ID=<GitHub OAuth App Client ID>
+CLIENT_SECRET=<GitHub OAuth App Client Secret>
+CLIENT_URL=<OAuth Authorization Endpoint>
+CLIENT_TOKEN_URL=<OAuth Token Endpoint>
+CLIENT_JWT_SECRET=<JWT Secret Key>
+DATABASE_URL=<Database Connection String>
 ```
 
-Create a second .env file in the frontend root directory:
-
+2. Frontend Configuration (`/frontend/.env`):
+```env
+VITE_PUBLIC_API_DOMAIN=<Backend URL>
+VITE_PUBLIC_FRONTEND_DOMAIN=<Frontend URL>
+VITE_GITHUB_CLIENT_ID=<GitHub OAuth App Client ID>
+VITE_GITHUB_APP_NAME=<GitHub App Name>
 ```
-VITE_PUBLIC_API_DOMAIN=<Your backend url>
-VITE_PUBLIC_FRONTEND_DOMAIN=<Your frontend url>
-VITE_GITHUB_CLIENT_ID=<The client ID of your GitHub OAuth app>
-VITE_GITHUB_APP_NAME=<Your GitHub app name>
+
+### Development Setup
+
+#### Using Make (Recommended)
+```bash
+# 1. Start the database
+make db-run
+
+# 2. Launch the backend
+make backend-dep
+make backend-run
+
+# 3. Start ngrok tunnel
+make ngrok-run
+
+# 4. Launch the frontend
+make frontend-run
 ```
 
-## Running The Project in A Dev Environment
+#### Manual Setup
+```bash
+# 1. Start Docker services
+docker compose up --build
 
-1. Launch Docker Desktop
-2. In the base of the repo: run `make db-run`
-3. Then, open a new tab to run commands in: run `make backend-dep` then `make backend-run`
-4. Next, in a new tab run `make ngrok-run`
-5. Finally, open one last new tab: run `make frontend-run`
+# 2. Start ngrok tunnel
+ngrok http --domain={your-ngrok-domain} 8080
 
+# 3. Install frontend dependencies
+cd frontend
+npm install
 
-## Running locally in dev mode without using Make:
-
-1. Launch Docker Desktop
-2. In the repo root: run `docker compose up --build`
-3. In a new terminal: run `ngrok http --domain={<ngrok public url>} 8080`
-4. In a new terminal: run `cd frontend`
-5. (On first run) In the frontend directory: run `npm i`
-6. In the frontend directory: run `npm run dev`
+# 4. Start frontend development server
+npm run dev
+```
