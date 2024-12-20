@@ -17,7 +17,7 @@ const Settings: React.FC = () => {
       <div className="Settings">
         <BreadcrumbPageHeader
           pageTitle={selectedClassroom?.org_name}
-          breadcrumbItems={[selectedClassroom?.name, "Settings"]}
+          breadcrumbItems={[selectedClassroom?.name, "Grading"]}
         />
         <Button variant="primary" onClick={logout}>
           Logout
