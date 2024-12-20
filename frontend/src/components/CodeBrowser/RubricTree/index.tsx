@@ -33,7 +33,8 @@ const RubricTree: React.FC = () => {
           <span>Total Score:</span>
           {(assignment?.default_score ?? 0) +
             Object.values(feedback).reduce(
-              (s: number, fb: IGraderFeedback) => s + fb.points,
+              (s: number, fb: IGraderFeedback) =>
+                s + (fb.rubric_item_id != 1 ? fb.points : 0),
               0
             ) +
             Object.values(stagedFeedback).reduce(

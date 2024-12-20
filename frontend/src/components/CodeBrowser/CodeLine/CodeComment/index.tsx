@@ -1,5 +1,11 @@
 import { useContext, useRef, useEffect, useState } from "react";
-import { FaEllipsisV, FaHistory, FaPen, FaTrash } from "react-icons/fa";
+import {
+  FaEllipsisV,
+  FaHistory,
+  FaPen,
+  FaTrashAlt,
+  FaTrashRestoreAlt,
+} from "react-icons/fa";
 
 import { AuthContext } from "@/contexts/auth";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
@@ -24,7 +30,7 @@ export const CodeComment: React.FC<ICodeComment> = ({
   localFeedbackID,
 }) => {
   const { currentUser } = useContext(AuthContext);
-  const { discardEditFeedback, discardAddFeedback, removeFeedback } =
+  const { editFeedback, discardEditFeedback, discardAddFeedback } =
     useContext(GraderContext);
   const [editing, setEditing] = useState(false);
 
@@ -37,20 +43,23 @@ export const CodeComment: React.FC<ICodeComment> = ({
             <div>
               <span>{fb.ta_username}</span>
               <span className="CodeComment__date">
-                {fb.action == "DELETE"
-                  ? "deleted " + formatRelativeTime(new Date())
-                  : !pending && fb.history
+                {fb.action == "DELETE" || fb.rubric_item_id == 1
+                  ? "deleted "
+                  : fb.history
                     ? "updated "
-                    : "commented " + formatRelativeTime(fb.created_at)}
+                    : "commented "}
+                {formatRelativeTime(
+                  pending || fb.action ? new Date() : fb.created_at
+                )}
               </span>
             </div>
-            {(pending || fb.action == "DELETE") && (
+            {(pending || fb.action) && (
               <div className="CodeComment__pendingPill">Pending</div>
             )}
           </div>
           {!readOnly && (
             <div className="CodeComment__icons">
-              {fb.history && (
+              {fb.history && fb.history.length > 0 && (
                 <div className="CodeComment__menu" tabIndex={0}>
                   <FaHistory />
                   <div className="CodeComment__menu__dropdown">
@@ -73,49 +82,66 @@ export const CodeComment: React.FC<ICodeComment> = ({
                   </div>
                 </div>
               )}
-              <div className="CodeComment__menu" tabIndex={0}>
-                <FaEllipsisV />
-                <div className="CodeComment__menu__dropdown">
-                  <li
-                    onClick={() => {
-                      (document.activeElement as HTMLElement).blur();
-                      setEditing(!editing);
-                    }}
-                  >
-                    <FaPen />
-                    Edit
-                  </li>
-                  <li
-                    className="CodeComment__menu__dropdown--delete"
-                    onClick={() => {
-                      if (typeof localFeedbackID !== "undefined") {
-                        if (fb.action == "EDIT" || fb.action == "DELETE") {
-                          discardEditFeedback(localFeedbackID);
-                        } else if (fb.action == "CREATE") {
+              {fb.rubric_item_id != 1 && (
+                <div className="CodeComment__menu" tabIndex={0}>
+                  <FaEllipsisV />
+                  <div className="CodeComment__menu__dropdown">
+                    {fb.action != "DELETE" && (
+                      <li
+                        onClick={() => {
                           (document.activeElement as HTMLElement).blur();
-                          discardAddFeedback(localFeedbackID);
-                        } else if (!fb.action) {
-                          (document.activeElement as HTMLElement).blur();
-                          removeFeedback(localFeedbackID);
+                          setEditing(!editing);
+                        }}
+                      >
+                        <FaPen />
+                        Edit
+                      </li>
+                    )}
+                    <li
+                      className={`CodeComment__menu__dropdown--delete${fb.action == "DELETE" ? "d" : ""}`}
+                      onClick={() => {
+                        if (typeof localFeedbackID !== "undefined") {
+                          if (fb.action == "EDIT" || fb.action == "DELETE") {
+                            // must be an edit to existing feedback, rollback edit
+                            discardEditFeedback(localFeedbackID);
+                          } else if (fb.action == "CREATE") {
+                            // must not be existing, just staged, delete staged comment
+                            (document.activeElement as HTMLElement).blur();
+                            discardAddFeedback(localFeedbackID);
+                          } else if (!fb.action) {
+                            // must be existing, fully delete
+                            (document.activeElement as HTMLElement).blur();
+                            editFeedback("DELETE", localFeedbackID);
+                          }
                         }
-                      }
-                    }}
-                  >
-                    <FaTrash />
-                    {(() => {
-                      switch (fb.action) {
-                        case "EDIT":
-                          return "Discard Changes";
-                        case "DELETE":
-                          return "Restore";
-
-                        default:
-                          return "Delete";
-                      }
-                    })()}
-                  </li>
+                      }}
+                    >
+                      {(() => {
+                        switch (fb.action) {
+                          case "EDIT":
+                            return (
+                              <>
+                                <FaTrashAlt /> Discard Changes
+                              </>
+                            );
+                          case "DELETE":
+                            return (
+                              <>
+                                <FaTrashRestoreAlt /> Restore
+                              </>
+                            );
+                          default:
+                            return (
+                              <>
+                                <FaTrashAlt /> Delete
+                              </>
+                            );
+                        }
+                      })()}
+                    </li>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -124,10 +150,12 @@ export const CodeComment: React.FC<ICodeComment> = ({
             path={fb.path}
             line={fb.line}
             content={{ localFeedbackID, fb, pending, readOnly }}
+            // pass content through so we can edit the existing meta data
             onCancel={() => setEditing(false)}
           />
         ) : (
-          fb.action != "DELETE" && (
+          fb.action != "DELETE" &&
+          fb.rubric_item_id != 1 && (
             <div className="CodeComment__body">
               <div
                 className={`CodeComment__points CodeComment__points--${fb.points > 0 ? "positive" : fb.points < 0 ? "negative" : "neutral"}`}
@@ -150,6 +178,7 @@ export const CodeComment: React.FC<ICodeComment> = ({
 interface ICodeCommentForm {
   path: string;
   line: number;
+  // if content exists, that is an indication that we are editing
   content?: ICodeComment;
   onCancel: () => void;
 }
@@ -191,9 +220,9 @@ export const CodeCommentForm: React.FC<ICodeCommentForm> = ({
     if (fb.points == 0 && fb.body == "") return;
     if (fb.body == "") fb.body = "No comment left for this point adjustment.";
 
-    // if content already exists, edit/delete instead of create
+    // if content already exists, edit instead of create
     if (content && typeof content.localFeedbackID !== "undefined") {
-      editFeedback(content.localFeedbackID, fb);
+      editFeedback("EDIT", content.localFeedbackID, fb);
     } else {
       addFeedback([fb]);
     }

@@ -107,9 +107,15 @@
         }
 
         &.CodeComment__menu__dropdown--delete {
-          color: var(--rose);
+          color: rgb(255, 19, 19);
           &:hover {
-            color: red;
+            color: rgb(255, 103, 86);
+          }
+        }
+        &.CodeComment__menu__dropdown--deleted {
+          color: rgb(146, 222, 32);
+          &:hover {
+            color: greenyellow;
           }
         }
       }

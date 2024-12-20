@@ -1,11 +1,18 @@
 /********************
  * Grading page types
  ********************/
+enum IGraderActionEnum {
+  CREATE,
+  EDIT,
+  DELETE,
+}
+type IGraderAction = keyof typeof IGraderActionEnum;
+
 interface IGraderFeedbackMap {
   [commentID: number]: IGraderFeedbackWithHistory;
 }
 interface IGraderFeedback {
-  action?: "CREATE" | "EDIT" | "DELETE";
+  action?: IGraderAction;
   rubric_item_id?: number;
   feedback_comment_id?: number;
   github_comment_id?: number;

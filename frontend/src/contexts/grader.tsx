@@ -12,15 +12,28 @@ interface IGraderContext {
   studentWork: IPaginatedStudentWork | null;
   selectedFile: IFileTreeNode | null;
   feedback: IGraderFeedbackMap;
+  /*************************************************************
+   * - staged feedback is essentially a list of "commands."
+   * - each staged fb has an action: create, edit, or delete
+   * - when rendering comments in the ui, only render the
+   *   comments from "create" actions.
+   * - the regular feedback list will also store edit/delete
+   *   states in order to visualize this e.g. when you edit
+   *   a comment, you would want the same one to display the
+   *   change, not append a new staged comment with the changes.
+   *************************************************************/
   stagedFeedback: IGraderFeedbackMap;
   rubric: IFullRubric | null;
   selectedRubricItems: number[];
   setSelectedFile: React.Dispatch<React.SetStateAction<IFileTreeNode | null>>;
   addFeedback: (feedback: IGraderFeedback[]) => void;
-  editFeedback: (feedbackID: number, feedback: IGraderFeedback) => void;
+  editFeedback: (
+    action: IGraderAction,
+    feedbackID: number,
+    feedback?: IGraderFeedback
+  ) => void;
   discardAddFeedback: (feedbackID: number) => void;
   discardEditFeedback: (feedbackID: number) => void;
-  removeFeedback: (feedbackID: number) => void;
   postFeedback: () => void;
   selectRubricItem: (riID: number) => void;
   deselectRubricItem: (riID: number) => void;
@@ -40,7 +53,6 @@ export const GraderContext: React.Context<IGraderContext> =
     editFeedback: () => {},
     discardAddFeedback: () => {},
     discardEditFeedback: () => {},
-    removeFeedback: () => {},
     postFeedback: () => {},
     selectRubricItem: () => {},
     deselectRubricItem: () => {},
@@ -115,12 +127,18 @@ export const GraderProvider: React.FC<{
       });
   }, [studentWorkID]);
 
+  // an increasing ID just for local so we can easily reference and never overwrite
   const getNextFeedbackID = () => {
     const tmp = nextFeedbackID.current;
     nextFeedbackID.current = nextFeedbackID.current + 1;
     return tmp;
   };
 
+  /****************************************
+   * CREATE ACTION
+   * - create the "create" staging feedback
+   *   which WILL be rendered
+   ****************************************/
   const addFeedback = (fbs: IGraderFeedback[]) => {
     const newFeedback: { [id: number]: IGraderFeedback } = {};
     for (const fb of fbs) {
@@ -136,34 +154,55 @@ export const GraderProvider: React.FC<{
     }));
   };
 
-  const editFeedback = (feedbackID: number, fb: IGraderFeedback) => {
+  /****************************************
+   * EDIT ACTION
+   * - create the "action" staging feedback
+   *   which WONT be rendered
+   * - modify the existing feedback in order
+   *   to reflect the changes in grader UI
+   ****************************************/
+  const editFeedback = (
+    action: IGraderAction,
+    feedbackID: number,
+    fb?: IGraderFeedback
+  ) => {
+    if (!fb) fb = feedback[feedbackID];
+
     setStagedFeedback((prevFeedback) => ({
       ...prevFeedback,
       [feedbackID]: {
         ...fb,
-        action: "EDIT",
+        // only overwrite action if preexisting. if editing a purely
+        // staged comment, it will still need to be a create command.
+        action: feedbackID in feedback ? action : fb.action,
       },
     }));
-
+    if (!(feedbackID in feedback)) return;
     setFeedback((prevFeedback) => {
+      // push last state to history before overwriting
       const currentFeedback = prevFeedback[feedbackID];
       const newHistory = currentFeedback.history
         ? [{ ...currentFeedback }, ...currentFeedback.history]
         : [{ ...currentFeedback }];
 
-      const newFeedback: IGraderFeedbackWithHistory = {
-        ...fb,
-        action: "EDIT",
-        history: newHistory,
-      };
-
       return {
         ...prevFeedback,
-        [feedbackID]: newFeedback,
+        [feedbackID]: {
+          ...fb,
+          action,
+          history: newHistory,
+        },
       };
     });
   };
 
+  /****************************************
+   * ROLLBACK EDIT ACTION
+   * - create the "action" staging feedback
+   *   which WONT be rendered
+   * - modify the existing feedback in order
+   *   to reflect the changes in grader UI
+   ****************************************/
   const discardEditFeedback = (feedbackID: number) => {
     setFeedback((prevFeedback) => {
       const currentFeedback = prevFeedback[feedbackID];
@@ -192,34 +231,6 @@ export const GraderProvider: React.FC<{
     setStagedFeedback((prevFeedback) => {
       const { [feedbackID]: _, ...remainingFeedback } = prevFeedback;
       return remainingFeedback;
-    });
-  };
-
-  const removeFeedback = (feedbackID: number) => {
-    setStagedFeedback((prevFeedback) => ({
-      ...prevFeedback,
-      [feedbackID]: {
-        ...feedback[feedbackID],
-        action: "DELETE",
-      },
-    }));
-
-    setFeedback((prevFeedback) => {
-      const currentFeedback = prevFeedback[feedbackID];
-      const newHistory = currentFeedback.history
-        ? [{ ...currentFeedback }, ...currentFeedback.history]
-        : [{ ...currentFeedback }];
-
-      const newFeedback: IGraderFeedbackWithHistory = {
-        ...currentFeedback,
-        action: "DELETE",
-        history: newHistory,
-      };
-
-      return {
-        ...prevFeedback,
-        [feedbackID]: newFeedback,
-      };
     });
   };
 
@@ -255,10 +266,26 @@ export const GraderProvider: React.FC<{
         }
         return prevStudentWork;
       });
-      setFeedback((prevFeedback) => ({
-        ...prevFeedback,
-        ...stagedFeedback,
-      }));
+      setFeedback((prevFeedback) => {
+        const merged: IGraderFeedbackMap = {
+          ...prevFeedback,
+          ...Object.fromEntries(
+            Object.entries(stagedFeedback).filter(
+              ([_, fb]: [string, IGraderFeedback]) => fb.action == "CREATE"
+            )
+          ),
+        };
+
+        return {
+          ...Object.fromEntries(
+            Object.entries(merged).map(([i, fb]: [string, IGraderFeedback]) => {
+              const { action, ...fbWithoutAction } = fb;
+              if (action == "DELETE") fb.rubric_item_id = 1;
+              return [Number(i), fbWithoutAction];
+            })
+          ),
+        };
+      });
       setStagedFeedback({});
     });
   };
@@ -293,7 +320,6 @@ export const GraderProvider: React.FC<{
         editFeedback,
         discardAddFeedback,
         discardEditFeedback,
-        removeFeedback,
         postFeedback,
         selectRubricItem,
         deselectRubricItem,
