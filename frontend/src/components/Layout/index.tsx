@@ -11,7 +11,7 @@ import LeftNav from "./LeftNav";
 import TopNav from "./TopNav";
 
 import "./styles.css";
-import { FaTachometerAlt } from "react-icons/fa";
+import { FaInfoCircle, FaTachometerAlt } from "react-icons/fa";
 import { MdEditDocument } from "react-icons/md";
 import { MdFactCheck } from "react-icons/md";
 import { FaGear } from "react-icons/fa6";
@@ -52,7 +52,8 @@ const Layout: React.FC = () => {
     ...(classroomUser?.classroom_role === ClassroomRole.PROFESSOR
       ? professorNavItems
       : []),
-    { name: "Settings", dest: "/app/settings", Icon: FaGear }
+    { name: "Settings", dest: "/app/settings", Icon: FaGear },
+    { name: "About Us", dest: "/app/about-us", Icon: FaInfoCircle }
   ];
 
   if (loadingCurrentClassroomUser) {
