@@ -1,4 +1,4 @@
-![Banner](https://github.com/user-attachments/assets/84169d26-84f0-4786-bf37-87484ef475bb)
+[![Banner](https://github.com/user-attachments/assets/84169d26-84f0-4786-bf37-87484ef475bb)](https://gitmarks.org)
 
 ## GitMarks Overview
 
