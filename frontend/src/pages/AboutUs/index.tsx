@@ -30,7 +30,7 @@ const AboutUs: React.FC = () => {
       name: "Nicholas Tietje",
       title: "Full Stack Developer",
       imageUrl: "/images/nick-tietje.jpg",
-      bio: "Nick is passionate about creating intuitive and engaging web and mobile experiences. Former Database Design TA, boardgame enjoyer, Kotlin connoisseur",
+      bio: "Nick is passionate about creating intuitive and engaging web and mobile experiences. Former Database Design TA, Boardgame enjoyer, Kotlin connoisseur",
       website: "https://nicktietje.com"
     },
     {
