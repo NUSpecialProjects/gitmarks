@@ -10,7 +10,7 @@ interface AboutCardProps {
   
   const AboutCard: React.FC<AboutCardProps> = ({ name, title, imageUrl, bio, website }) => {
     return (
-      <div className="AboutCard" onClick={() => window.open(website, '_blank')} style={{ cursor: 'pointer' }}>
+      <a href={website} target="_blank" rel="noopener noreferrer" className="AboutCard">
         <div className="AboutCard__image">
           <img src={imageUrl} alt={`${name}`} />
         </div>
@@ -19,7 +19,7 @@ interface AboutCardProps {
           <p className="AboutCard__title">{title}</p>
           <p className="AboutCard__bio">{bio}</p>
         </div>
-      </div>
+      </a>
     );
   };
   
@@ -38,35 +38,35 @@ const AboutUs: React.FC = () => {
       title: "Backend Developer",
       imageUrl: "/images/cameron-plume.jpg",
       bio: "Former OOD TA, CS 1200 course author. Heavily involved with Generate Product Development. Golang advocate, Systems nerd, Ski bum. ",
-      website: "https://github.com/CamPlume1"
+      website: "https://cameron-plume.netlify.app/"
     },
     {
       name: "Nandini Ghosh",
       title: "Designer & Frontend Developer",
       imageUrl: "/images/nandini-ghosh.png",
-      bio: "Nandini is a talented designer and frontend developer with a keen eye for aesthetics and user experience.",
-      website: "https://github.com/nandini-ghosh"
+      bio: "Nandini is a frontend developer and a UI/UX designer who loves bridging technology and human-centered design. President of NU Women in Tech, she loves cats, drinking tea and learning new recipes.",
+      website: "https://www.nandinighosh.com/"
     },
     {
       name: "Alexander Angione",
       title: "Full Stack Developer",
       imageUrl: "/images/alexander-angione.jpg",
-      bio: "Alex is a full stack developer with a passion for both frontend and backend development.",
+      bio: "Alex is an embedded, iOS, and full-stack software engineer with a desire to learn as much as possible. He's a former OOD/Fundies 2 TA and Oasis mentor, a basketball and volleyball enjoyer, and a cheese enthusiast",
       website: "https://github.com/alexangione419"
     },
     {
       name: "Sebastian Tremblay",
       title: "Infrastructure & Product Manager",
       imageUrl: "/images/sebastian-tremblay.png",
-      bio: "Sebastian is responsible for infrastructure and product management, ensuring smooth operations and product development.",
-      website: "https://github.com/sebytremblay"
+      bio: "Seby is an aspiring backend engineer interested in systems and large language models. He enjoys teaching, skating, and, of course, Panera.",
+      website: "https://sebytremblay.com/"
     },
     {
       name: "Kenneth Chen",
       title: "Full Stack Developer",
       imageUrl: "/images/kenneth-chen.png",
       bio: "Kenny likes coding and code architecting. Founding president of Cooking Club, love art, cooking, and volleyball. Big braised ribs fan",
-      website: "https://github.com/kennybc"
+      website: "https://www.kenny.us/"
     }
   ];
 
