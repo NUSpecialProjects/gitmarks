@@ -79,6 +79,8 @@ const ClassroomCreation: React.FC = () => {
     if (selected === "Custom") {
       setShowCustomNameInput(true);
       setName("");
+      setClassroomExists(false);
+      setError(null);
     } else {
       setShowCustomNameInput(false);
       setName(selected);
