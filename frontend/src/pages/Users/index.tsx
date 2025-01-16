@@ -30,7 +30,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [], error: classroomUsersError } = useQuery({
     queryKey: ['classroomUsers', selectedClassroom?.id, role_type],
     queryFn: async () => {
       if (!selectedClassroom?.id) return [];
@@ -41,12 +41,12 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     initialData: initialUserList
   });
 
-  const { data: inviteLink = "" } = useQuery({
+  const { data: inviteLink = "", error: classroomTokenError } = useQuery({
     queryKey: ['classroomToken', selectedClassroom?.id, role_type],
     queryFn: async () => {
       if (!selectedClassroom?.id || !showActionsColumn) return "";
-      const data = await postClassroomToken(selectedClassroom.id, role_type);
-      return `${base_url}/app/token/classroom/join?token=${data.token}`;
+        const data = await postClassroomToken(selectedClassroom.id, role_type);
+        return `${base_url}/app/token/classroom/join?token=${data.token}`;
     },
     enabled: !!selectedClassroom?.id,
   });
@@ -72,6 +72,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
           ['classroomUsers', selectedClassroom?.id, role_type],
           [...data.invited_users, ...data.requested_users]
         );
+        setError(null);
       })
       .catch((_) => {
         setError("Failed to invite all users. Please try again.");
@@ -83,6 +84,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
       .then((data: IClassroomUserResponse) => {
         removeUserFromList(userId);
         addUserToList(data.user);
+        setError(null);
       })
       .catch((_) => {
         setError("Failed to invite user. Please try again.");
@@ -93,6 +95,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     await revokeOrganizationInvite(selectedClassroom!.id, userId)
       .then((_) => {
         removeUserFromList(userId);
+        setError(null);
       })
       .catch((_) => {
         setError("Failed to revoke invite. Please try again.");
@@ -107,6 +110,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     await removeUserFromClassroom(selectedClassroom!.id, userId)
       .then(() => {
         removeUserFromList(userId);
+        setError(null);
       })
       .catch((_) => {
         setError("Failed to remove user. Please try again.");
@@ -143,6 +147,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   return (
     <div>
       <SubPageHeader pageTitle={role_label + `s`} chevronLink="/app/dashboard/"></SubPageHeader>
+      
       {inviteLink && (
         <div className="Users__inviteLinkWrapper">
           <div>
@@ -150,7 +155,6 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
             <p>Share this link to invite and add students to {selectedClassroom?.name}.</p>
             {(role_type === ClassroomRole.PROFESSOR || role_type === ClassroomRole.TA) &&
               <p>Warning: This will make them an admin of the organization.</p>}
-            {error && <p className="error">{error}</p>}
           </div>
           <CopyLink link={inviteLink} name="invite-link"></CopyLink>
 
@@ -159,6 +163,24 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
               <Button onClick={handleInviteAll}>Invite All Requested Users</Button>
             </div>
           )}
+        </div>
+      )}
+
+      {classroomUsersError && (
+        <div className="error">
+          Failed to load users. Please try again.
+        </div>
+      )}
+
+      {classroomTokenError && (
+        <div className="error">
+          Failed to generate invite link. Please try again.
+        </div>
+      )}
+
+      {error && (
+        <div className="error">
+          {error}
         </div>
       )}
 
