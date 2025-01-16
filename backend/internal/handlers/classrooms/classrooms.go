@@ -19,6 +19,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Helper method to check if a classroom exists
+func (s *ClassroomService) doesClassroomExist(ctx context.Context, name string) (bool, error) {
+	_, err := s.store.GetClassroomByName(ctx, name)
+	return err == nil, nil // If no error, classroom exists
+}
+
 // Returns the classrooms the authenticated user is part of.
 func (s *ClassroomService) getUserClassrooms() fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -63,8 +69,10 @@ func (s *ClassroomService) checkClassroomExists() fiber.Handler {
 			return errs.BadRequest(errors.New("invalid classroom name encoding"))
 		}
 
-		_, err = s.store.GetClassroomByName(c.Context(), decodedName)
-		exists := err == nil // If no error, classroom exists
+		exists, err := s.doesClassroomExist(c.Context(), decodedName)
+		if err != nil {
+			return errs.InternalServerError()
+		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"exists": exists,
@@ -87,12 +95,11 @@ func (s *ClassroomService) createClassroom() fiber.Handler {
 		}
 
 		// check if classroom exists already
-		_, err = s.store.GetClassroomByName(c.Context(), classroomData.Name)
-		exists := err == nil // If no error, classroom exists
-		if exists {
-			return c.Status(http.StatusConflict).JSON(fiber.Map{
-				"exists": true,
-			})
+		exists, err := s.doesClassroomExist(c.Context(), classroomData.Name)
+		if err != nil {
+			return errs.InternalServerError()
+		} else if exists {
+			return c.Status(http.StatusConflict).SendString("Classroom already exists")
 		}
 
 		membership, err := client.GetUserOrgMembership(c.Context(), classroomData.OrgName, githubUser.Login)
