@@ -248,7 +248,7 @@ export async function getClassroomNames(): Promise<string[]> {
 
 export async function checkClassroomExists(classroomName: string): Promise<boolean> {
   const encodedName = encodeURIComponent(classroomName);
-  const response = await fetch(`${base_url}/classrooms/check-classroom/${encodedName}`, {
+  const response = await fetch(`${base_url}/classrooms/check-classroom-exists/${encodedName}`, {
     method: "GET",
     credentials: "include",
     headers: {
