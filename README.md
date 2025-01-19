@@ -18,11 +18,14 @@ GitMarks is a Git-based grading platform that streamlines the academic assessmen
 
 ### Infrastructure
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Amazon S3](https://img.shields.io/badge/Amazon%20S3-FF9900?style=for-the-badge&logo=amazons3&logoColor=white)](https://aws.amazon.com/s3/)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-3970e4?style=for-the-badge&logo=kubernetes&logoColor=white)](https://www.kubernetes.io/)
+[![Amazon S3](https://img.shields.io/badge/Amazon%20S3-2ca02c?style=for-the-badge&logo=amazons3&logoColor=white)](https://aws.amazon.com/s3/)
+[![ECS](https://img.shields.io/badge/Amazon%20ECS-FF9900?style=for-the-badge&logo=amazonecs&logoColor=white)](https://aws.amazon.com/ecs/)
+[![RDS](https://img.shields.io/badge/Amazon%20RDS-1f77b4?style=for-the-badge&logo=amazonrds&logoColor=white)](https://aws.amazon.com/rds/)
 
 ## Features
 
-<div align="center">
+<div align="left">
 
 | Category | Capabilities |
 |:---------|:-------------|
@@ -36,7 +39,7 @@ GitMarks is a Git-based grading platform that streamlines the academic assessmen
 
 ## Team
 
-<div align="center">
+<div align="left">
 
 <table>
   <tr>
