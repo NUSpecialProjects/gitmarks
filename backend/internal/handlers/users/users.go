@@ -31,7 +31,7 @@ func (s *UserService) GetUser() fiber.Handler {
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"user":        user,
+			"user":        user, // gitmarks user
 			"github_user": githubUser,
 		})
 	}
