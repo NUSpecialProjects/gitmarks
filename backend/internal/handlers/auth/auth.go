@@ -154,7 +154,7 @@ func (service *AuthService) GetCurrentUser() fiber.Handler {
 
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"github_user": githubUser,
-			"user":        user,
+			"user":        user, // gitmarks user
 		})
 	}
 }
