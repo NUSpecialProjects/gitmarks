@@ -138,4 +138,7 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 
 	// Check if a fork has finished initializing
 	CheckForkIsReady(ctx context.Context, repo *github.Repository) bool
+
+	//Enable a given action
+	EnableActions(ctx context.Context, repoOwner, forkName string) error
 }

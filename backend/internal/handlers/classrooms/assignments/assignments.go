@@ -2,6 +2,7 @@ package assignments
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -302,6 +303,13 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		// Insert into DB
 		_, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
 		if err != nil {
+			return err
+		}
+		
+
+		err = client.EnableActions(c.Context(), classroom.OrgName, forkName)
+		if err != nil {
+			fmt.Println("deceased")
 			return err
 		}
 

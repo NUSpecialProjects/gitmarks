@@ -590,3 +590,22 @@ func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Reposit
 
 	return len(branches) == len(srcBranches)
 }
+
+
+func (api *CommonAPI) EnableActions(ctx context.Context, ownerName, repoName string) error {
+	endpoint := fmt.Sprintf("/repos/%s/%s/actions/permissions", ownerName, repoName)
+
+	body := map[string]interface{}{
+		"enabled": true,
+		"allowed_actions": "all",
+	}
+
+	req, err := api.Client.NewRequest("PUT", endpoint, body)
+	if err != nil {
+		fmt.Println("error formatting request")
+	}
+
+	_, err = api.Client.Do(ctx, req, nil)
+	
+	return err
+}
