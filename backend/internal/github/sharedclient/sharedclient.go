@@ -592,20 +592,40 @@ func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Reposit
 }
 
 
-func (api *CommonAPI) EnableActions(ctx context.Context, ownerName, repoName string) error {
-	endpoint := fmt.Sprintf("/repos/%s/%s/actions/permissions", ownerName, repoName)
+func (api *CommonAPI) EnableWorkflow(ctx context.Context, ownerName, repoName, workflowName string) error {
+	endpoint := fmt.Sprintf("/repos/%s/%s/actions/worflows/%s/enable", ownerName, repoName, workflowName)
 
-	body := map[string]interface{}{
-		"enabled": true,
-		"allowed_actions": "all",
-	}
-
-	req, err := api.Client.NewRequest("PUT", endpoint, body)
+	req, err := api.Client.NewRequest("PUT", endpoint, nil)
 	if err != nil {
 		fmt.Println("error formatting request")
 	}
 
 	_, err = api.Client.Do(ctx, req, nil)
+	if err != nil {
+		fmt.Println("OOOOOFFFFFF")
+	}
+	
+	return err
+}
+
+
+// /repos/{owner}/{repo}/actions/permissions
+func (api *CommonAPI) EnableActions(ctx context.Context, ownerName, repoName string) error {
+	endpoint := fmt.Sprintf("/repos/%s/%s/actions/permissions", ownerName, repoName)
+
+	body := map[string]bool{
+		"enabled": true,
+	}
+
+	req, err := api.Client.NewRequest("PUT", endpoint, body)
+	if err != nil {
+		fmt.Println("error formatting request -> Enabling Actions")
+	}
+
+	_, err = api.Client.Do(ctx, req, nil)
+	if err != nil {
+		fmt.Println("OOOOOFFFFFFTAAAAAAAAA HERE")
+	}
 	
 	return err
 }

@@ -6,33 +6,52 @@ import (
 )
 
 func ActionWithDeadline(deadline *time.Time) string {
-  // yyyy, mm, dd, hh, mm, ss
-	var scriptString = `
-from datetime import datetime
-import sys
+  fmt.Printf(deadline.Local().GoString())
+  return `name: deadline-enforcement
 
-def check_date():
-    # Define the target date
-    target_date = datetime(%d, %d, %d, %d, %d, %d, tzinfo=timezone.utc)
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  enforce-deadline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute deadline enforcement
+        run: echo "executed"
+`
+//   // yyyy, mm, dd, hh, mm, ss
+// 	var scriptString = `
+// from datetime import datetime
+// import sys
+
+// def check_date():
+//     # Define the target date
+//     target_date = datetime(%d, %d, %d, %d, %d, %d, tzinfo=timezone.utc)
     
-    # Get current date and time
-    current_date = datetime.now()
+//     # Get current date and time
+//     current_date = datetime.now()
     
-    # Compare dates and exit with appropriate code
-    if current_date > target_date:
-        sys.exit(1)
-    else:
-        sys.exit(0)
+//     # Compare dates and exit with appropriate code
+//     if current_date > target_date:
+//         sys.exit(1)
+//     else:
+//         sys.exit(0)
 
-if __name__ == "__main__":
-    check_date()`
+// if __name__ == "__main__":
+//     check_date()`
 
-	return fmt.Sprintf(scriptString, deadline.Year(), deadline.Month(), deadline.Day(), deadline.Hour(), deadline.Minute(), deadline.Second())
+// 	return fmt.Sprintf(scriptString, deadline.Year(), deadline.Month(), deadline.Day(), deadline.Hour(), deadline.Minute(), deadline.Second())
 }
 
 
 func TargetBranchProtectionAction() string {
-    var actionString = `name: Check PR Target Branch
+    var actionString = `name: check-pr-target-branch
 
 on:
   pull_request:

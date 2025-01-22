@@ -140,5 +140,8 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	CheckForkIsReady(ctx context.Context, repo *github.Repository) bool
 
 	//Enable a given action
-	EnableActions(ctx context.Context, repoOwner, forkName string) error
+	EnableWorkflow(ctx context.Context, repoOwner, forkName, workflowName string) error
+
+	EnableActions(ctx context.Context, ownerName, repoName string) error
+
 }
