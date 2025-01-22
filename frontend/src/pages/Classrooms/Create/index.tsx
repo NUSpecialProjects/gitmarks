@@ -1,11 +1,12 @@
 import React, { useContext } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { getClassroomNames, postClassroom } from "@/api/classrooms";
+import { postClassroom } from "@/api/classrooms";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import { getOrganizationDetails } from "@/api/organizations";
 import Panel from "@/components/Panel";
 import Button from "@/components/Button";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { useOrganizationDetails } from "@/hooks/useOrganization";
+import { useClassroomNames } from "@/hooks/useClassroomNames";
 
 import "./styles.css";
 import Input from "@/components/Input";
@@ -20,22 +21,17 @@ const ClassroomCreation: React.FC = () => {
   const location = useLocation();
   const orgID = location.state?.orgID;
 
-  const { data: predefinedClassroomNames = [], isError: isNamesError } = useQuery({
-    queryKey: ['classroomNames'],
-    queryFn: async () => {
-      const names = await getClassroomNames();
-      if (names.length > 0 && !name) {
-        setName(names[0]);
+  const { data: predefinedClassroomNames = [], isError: isNamesError } = useClassroomNames(
+    (firstClassName: string) => {
+      if (!name) {
+        setName(firstClassName);
       }
-      return names;
     }
-  });
+  );
 
-  const { data: organization, isLoading: isOrgLoading, error: orgError } = useQuery({
-    queryKey: ['organization', orgID],
-    queryFn: () => getOrganizationDetails(orgID),
-    enabled: !!orgID
-  });
+  const allClassroomNames = [...predefinedClassroomNames, "Custom"];
+
+  const { data: organization, isLoading: isOrgLoading, error: orgError } = useOrganizationDetails(orgID);
 
   const createClassroomMutation = useMutation({
     mutationFn: postClassroom,
@@ -67,8 +63,6 @@ const ClassroomCreation: React.FC = () => {
       org_name: organization.login,
     });
   };
-
-  const allClassroomNames = [...predefinedClassroomNames, "Custom"];
 
   return (
     <Panel title="New Classroom" logo={true}>

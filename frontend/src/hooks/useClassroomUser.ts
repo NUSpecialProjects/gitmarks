@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentClassroomUser } from "@/api/classrooms";
+import { getCurrentClassroomUser, getClassroomUsers } from "@/api/classrooms";
 import { ClassroomRole, requireAtLeastClassroomRole } from "@/types/enums";
 import { useNavigate } from "react-router-dom";
 
@@ -25,6 +25,23 @@ export function useClassroomUser(classroomId?: number, requiredRole: ClassroomRo
 
   return { 
     classroomUser: classroomUser || null, 
+    error: error as Error | null,
+    loading: isLoading 
+  };
+}
+
+export function useClassroomUsersList(classroomId?: number) {
+  const { data: classroomUsers, error, isLoading } = useQuery({
+    queryKey: ['classroomUsers', classroomId],
+    queryFn: async () => {
+      if (!classroomId) return [];
+      return await getClassroomUsers(classroomId);
+    },
+    enabled: !!classroomId
+  });
+
+  return { 
+    classroomUsers: classroomUsers || [], 
     error: error as Error | null,
     loading: isLoading 
   };

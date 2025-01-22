@@ -1,0 +1,109 @@
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
+import {
+  getAssignmentIndirectNav,
+  getAssignmentTemplate,
+  postAssignmentToken,
+} from "@/api/assignments";
+import {
+  getAssignmentAcceptanceMetrics,
+  getAssignmentGradedMetrics,
+} from "@/api/metrics";
+import { getStudentWorks } from "@/api/student_works";
+import { ChartData } from 'chart.js';
+
+export const useAssignment = (classroomId: number | undefined, assignmentId: number | undefined) => {
+  const location = useLocation();
+
+  return useQuery({
+    queryKey: ['assignment', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return null;
+      if (location.state?.assignment) {
+        return location.state.assignment;
+      }
+      return await getAssignmentIndirectNav(classroomId, assignmentId);
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+};
+
+export const useStudentWorks = (classroomId: number | undefined, assignmentId: number | undefined) => {
+  return useQuery({
+    queryKey: ['studentWorks', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return [];
+      return await getStudentWorks(classroomId, assignmentId);
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+};
+
+export const useAssignmentInviteLink = (classroomId: number | undefined, assignmentId: number | undefined, baseUrl: string) => {
+  return useQuery({
+    queryKey: ['assignmentToken', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return "";
+      const tokenData = await postAssignmentToken(classroomId, assignmentId);
+      return `${baseUrl}/app/token/assignment/accept?token=${tokenData.token}`;
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+};
+
+export const useAssignmentTemplate = (classroomId: number | undefined, assignmentId: number | undefined) => {
+  return useQuery({
+    queryKey: ['assignmentTemplate', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return null;
+      return await getAssignmentTemplate(classroomId, assignmentId);
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+};
+
+// unknown type is for properties that we aren't using, so unknown is ok
+export const useAssignmentMetrics = (classroomId: number | undefined, assignmentId: number | undefined) => {
+  const { data: acceptanceData } = useQuery({
+    queryKey: ['acceptanceMetrics', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return null;
+      const metrics = await getAssignmentAcceptanceMetrics(classroomId, Number(assignmentId));
+      return {
+        labels: ["Not Accepted", "Accepted", "Started", "Submitted", "In Grading"],
+        datasets: [{
+          backgroundColor: ["#f83b5c", "#50c878", "#fece5a", "#7895cb", "#219386"],
+          data: [metrics.not_accepted, metrics.accepted, metrics.started, metrics.submitted, metrics.in_grading]
+        }]
+      } as ChartData<'bar', number[], unknown>;
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+
+  const { data: gradedData } = useQuery({
+    queryKey: ['gradedMetrics', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return null;
+      const metrics = await getAssignmentGradedMetrics(classroomId, Number(assignmentId));
+      return {
+        labels: ["Graded", "Ungraded"],
+        datasets: [{
+          backgroundColor: ["#219386", "#e5e7eb"],
+          data: [metrics.graded, metrics.ungraded]
+        }]
+      } as ChartData<'doughnut', number[], unknown>;
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+
+  return {
+    acceptanceMetrics: acceptanceData || {
+      labels: [],
+      datasets: [{ backgroundColor: [], data: [] }]
+    } as ChartData<'bar', number[], unknown>,
+    gradedMetrics: gradedData || {
+      labels: [],
+      datasets: [{ backgroundColor: [], data: [] }]
+    } as ChartData<'doughnut', number[], unknown>
+  };
+}; 

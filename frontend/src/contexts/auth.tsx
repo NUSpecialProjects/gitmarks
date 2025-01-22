@@ -1,9 +1,9 @@
 import { useState, createContext, useContext, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { logout as logoutApi } from "@/api/auth";
 import { SelectedClassroomContext } from "./selectedClassroom";
-import { fetchCurrentUser } from "@/api/users";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface IAuthContext {
   currentUser: IGitHubUser | null;
@@ -25,18 +25,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
 
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: fetchCurrentUser,
-    select: (data: IUserResponse) => {
-      return data;
-    },
-    retry: false,
-    staleTime: 0, 
-    gcTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true
-  });
+  const { data: user, isLoading } = useCurrentUser();
 
   useEffect(() => {
     setIsLoggedIn(!!user);

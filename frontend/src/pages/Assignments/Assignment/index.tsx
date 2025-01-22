@@ -7,16 +7,6 @@ import { Bar, Doughnut } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import {
-  getAssignmentIndirectNav,
-  getAssignmentTemplate,
-  postAssignmentToken,
-} from "@/api/assignments";
-import {
-  getAssignmentAcceptanceMetrics,
-  getAssignmentGradedMetrics,
-} from "@/api/metrics";
-import { getStudentWorks } from "@/api/student_works";
 import { formatDate, formatDateTime } from "@/utils/date";
 
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
@@ -25,92 +15,25 @@ import { Table, TableCell, TableRow } from "@/components/Table";
 import Button from "@/components/Button";
 import MetricPanel from "@/components/Metrics/MetricPanel";
 import Metric from "@/components/Metrics";
-import { useQuery } from "@tanstack/react-query";
 import Pill from "@/components/Pill";
 import "./styles.css";
 import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
+import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics } from "@/hooks/useAssignment";
 
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);
 
 const Assignment: React.FC = () => {
-  const location = useLocation();
   const { selectedClassroom } = useContext(SelectedClassroomContext);
-const { id: assignmentID } = useParams();
+  const { id: assignmentID } = useParams();
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
-  const { data: assignment } = useQuery({
-    queryKey: ['assignment', selectedClassroom?.id, assignmentID],
-    queryFn: async () => {
-      if (!selectedClassroom?.id || !assignmentID) return null;
-      if (location.state?.assignment) {
-        return location.state.assignment;
-      }
-      return await getAssignmentIndirectNav(selectedClassroom.id, Number(assignmentID));
-    },
-    enabled: !!selectedClassroom?.id && !!assignmentID
-  });
-
-  const { data: studentWorks = [] } = useQuery({
-    queryKey: ['studentWorks', selectedClassroom?.id, assignment?.id],
-    queryFn: async () => {
-      if (!selectedClassroom?.id || !assignment?.id) return [];
-      return await getStudentWorks(selectedClassroom.id, assignment.id);
-    },
-    enabled: !!selectedClassroom?.id && !!assignment?.id
-  });
-
-  const { data: inviteLink = "", error: linkError } = useQuery({
-    queryKey: ['assignmentToken', selectedClassroom?.id, assignment?.id],
-    queryFn: async () => {
-      if (!selectedClassroom?.id || !assignment?.id) return "";
-      const tokenData = await postAssignmentToken(selectedClassroom.id, assignment.id);
-      return `${base_url}/app/token/assignment/accept?token=${tokenData.token}`;
-    },
-    enabled: !!selectedClassroom?.id && !!assignment?.id
-  });
-
-  const { data: assignmentTemplate } = useQuery({
-    queryKey: ['assignmentTemplate', selectedClassroom?.id, assignment?.id],
-    queryFn: async () => {
-      if (!selectedClassroom?.id || !assignment?.id) return null;
-      return await getAssignmentTemplate(selectedClassroom.id, assignment.id);
-    },
-    enabled: !!selectedClassroom?.id && !!assignment?.id
-  });
-
-  const { data: acceptanceMetrics } = useQuery({
-    queryKey: ['acceptanceMetrics', selectedClassroom?.id, assignmentID],
-    queryFn: async () => {
-      if (!selectedClassroom?.id || !assignmentID) return null;
-      const metrics = await getAssignmentAcceptanceMetrics(selectedClassroom.id, Number(assignmentID));
-      return {
-        labels: ["Not Accepted", "Accepted", "Started", "Submitted", "In Grading"],
-        datasets: [{
-          backgroundColor: ["#f83b5c", "#50c878", "#fece5a", "#7895cb", "#219386"],
-          data: [metrics.not_accepted, metrics.accepted, metrics.started, metrics.submitted, metrics.in_grading]
-        }]
-      };
-    },
-    enabled: !!selectedClassroom?.id && !!assignmentID
-  });
-
-  const { data: gradedMetrics } = useQuery({
-    queryKey: ['gradedMetrics', selectedClassroom?.id, assignmentID],
-    queryFn: async () => {
-      if (!selectedClassroom?.id || !assignmentID) return null;
-      const metrics = await getAssignmentGradedMetrics(selectedClassroom.id, Number(assignmentID));
-      return {
-        labels: ["Graded", "Ungraded"],
-        datasets: [{
-          backgroundColor: ["#219386", "#e5e7eb"],
-          data: [metrics.graded, metrics.ungraded]
-        }]
-      };
-    },
-    enabled: !!selectedClassroom?.id && !!assignmentID
-  });
+  const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
+  const { data: studentWorks = [] } = useStudentWorks(selectedClassroom?.id, assignment?.id);
+  const { data: inviteLink = "", error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url);
+  const { data: assignmentTemplate } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
+  const { acceptanceMetrics, gradedMetrics } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
 
   const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
   const firstCommitDate = studentWorks.reduce((earliest, work) => {
