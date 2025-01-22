@@ -2,9 +2,11 @@ package classrooms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +18,12 @@ import (
 	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	"github.com/gofiber/fiber/v2"
 )
+
+// Helper method to check if a classroom exists
+func (s *ClassroomService) doesClassroomExist(ctx context.Context, name string) (bool, error) {
+	_, err := s.store.GetClassroomByName(ctx, name)
+	return err == nil, nil // If no error, classroom exists
+}
 
 // Returns the classrooms the authenticated user is part of.
 func (s *ClassroomService) getUserClassrooms() fiber.Handler {
@@ -48,6 +56,30 @@ func (s *ClassroomService) getClassroom() fiber.Handler {
 	}
 }
 
+func (s *ClassroomService) checkClassroomExists() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		classroomName := c.Params("classroom_name")
+		if classroomName == "" {
+			return errs.BadRequest(errors.New("classroom name is required"))
+		}
+
+		// Decode the URL-encoded classroom name
+		decodedName, err := url.QueryUnescape(classroomName)
+		if err != nil {
+			return errs.BadRequest(errors.New("invalid classroom name encoding"))
+		}
+
+		exists, err := s.doesClassroomExist(c.Context(), decodedName)
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+		return c.Status(http.StatusOK).JSON(fiber.Map{
+			"exists": exists,
+		})
+	}
+}
+
 // Creates a new classroom.
 func (s *ClassroomService) createClassroom() fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -60,6 +92,14 @@ func (s *ClassroomService) createClassroom() fiber.Handler {
 		err = c.BodyParser(&classroomData)
 		if err != nil {
 			return errs.InvalidRequestBody(models.Classroom{})
+		}
+
+		// check if classroom exists already
+		exists, err := s.doesClassroomExist(c.Context(), classroomData.Name)
+		if err != nil {
+			return errs.InternalServerError()
+		} else if exists {
+			return c.Status(http.StatusConflict).SendString("Classroom already exists")
 		}
 
 		membership, err := client.GetUserOrgMembership(c.Context(), classroomData.OrgName, githubUser.Login)
