@@ -10,46 +10,27 @@ import Button from "@/components/Button";
 import CopyLink from "@/components/CopyLink";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useClassroomUser, useClassroomUsersList } from "@/hooks/useClassroomUser";
+import { useQueryClient } from "@tanstack/react-query";
+import { useClassroomInviteLink } from "@/hooks/useClassroomInviteLink";
 
 interface GenericRolePageProps {
   role_label: string;
   role_type: ClassroomRole;
-  userList: IClassroomUser[];
 }
 
 const GenericRolePage: React.FC<GenericRolePageProps> = ({
   role_label,
   role_type,
-  userList: initialUserList,
 }: GenericRolePageProps) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const { classroomUser: currentClassroomUser } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
-  const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: users = [], error: classroomUsersError } = useQuery({
-    queryKey: ['classroomUsers', selectedClassroom?.id, role_type],
-    queryFn: async () => {
-      if (!selectedClassroom?.id) return [];
-      const users = await getClassroomUsers(selectedClassroom.id);
-      return users.filter((user: IClassroomUser) => user.classroom_role === role_type);
-    },
-    enabled: !!selectedClassroom?.id,
-    initialData: initialUserList
-  });
+  const { classroomUsers: users, error: classroomUsersError } = useClassroomUsersList(selectedClassroom?.id);
 
-  const { data: inviteLink = "", error: classroomTokenError } = useQuery({
-    queryKey: ['classroomToken', selectedClassroom?.id, role_type],
-    queryFn: async () => {
-      if (!selectedClassroom?.id || !showActionsColumn) return "";
-        const data = await postClassroomToken(selectedClassroom.id, role_type);
-        return `${base_url}/app/token/classroom/join?token=${data.token}`;
-    },
-    enabled: !!selectedClassroom?.id,
-  });
+  const { data: inviteLink = "", error: classroomTokenError } = useClassroomInviteLink(selectedClassroom?.id, role_type);
 
   const removeUserFromList = (userId: number) => {
     queryClient.setQueryData(
@@ -192,10 +173,12 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
               <TableCell className="Users__centerAlignedCell">Status</TableCell>
               {showActionsColumn && <TableCell className="Users__centerAlignedCell">Actions</TableCell>}
             </TableRow>
-            {users.map((user, i) => (
-              <TableRow key={i}>
-                <TableCell>{user.first_name} {user.last_name}</TableCell>
-                <TableCell>
+            {users
+              .filter(user => user.classroom_role === role_type)
+              .map((user, i) => (
+                <TableRow key={i}>
+                  <TableCell>{user.first_name} {user.last_name}</TableCell>
+                  <TableCell>
                   <Pill label={removeUnderscores(user.status)}
                     variant={(() => {
                       switch (user.status) {
