@@ -126,28 +126,6 @@ export async function useClassroomToken(
   return resp;
 }
 
-export async function sendOrganizationInvitesToRequestedUsers(
-  classroomId: number,
-  role: string
-): Promise<IClassroomInvitedUsersListResponse> {
-  const response = await fetch(
-    `${base_url}/classrooms/classroom/${classroomId}/invite/role/${role}`,
-    {
-      method: "PUT",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(response.statusText);
-  }
-
-  return await response.json();
-}
-
 export async function sendOrganizationInviteToUser(
   classroomId: number,
   role: string,

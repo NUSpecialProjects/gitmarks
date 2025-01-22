@@ -1,4 +1,4 @@
-import { sendOrganizationInvitesToRequestedUsers, sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom, postClassroomToken, getClassroomUsers } from "@/api/classrooms";
+import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom } from "@/api/classrooms";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
 import React, { useContext, useState } from "react";
@@ -46,41 +46,25 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     );
   };
 
-  const handleInviteAll = async () => {
-    await sendOrganizationInvitesToRequestedUsers(selectedClassroom!.id, role_type)
-      .then((data: IClassroomInvitedUsersListResponse) => {
-        queryClient.setQueryData(
-          ['classroomUsers', selectedClassroom?.id, role_type],
-          [...data.invited_users, ...data.requested_users]
-        );
-        setError(null);
-      })
-      .catch((_) => {
-        setError("Failed to invite all users. Please try again.");
-      });
-  };
-
   const handleInviteUser = async (userId: number) => {
-    await sendOrganizationInviteToUser(selectedClassroom!.id, role_type, userId)
-      .then((data: IClassroomUserResponse) => {
-        removeUserFromList(userId);
-        addUserToList(data.user);
-        setError(null);
-      })
-      .catch((_) => {
-        setError("Failed to invite user. Please try again.");
-      });
+    try {
+      const { user } = await sendOrganizationInviteToUser(selectedClassroom!.id, role_type, userId);
+      removeUserFromList(userId);
+      addUserToList(user);
+      setError(null);
+    } catch (err) {
+      setError("Failed to invite user. Please try again.");
+    }
   };
 
   const handleRevokeInvite = async (userId: number) => {
-    await revokeOrganizationInvite(selectedClassroom!.id, userId)
-      .then((_) => {
-        removeUserFromList(userId);
-        setError(null);
-      })
-      .catch((_) => {
-        setError("Failed to revoke invite. Please try again.");
-      });
+    try {
+      await revokeOrganizationInvite(selectedClassroom!.id, userId);
+      removeUserFromList(userId);
+      setError(null);
+    } catch (err) {
+      setError("Failed to revoke invite. Please try again.");
+    }
   };
 
   const handleRemoveUser = async (userId: number) => {
@@ -88,14 +72,14 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
       setError("You cannot remove yourself from the classroom.");
       return;
     }
-    await removeUserFromClassroom(selectedClassroom!.id, userId)
-      .then(() => {
-        removeUserFromList(userId);
-        setError(null);
-      })
-      .catch((_) => {
-        setError("Failed to remove user. Please try again.");
-      });
+
+    try {
+      await removeUserFromClassroom(selectedClassroom!.id, userId);
+      removeUserFromList(userId);
+      setError(null);
+    } catch (err) {
+      setError("Failed to remove user. Please try again.");
+    }
   };
 
   // Don't show buttons if (the current user is a professor) AND (the current user is not the target user)
@@ -138,12 +122,6 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
               <p>Warning: This will make them an admin of the organization.</p>}
           </div>
           <CopyLink link={inviteLink} name="invite-link"></CopyLink>
-
-          {users.filter(user => (user.status === ClassroomUserStatus.REQUESTED && shouldShowActionButtons(user))).length > 0 && (
-            <div className="Users__inviteAllWrapper">
-              <Button onClick={handleInviteAll}>Invite All Requested Users</Button>
-            </div>
-          )}
         </div>
       )}
 

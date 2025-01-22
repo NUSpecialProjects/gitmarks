@@ -508,60 +508,6 @@ func (s *ClassroomService) updateUserStatus(ctx context.Context, client github.G
 	return classroomUser, nil
 }
 
-// Sends invites to all users in the classroom who are in the requested state
-func (s *ClassroomService) sendOrganizationInvitesToRequestedUsers() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		classroomID, err := strconv.ParseInt(c.Params("classroom_id"), 10, 64)
-		if err != nil {
-			return errs.BadRequest(err)
-		}
-
-		classroom, err := s.store.GetClassroomByID(c.Context(), classroomID)
-		if err != nil {
-			return errs.InternalServerError()
-		}
-
-		classroomRole, err := models.NewClassroomRole(c.Params("classroom_role"))
-		if err != nil {
-			return errs.BadRequest(err)
-		}
-
-		// Only allow professors to invite people to org
-		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
-		if err != nil {
-			return err
-		}
-
-		classroomUsers, err := s.store.GetUsersInClassroom(c.Context(), classroomID)
-		if err != nil {
-			return errs.InternalServerError()
-		}
-
-		stillRequestedUsers := []models.ClassroomUser{}
-		invitedUsers := []models.ClassroomUser{}
-
-		for _, classroomUser := range classroomUsers {
-			if classroomUser.Status != models.UserStatusRequested {
-				continue
-			}
-			//TODO: these are many content generating requests to the GitHub API, maybe need to delay between them
-			// use the current user's client to invite the user to the organization
-			modifiedClassroomUser, err := s.inviteUserToOrganization(c.Context(), s.appClient, classroom, classroomRole, classroomUser.User)
-			if err != nil { // we failed to invite the user, but this is not a critical failure.
-				stillRequestedUsers = append(stillRequestedUsers, classroomUser)
-			} else {
-				invitedUsers = append(invitedUsers, modifiedClassroomUser)
-			}
-		}
-
-		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"message":         "Invites sent successfully",
-			"invited_users":   invitedUsers,
-			"requested_users": stillRequestedUsers,
-		})
-	}
-}
-
 // Sends an invite to a user to join the organization
 func (s *ClassroomService) sendOrganizationInviteToUser() fiber.Handler {
 	return func(c *fiber.Ctx) error {
