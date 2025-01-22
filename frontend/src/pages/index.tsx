@@ -25,6 +25,8 @@ import InviteStudents from "./Classrooms/InviteStudents";
 import Success from "./Classrooms/Sucess";
 import Landing from "./Classrooms/Landing";
 import AccessDenied from "./AccessDenied";
+import AboutUs from "./AboutUs";
+
 export {
   PageNotFound,
   Settings,
@@ -53,4 +55,5 @@ export {
   Success,
   Landing,
   AccessDenied,
+  AboutUs,
 };

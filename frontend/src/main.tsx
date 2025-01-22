@@ -78,6 +78,7 @@ export default function App(): React.JSX.Element {
               </Route>
               {/******* CLASS SELECTED: INNER APP *******/}
               <Route path="" element={<Layout />}>
+                <Route path="about-us" element={<Pages.AboutUs />} />
                 <Route path="assignments" element={<Pages.Assignments />} />
                 <Route
                   path="assignments/create"
