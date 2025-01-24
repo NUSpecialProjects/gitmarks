@@ -66,15 +66,9 @@ export default function App(): React.JSX.Element {
 
               {/******* TOKEN ROUTES *******/}
               <Route path="token">
-                  <Route
-                    path="classroom/join"
-                    element={<Pages.JoinClassroom />}
-                  />
-                  <Route
-                    path="assignment/accept"
-                    element={<Pages.AcceptAssignment />}
-                  />
-                </Route>
+                <Route path="classroom/join" element={<Pages.JoinClassroom />} />
+                <Route path="assignment/accept" element={<Pages.AcceptAssignment />} />
+              </Route>
 
               {/******* APP ROUTES: AUTHENTICATED USER *******/}
               <Route path="app" element={<PrivateRoute />}>
