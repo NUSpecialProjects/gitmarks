@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { postClassroom } from "@/api/classrooms";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
@@ -7,6 +7,7 @@ import Button from "@/components/Button";
 import { useMutation } from "@tanstack/react-query";
 import { useOrganizationDetails } from "@/hooks/useOrganization";
 import { useClassroomNames } from "@/hooks/useClassroomNames";
+import { useClassroomValidation } from "@/hooks/useClassroomNames";
 
 import "./styles.css";
 import Input from "@/components/Input";
@@ -29,8 +30,8 @@ const ClassroomCreation: React.FC = () => {
     }
   );
 
+  const { data: classroomExists = false } = useClassroomValidation(name);
   const allClassroomNames = [...predefinedClassroomNames, "Custom"];
-
   const { data: organization, isLoading: isOrgLoading, error: orgError } = useOrganizationDetails(orgID);
 
   const createClassroomMutation = useMutation({
@@ -120,8 +121,8 @@ const ClassroomCreation: React.FC = () => {
             <div className="ClassroomCreation__buttonWrapper">
               <Button 
                 type="submit" 
-                disabled={createClassroomMutation.isPending}
-                variant={createClassroomMutation.isPending ? "disabled" : "primary"}
+                disabled={createClassroomMutation.isPending || classroomExists}
+                variant={createClassroomMutation.isPending || classroomExists ? "disabled" : "primary"}
               >
                 {createClassroomMutation.isPending ? "Creating..." : "Create Classroom"}
               </Button>

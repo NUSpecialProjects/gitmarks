@@ -1,0 +1,203 @@
+.AboutUs {
+  padding: 60px 0;
+  min-height: calc(100vh);
+}
+
+.AboutUs__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.AboutUs__title {
+  text-align: center;
+  font-family: var(--primary-font);
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--primary-text);
+}
+
+.AboutUs__title + .AboutUs__subtitle {
+  margin-top: -30px;
+}
+
+.AboutUs__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 40px;
+  justify-items: center;
+  margin-bottom: 60px;
+}
+
+.AboutCard {
+  width: 300px;
+  background: var(--brand-gradient-light);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  height: auto;
+  position: relative;
+}
+
+.AboutCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.AboutCard__image {
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  position: relative;
+}
+
+.AboutCard__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.AboutCard:hover .AboutCard__image img {
+  transform: scale(1.02);
+}
+
+.AboutCard__info {
+  padding: 20px;
+  text-align: center;
+}
+
+.AboutCard__name {
+  font-family: var(--primary-font);
+  font-weight: 500;
+  font-size: 18px;
+  margin: 0 0 4px 0;
+  color: var(--primary-text);
+}
+
+.AboutCard__title {
+  font-family: var(--primary-font);
+  font-size: 14px;
+  color: var(--secondary-text);
+  margin: 0;
+}
+
+.AboutCard__bio {
+  font-family: var(--primary-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--secondary-text);
+  margin: 12px 0 0 0;
+  text-align: left;
+}
+
+.AboutUs__team-photo {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 60px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.AboutUs__team-photo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.AboutUs__description {
+  max-width: 800px;
+  margin: 0 auto 60px;
+  text-align: center;
+}
+
+.AboutUs__description p {
+  font-family: var(--primary-font);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--secondary-text);
+  margin-bottom: 24px;
+}
+
+.AboutUs__features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+  padding-bottom: 30px;
+}
+
+.AboutUs__feature {
+  padding: 24px;
+  background: var(--brand-gradient-light);
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.AboutUs__feature:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--brand-lightest);
+}
+
+.AboutUs__feature h3 {
+  font-family: var(--primary-font);
+  font-size: 20px;
+  color: var(--primary-text);
+  margin-bottom: 12px;
+  transition: color 0.3s ease;
+}
+
+.AboutUs__feature:hover h3 {
+  color: var(--accent-color, #007bff);
+}
+
+.AboutUs__feature p {
+  font-family: var(--primary-font);
+  font-size: 14px;
+  color: var(--secondary-text);
+  margin: 0;
+}
+
+.AboutUs__subtitle {
+  text-align: center;
+  font-family: var(--primary-font);
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 30px;
+  color: var(--caption-text);
+}
+
+.AboutUs__github-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto 60px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.AboutUs__github-button:hover {
+  opacity: 0.8;
+}
+
+.AboutUs__github-button svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--primary-text);
+}
+
+.AboutUs__github-button span {
+  font-family: var(--primary-font);
+  font-size: 16px;
+  color: var(--primary-text);
+  text-decoration: underline;
+}
