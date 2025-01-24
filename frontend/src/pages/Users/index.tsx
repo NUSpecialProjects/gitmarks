@@ -1,4 +1,4 @@
-import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom, postClassroomToken, getClassroomUsers } from "@/api/classrooms";
+import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom } from "@/api/classrooms";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
 import React, { useContext, useState } from "react";
@@ -51,7 +51,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
       removeUserFromList(userId);
       addUserToList(user);
       setError(null);
-    } catch (err) {
+    } catch (_) {
       setError("Failed to invite user. Please try again.");
     }
   };
@@ -61,7 +61,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
       await revokeOrganizationInvite(selectedClassroom!.id, userId);
       removeUserFromList(userId);
       setError(null);
-    } catch (err) {
+    } catch (_) {
       setError("Failed to revoke invite. Please try again.");
     }
   };
@@ -76,7 +76,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
       await removeUserFromClassroom(selectedClassroom!.id, userId);
       removeUserFromList(userId);
       setError(null);
-    } catch (err) {
+    } catch (_) {
       setError("Failed to remove user. Please try again.");
     }
   };
