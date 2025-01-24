@@ -1,4 +1,4 @@
-import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom } from "@/api/classrooms";
+import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom, postClassroomToken, getClassroomUsers } from "@/api/classrooms";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
 import React, { useContext, useState } from "react";
@@ -29,8 +29,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   const queryClient = useQueryClient();
 
   const { classroomUsers: users, error: classroomUsersError } = useClassroomUsersList(selectedClassroom?.id);
-
-  const { data: inviteLink = "", error: classroomTokenError } = useClassroomInviteLink(selectedClassroom?.id, role_type);
+  const { data: inviteLink = "", error: classroomTokenError } = useClassroomInviteLink(selectedClassroom?.id, role_type, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
 
   const removeUserFromList = (userId: number) => {
     queryClient.setQueryData(
@@ -109,6 +108,8 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     }
   };
 
+  const filteredUsers = users.filter(user => user.classroom_role === role_type);
+
   return (
     <div>
       <SubPageHeader pageTitle={role_label + `s`} chevronLink="/app/dashboard/"></SubPageHeader>
@@ -144,39 +145,37 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
       )}
 
       <div className="Users__tableWrapper">
-        {users.length > 0 ? (
+        {filteredUsers.length > 0 ? (
           <Table cols={showActionsColumn ? 3 : 2}>
             <TableRow style={{ borderTop: "none" }}>
               <TableCell>{role_label} Name</TableCell>
               <TableCell className="Users__centerAlignedCell">Status</TableCell>
               {showActionsColumn && <TableCell className="Users__centerAlignedCell">Actions</TableCell>}
             </TableRow>
-            {users
-              .filter(user => user.classroom_role === role_type)
-              .map((user, i) => (
+            {filteredUsers.map((user, i) => (
                 <TableRow key={i}>
                   <TableCell>{user.first_name} {user.last_name}</TableCell>
                   <TableCell>
-                  <Pill label={removeUnderscores(user.status)}
-                    variant={(() => {
-                      switch (user.status) {
-                        case ClassroomUserStatus.ACTIVE:
-                          return 'green';
-                        case ClassroomUserStatus.ORG_INVITED:
-                          return 'amber';
-                        case ClassroomUserStatus.REQUESTED:
-                          return 'default';
-                        case ClassroomUserStatus.NOT_IN_ORG:
-                          return 'red';
-                        default:
-                          return 'default'; // Fallback for unexpected roles
-                      }
-                    })()}>
-                  </Pill>
-                </TableCell>
-                {showActionsColumn && <TableCell>{getActionButton(user)}</TableCell>}
-              </TableRow>
-            ))}
+                    <Pill label={removeUnderscores(user.status)}
+                      variant={(() => {
+                        switch (user.status) {
+                          case ClassroomUserStatus.ACTIVE:
+                            return 'green';
+                          case ClassroomUserStatus.ORG_INVITED:
+                            return 'amber';
+                          case ClassroomUserStatus.REQUESTED:
+                            return 'default';
+                          case ClassroomUserStatus.NOT_IN_ORG:
+                            return 'red';
+                          default:
+                            return 'default';
+                        }
+                      })()}>
+                    </Pill>
+                  </TableCell>
+                  {showActionsColumn && <TableCell>{getActionButton(user)}</TableCell>}
+                </TableRow>
+              ))}
           </Table>
         ) : (
           <EmptyDataBanner>

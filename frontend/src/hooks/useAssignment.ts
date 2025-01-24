@@ -33,9 +33,15 @@ export const useStudentWorks = (classroomId: number | undefined, assignmentId: n
     queryKey: ['studentWorks', classroomId, assignmentId],
     queryFn: async () => {
       if (!classroomId || !assignmentId) return [];
-      return await getStudentWorks(classroomId, assignmentId);
+      try {
+        const works = await getStudentWorks(classroomId, assignmentId);
+        return works ?? [];
+      } catch (_) {
+        return [];
+      }
     },
-    enabled: !!classroomId && !!assignmentId
+    enabled: !!classroomId && !!assignmentId,
+    initialData: [] as IStudentWork[],
   });
 };
 
@@ -45,7 +51,7 @@ export const useAssignmentInviteLink = (classroomId: number | undefined, assignm
     queryFn: async () => {
       if (!classroomId || !assignmentId) return "";
       const tokenData = await postAssignmentToken(classroomId, assignmentId);
-      return `${baseUrl}/app/token/assignment/accept?token=${tokenData.token}`;
+      return `${baseUrl}/token/assignment/accept?token=${tokenData.token}`;
     },
     enabled: !!classroomId && !!assignmentId
   });

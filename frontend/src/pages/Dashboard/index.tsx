@@ -4,7 +4,7 @@ import { Table, TableRow, TableCell } from "@/components/Table";
 import { MdAdd } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { getAssignments } from "@/api/assignments";
 import { formatDateTime, formatDate } from "@/utils/date";
 import { useClassroomUser } from "@/hooks/useClassroomUser";
@@ -22,8 +22,6 @@ const Dashboard: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const {
     classroomUser,
-    error: classroomUserError,
-    loading: loadingCurrentClassroomUser,
   } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
 
   const {
@@ -90,24 +88,6 @@ const Dashboard: React.FC = () => {
     return `${reducedTaCount} : ${reducedStudentCount}`;
   };
 
-  useEffect(() => {
-    if (
-      !loadingCurrentClassroomUser &&
-      (classroomUserError || !classroomUser)
-    ) {
-      console.log(
-        "Attempted to view a classroom without access. Redirecting to classroom select."
-      );
-      navigate(`/app/organization/select`);
-    }
-  }, [
-    loadingCurrentClassroomUser,
-    classroomUserError,
-    classroomUser,
-    selectedClassroom?.org_id,
-    navigate,
-  ]);
-
   const handleUserGroupClick = (group: string, users: IClassroomUser[]) => {
     if (group === "Professor") {
       navigate("/app/professors", { state: { users } });
@@ -130,18 +110,6 @@ const Dashboard: React.FC = () => {
         <p>Please contact your professor if you believe this is an error.</p>
         <Button variant="primary" onClick={() => navigate("/app/classroom/select", { state: { orgID: selectedClassroom?.org_id } })}>
           Return to Classroom Selection
-        </Button>
-      </div>
-    );
-  }
-
-  if (!selectedClassroom) {
-    return (
-      <div className="Dashboard__error">
-        <h2>No Classroom Selected</h2>
-        <p>Please select a classroom to continue.</p>
-        <Button variant="primary" onClick={() => navigate("/app/classroom/select")}>
-          Select Classroom
         </Button>
       </div>
     );
@@ -177,8 +145,8 @@ const Dashboard: React.FC = () => {
   return (
     <div className="Dashboard">
       <BreadcrumbPageHeader
-        pageTitle={selectedClassroom.org_name}
-        breadcrumbItems={[selectedClassroom.name]}
+        pageTitle={selectedClassroom!.org_name}
+        breadcrumbItems={[selectedClassroom!.name]}
       />
 
       <div className="Dashboard__sectionWrapper">
@@ -231,7 +199,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           <Metric title="Created on">
-            {formatDate(selectedClassroom.created_at ?? null)}
+            {formatDate(selectedClassroom!.created_at)}
           </Metric>
           <Metric title="Assignments">
             {assignments.length.toString()}

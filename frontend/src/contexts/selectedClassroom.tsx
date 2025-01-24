@@ -6,12 +6,14 @@ const COOKIE_NAME = "selectedClassroom";
 interface ISelectedClassroomContext {
   selectedClassroom: IClassroom | null;
   setSelectedClassroom: (classroom: IClassroom | null) => void;
+  loading: boolean;
 }
 
 export const SelectedClassroomContext: React.Context<ISelectedClassroomContext> =
   createContext<ISelectedClassroomContext>({
     selectedClassroom: null,
     setSelectedClassroom: (_: IClassroom | null) => {},
+    loading: true,
   });
 
 const SelectedClassroomProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -48,13 +50,15 @@ const SelectedClassroomProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    !loading && (
-      <SelectedClassroomContext.Provider
-        value={{ selectedClassroom: selectedClassroom, setSelectedClassroom }}
-      >
-        {children}
-      </SelectedClassroomContext.Provider>
-    )
+    <SelectedClassroomContext.Provider
+      value={{ 
+        selectedClassroom: selectedClassroom, 
+        setSelectedClassroom,
+        loading
+      }}
+    >
+      {children}
+    </SelectedClassroomContext.Provider>
   );
 };
 

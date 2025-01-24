@@ -33,7 +33,7 @@ const LinkGenerator: React.FC<CreateTokenProps> = ({
     }
     await postClassroomToken(classroom.id, role_type, duration)
       .then((data: ITokenResponse) => {
-        const url = `${base_url}/app/token/classroom/join?token=${data.token}`;
+        const url = `${base_url}/token/classroom/join?token=${data.token}`;
         setMessage("Link created! " + url);
         navigator.clipboard.writeText(url);
       })

@@ -2,12 +2,12 @@ import { useContext } from "react";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import Button from "@/components/Button";
 import "./styles.css";
-import { AuthContext } from "@/contexts/auth";
+import { useAuth } from "@/contexts/auth";
 import { useNavigate } from "react-router-dom";
 
 const AccessDenied: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { logout } = useContext(AuthContext);
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {

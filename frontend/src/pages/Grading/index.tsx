@@ -149,7 +149,7 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
 
 const Grading: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
-  useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/app/organization/select");
+  const { classroomUser } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/app/organization/select");
 
   const { data: assignments, isLoading, error } = useQuery({
     queryKey: ['assignments', selectedClassroom?.id],
@@ -194,13 +194,15 @@ const Grading: React.FC = () => {
           <div className="emptyDataBannerMessage">
             No assignments found.
           </div>
-          <Button
+          {classroomUser?.classroom_role === ClassroomRole.PROFESSOR && (
+            <Button
               variant="primary"
               size="small"
               href={`/app/assignments/create?org_name=${selectedClassroom?.org_name}`}
               >
               <MdAdd className="icon" /> Create Assignment
             </Button>
+          )}
         </EmptyDataBanner>
       )}
     </div>

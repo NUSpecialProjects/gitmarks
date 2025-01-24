@@ -5,7 +5,7 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 
 import "./styles.css";
 import Button from "@/components/Button";
-import { AuthContext } from "@/contexts/auth";
+import { useAuth } from "@/contexts/auth";
 
 interface ICodeFeedback {
   fb: IGraderFeedback;
@@ -13,12 +13,12 @@ interface ICodeFeedback {
 }
 
 const CodeFeedback: React.FC<ICodeFeedback> = ({ fb, pending = false }) => {
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser } = useAuth();
 
   return (
     <div className="CodeLine__comment">
       <div className="CodeLine__commentHead">
-        <img src={currentUser?.avatar_url} alt="new" />
+        <img src={currentUser?.github_user?.avatar_url} alt="new" />
         {fb.ta_username}
         {pending && <div className="CodeLine__commentPending">Pending</div>}
       </div>
@@ -47,7 +47,7 @@ interface ICodeLine {
 
 const CodeLine: React.FC<ICodeLine> = ({ path, line, isDiff, code }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser } = useAuth();
   const {
     assignmentID,
     studentWorkID,
@@ -103,7 +103,7 @@ const CodeLine: React.FC<ICodeLine> = ({ path, line, isDiff, code }) => {
       line,
       body: String(data.get("comment")).trim(),
       points: Number(data.get("points")),
-      ta_username: currentUser.login,
+      ta_username: currentUser.github_user.login,
     };
     if (fb.points == 0 && fb.body == "") return;
     if (fb.body == "") fb.body = "No comment left for this point adjustment.";
@@ -131,7 +131,7 @@ const CodeLine: React.FC<ICodeLine> = ({ path, line, isDiff, code }) => {
             line,
             body: ri.explanation,
             points: ri.point_value ?? 0,
-            ta_username: currentUser.login,
+            ta_username: currentUser.github_user.login,
           });
         }
         return selected;

@@ -431,9 +431,9 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"message":   "Token applied successfully",
-			"user":      classroomUser,
-			"classroom": classroom,
+			"message":        "Successfully joined classroom",
+			"classroom_user": classroomUser,
+			"classroom":      classroom,
 		})
 	}
 }

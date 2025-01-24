@@ -1,69 +1,101 @@
-import { useState, createContext, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useCallback, createContext, ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { logout as logoutApi } from "@/api/auth";
 import { SelectedClassroomContext } from "./selectedClassroom";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { NavigateFunction } from "react-router-dom";
 
-interface IAuthContext {
-  currentUser: IGitHubUser | null;
-  isLoggedIn: boolean;
-  login: () => void;
-  logout: () => void;
+export enum AuthState {
+  LOGGING_IN = "LOGGING_IN",
+  LOGGED_IN = "LOGGED_IN",
+  LOGGED_OUT = "LOGGED_OUT",
 }
 
-export const AuthContext = createContext<IAuthContext>({
-  currentUser: null,
-  isLoggedIn: false,
-  login: () => {},
-  logout: () => {},
-});
+interface AuthContextType {
+  currentUser: IUserResponse | null;
+  authState: AuthState;
+  loading: boolean;
+  logout: () => void;
+  refetch: () => void;
+}
 
-const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [authState, setAuthState] = useState<AuthState>(AuthState.LOGGING_IN);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
+  const { data: user, status, refetch } = useCurrentUser();
 
-  const { data: user, isLoading } = useCurrentUser();
-
+  
   useEffect(() => {
-    setIsLoggedIn(!!user);
-  }, [user]);
+    switch (status) {
+      case 'pending':
+        setAuthState(AuthState.LOGGING_IN);
+        break;
+      case 'error':
+        setAuthState(AuthState.LOGGED_OUT);
+        break;
+      case 'success':
+        if (user) {
+          setAuthState(AuthState.LOGGED_IN);
+        } else {
+          setAuthState(AuthState.LOGGED_OUT);
+        }
+        break;
+    }
+  }, [user, status, authState]);
 
   const logoutMutation = useMutation({
     mutationFn: logoutApi,
     onSuccess: () => {
       setSelectedClassroom(null);
-      setIsLoggedIn(false);
+      setAuthState(AuthState.LOGGED_OUT);
     },
-    retry: false // Don't retry logout operations
+    retry: false
   });
 
-  const login = () => {
-    setIsLoggedIn(true);
-  };
-
-  const logout = () => {
+  const logout = useCallback(() => {
     logoutMutation.mutate();
-  };
+  }, [logoutMutation]);
 
-  if (isLoading) {
-    return null;
-  }
+  const value = {
+    currentUser: user || null,
+    authState,
+    loading: status === 'pending',
+    logout,
+    refetch,
+  };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        currentUser: user?.github_user || null, 
-        isLoggedIn, 
-        login, 
-        logout 
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export default AuthProvider;
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === null) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export const goToRedirectUrl = (navigate: NavigateFunction) => {
+  const redirectUrl = getRedirectUrl();
+  if (redirectUrl) {
+    clearRedirectUrl();
+    navigate(redirectUrl, { replace: true });
+  }
+}
+
+export const setRedirectUrl = () => {
+  const currentUrl = location.pathname + location.search + location.hash;
+  if (!currentUrl.startsWith('/oauth')) {
+    localStorage.setItem("redirectAfterLogin", currentUrl);
+  }
+}
+
+export const getRedirectUrl = () => localStorage.getItem("redirectAfterLogin");
+const clearRedirectUrl = () => localStorage.removeItem("redirectAfterLogin");

@@ -1,50 +1,58 @@
-import { AuthContext } from "@/contexts/auth";
 import { useContext, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./styles.css";
 import { sendCode } from "@/api/auth";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
+import { AuthState, getRedirectUrl, goToRedirectUrl, useAuth } from "@/contexts/auth";
+// import { goToRedirectUrlOrDefault } from "@/contexts/auth";
 
 const Callback: React.FC = () => {
+  const { selectedClassroom } = useContext(SelectedClassroomContext);
+  const { authState, refetch } = useAuth();
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
   const hasRun = useRef(false);
+  const authStateRef = useRef(authState);
 
-  const handleSuccessfulLogin = () => {
-    const redirectUrl = localStorage.getItem("redirectAfterLogin");
-    login(); // set the user's login status to true
-    if (redirectUrl) {
-      localStorage.removeItem("redirectAfterLogin");
-      navigate(redirectUrl, { replace: true }); // redirect to the page that was requested before login
-    } else {
-      navigate("/app/organization/select", { replace: true }); // default redirect after login
+  useEffect(() => { // Keep the ref up to date with the latest authState for timeout function
+    authStateRef.current = authState;
+  }, [authState]);
+
+  useEffect(() => {
+    if (authState === AuthState.LOGGED_IN) {
+      if (getRedirectUrl()) {
+        goToRedirectUrl(navigate);
+      } else if (selectedClassroom) {
+        navigate(`/app/dashboard`);
+      } else {
+        navigate("/app/organization/select");
+      }
     }
-  };
+  }, [authState]);
 
   useEffect(() => {
     if (hasRun.current) return; // prevent multiple executions
     hasRun.current = true;
 
-    //if code, good, else, route to home
-    if (code) {
-      sendCode(code)
-        .then(() => {
-          //Successful login. Handle redirect
-          handleSuccessfulLogin();
-        })
-        .catch((err: Error) => {
-          // Navigate back to login page with an error message attached
-          navigate(
-            `/?error=${encodeURIComponent(err.message)}`,
-            { replace: true }
-          );
-        });
-    } else {
-      navigate("/", { replace: true });
+    // if code, good, else, route to home
+    if (!code) {
+      navigate(`/?error=${encodeURIComponent("No login code provided")}`, { replace: true });
+      return;
     }
-  }, []);
+
+    sendCode(code)
+      .then(() => {
+        refetch();
+      })
+      .catch((err: Error) => {
+        navigate(
+          `/?error=${encodeURIComponent(err.message)}`,
+          { replace: true }
+        );
+      });
+  }, [code]);
 
   return (
     <div className="callback-container">

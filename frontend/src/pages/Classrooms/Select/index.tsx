@@ -23,7 +23,6 @@ const ClassroomSelection: React.FC = () => {
 
   useEffect(() => {
     if (!orgID) {
-      console.log("No organization ID provided. Redirecting to organization selection.");
       navigate("/app/organization/select");
     }
   }, [orgID, navigate]);

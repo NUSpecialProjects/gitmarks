@@ -10,7 +10,7 @@ export const fetchCurrentUser = async (): Promise<IUserResponse> => {
   });
 
   if (!response.ok) {
-    if (response.status === 403) {
+    if (response.status === 403 || response.status === 401) {
       throw new Error("Unauthorized");
     } else {
       throw new Error("Network response was not ok");

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { postClassroomToken } from "@/api/classrooms";
 import { ClassroomRole } from "@/types/enums";
 
-export const useClassroomInviteLink = (classroomId: number | undefined, role: ClassroomRole) => {
+export const useClassroomInviteLink = (classroomId: number | undefined, role: ClassroomRole, enabled: boolean = true) => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
   return useQuery({
@@ -10,8 +10,8 @@ export const useClassroomInviteLink = (classroomId: number | undefined, role: Cl
     queryFn: async () => {
       if (!classroomId) return null;
       const data = await postClassroomToken(classroomId, role);
-      return `${base_url}/app/token/classroom/join?token=${data.token}`;
+      return `${base_url}/token/classroom/join?token=${data.token}`;
     },
-    enabled: !!classroomId
+    enabled: !!classroomId && enabled
   });
 };

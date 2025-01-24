@@ -14,7 +14,6 @@ export async function getCurrentClassroomUser(
     }
   );
   if (!response.ok) {
-    console.log("Error getting current classroom user:", response.statusText);
     throw new Error(response.statusText);
   }
   const resp: { user: IClassroomUser } = await response.json();

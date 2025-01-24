@@ -1,21 +1,17 @@
 import "./styles.css";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import ErrorMessage from "@/components/Error";
 import { getCallbackURL } from "@/api/auth";
 import { FaGithub } from "react-icons/fa6";
 import Button from "@/components/Button";
-import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "@/contexts/auth";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { useEffect, useState } from "react";
 
 const Login: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const errorFromQuery = queryParams.get("error");
   const [error, setError] = useState<string | null>(null);
-  const { isLoggedIn } = useContext(AuthContext);
 
   // Use React Query to handle the API call
   const { data: callbackData, error: callbackError, isLoading, refetch } = useQuery({
@@ -35,25 +31,12 @@ const Login: React.FC = () => {
     if (errorFromQuery) {
       setError(errorFromQuery);
       queryParams.delete("error");
-      navigate({ search: queryParams.toString() }, { replace: true });
     } else {
       setError(null);
     }
   }, [errorFromQuery, queryParams]);
-
-  // Handle redirect when logged in
-  useEffect(() => {
-    if (isLoggedIn) {
-      setError(null);
-      navigate("/app/dashboard", { replace: true });
-    }
-  }, [isLoggedIn, navigate]);
   
-  return isLoggedIn ? (
-    <div>
-      <LoadingSpinner />
-    </div>
-    ) : (
+  return (
     <div className="LandingPage">
       <div className="LogoBar">
         <svg

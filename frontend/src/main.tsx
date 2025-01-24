@@ -1,12 +1,11 @@
-import React, { useContext, useEffect } from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
   Outlet,
-  useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { QueryClient } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -14,25 +13,23 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 
 import * as Pages from "./pages";
 import Layout from "./components/Layout";
-import AuthProvider, { AuthContext } from "./contexts/auth";
+import { AuthState, useAuth } from "./contexts/auth";
 import SelectedSemesterProvider from "./contexts/selectedClassroom";
 import "./global.css";
+import { AuthProvider } from "./contexts/auth";
 
-// If not logged in, route to login
+/**
+ * PrivateRoute is a wrapper that redirects to the login page if the user is not logged in
+ * Should not be used for routes that need more nuanced handling of auth states
+ */
 const PrivateRoute = () => {
-  const { isLoggedIn } = useContext(AuthContext);
-  const location = useLocation();
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      const currentUrl = location.pathname + location.search + location.hash;
-      localStorage.setItem("redirectAfterLogin", currentUrl); // store the current url to redirect to after login
+  const { authState } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => { // If not logged in, route to login
+    if (authState === AuthState.LOGGED_OUT) {
+      navigate("/");
     }
-  }, [isLoggedIn, location]);
-
-  if (!isLoggedIn) {
-    return <Navigate to="/" replace />;
-  }
+  }, [authState]);
 
   return <Outlet />;
 };
@@ -43,6 +40,7 @@ const queryClient = new QueryClient({
       staleTime: 5 * 1000, // 5 seconds
       gcTime: 5 * 60 * 1000, // 5 minutes
       refetchOnMount: 'always',
+      retry: 1,
     },
   },
 });
@@ -57,16 +55,28 @@ export default function App(): React.JSX.Element {
       client={queryClient}
       persistOptions={{ persister }}
     >
-      <AuthProvider>
-        <SelectedSemesterProvider>
-          <Router>
+      <Router>
+        <AuthProvider>
+          <SelectedSemesterProvider>
             <Routes>
               {/******* LANDING PAGE & OAUTH CALLBACK *******/}
               <Route path="" element={<Pages.Login />} />
               <Route path="oauth/callback" element={<Pages.Callback />} />
 
+              {/******* TOKEN ROUTES *******/}
+              <Route path="token">
+                  <Route
+                    path="classroom/join"
+                    element={<Pages.JoinClassroom />}
+                  />
+                  <Route
+                    path="assignment/accept"
+                    element={<Pages.AcceptAssignment />}
+                  />
+                </Route>
+
               {/******* APP ROUTES: AUTHENTICATED USER *******/}
-              <Route path="/app" element={<PrivateRoute />}>
+              <Route path="app" element={<PrivateRoute />}>
                 {/******* CLASS SELECTION: PRE-APP ACCESS STEP *******/}
 
                 <Route path="classroom">
@@ -80,23 +90,13 @@ export default function App(): React.JSX.Element {
                   <Route path="success" element={<Pages.Success />} />
                   <Route path="landing" element={<Pages.Landing />} />
                 </Route>
-                <Route path="organization" element={<PrivateRoute />}>
+                <Route path="organization">
                   <Route
                     path="select"
                     element={<Pages.OrganizationSelectPage />}
                   />
                 </Route>
 
-                <Route path="token" element={<PrivateRoute />}>
-                  <Route
-                    path="classroom/join"
-                    element={<Pages.JoinClassroom />}
-                  />
-                  <Route
-                    path="assignment/accept"
-                    element={<Pages.AcceptAssignment />}
-                  />
-                </Route>
                 {/******* CLASS SELECTED: INNER APP *******/}
                 <Route path="" element={<Layout />}>
                   <Route path="assignments" element={<Pages.Assignments />} />
@@ -134,9 +134,9 @@ export default function App(): React.JSX.Element {
               {/******* 404 CATCH ALL *******/}
               <Route path="404" element={<Pages.PageNotFound />} />
             </Routes>
-          </Router>
-        </SelectedSemesterProvider>
-      </AuthProvider>
+          </SelectedSemesterProvider>
+        </AuthProvider>
+      </Router>
     </PersistQueryClientProvider>
   );
 }

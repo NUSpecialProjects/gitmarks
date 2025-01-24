@@ -2,13 +2,12 @@ import React, { useState } from "react";
 import TokenApplyPage from "../Generic";
 import { useAssignmentToken } from "@/api/assignments";
 import Button from "@/components/Button";
-import EmptyDataBanner from "@/components/EmptyDataBanner";
 
 const AcceptAssignmentPage: React.FC = () => {
   const [repoURL, setRepoURL] = useState<string | null>(null);
 
   return (
-    <EmptyDataBanner>
+    <>
     <TokenApplyPage<IAssignmentAcceptResponse>
       useTokenFunction={async (token: string) => {
         return await useAssignmentToken(token);
@@ -24,7 +23,7 @@ const AcceptAssignmentPage: React.FC = () => {
         View your assignment repository
       </Button>
       )}
-    </EmptyDataBanner>
+    </>
   );
 };
 
