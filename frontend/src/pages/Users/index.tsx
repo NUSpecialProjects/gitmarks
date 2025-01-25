@@ -69,7 +69,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     }
   };
 
-  const filteredUsers = users.filter(user => user.classroom_role === role_type);
+  const filteredUsers = users.filter(user => user.classroom_role === role_type && user.status != ClassroomUserStatus.REMOVED);
 
   return (
     <div>

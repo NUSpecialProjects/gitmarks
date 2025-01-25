@@ -23,6 +23,7 @@ export enum ClassroomUserStatus {
   ACTIVE = "ACTIVE",
   ORG_INVITED = "ORG_INVITED",
   NOT_IN_ORG = "NOT_IN_ORG",
+  REMOVED = "REMOVED",
 }
 
 export enum OrgRole {

@@ -26,7 +26,6 @@ const AccessDenied: React.FC = () => {
           <>
             <p>You have a pending invitation.</p>
             <p>Please accept the invitation to access this page:</p>
-            
               <Button
                 variant="primary"
                 href="https://github.com/orgs/NUSpecialProjects/invitation"
@@ -35,11 +34,20 @@ const AccessDenied: React.FC = () => {
               >
                 View Invitation on GitHub
               </Button>
-            
           </>
         ) : (
           <>
-            <p>You do not have permission to view this page.</p>
+            <p>You do not have permission to view this page:</p>
+            {classroomUser?.status === ClassroomUserStatus.REMOVED ? (
+              <p>You have been removed from this classroom.</p>
+            ) : classroomUser?.status === ClassroomUserStatus.NOT_IN_ORG ? (
+              <p>You are not in the GitHub organization.</p>
+            ) : classroomUser?.status === ClassroomUserStatus.REQUESTED ? (
+              <p>You have requested to join this classroom.</p>
+            ) : (
+              <p>You are not in this classroom.</p>
+            )}
+            {/* TODO: not invited to classroom, removed from classroom, not in organization */}
             <p>Please contact your professor if you believe this is an error.</p>
             <Button
               variant="primary"

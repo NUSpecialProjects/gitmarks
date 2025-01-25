@@ -25,7 +25,7 @@ export function useClassroomUser(requiredRole?: ClassroomRole, redirectPath?: st
 
   const { data: classroomUser, error, status } = useQuery({
     queryKey: ['classroomUser', classroomId],
-    queryFn: async () => { //TODO: redirect is not working :(
+    queryFn: async () => {
       if (!classroomId) return null;
       try {
         const user = await getCurrentClassroomUser(classroomId);

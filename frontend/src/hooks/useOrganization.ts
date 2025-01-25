@@ -2,7 +2,7 @@ import { getAppInstallations, getOrganizationDetails } from "@/api/organizations
 import { useQuery } from "@tanstack/react-query";
 import { getClassroomsInOrg } from "@/api/classrooms";
 
-export const useOrganizationDetails = (orgID: string) => { //TODO: login??
+export const useOrganizationDetails = (orgID: string) => {
   return useQuery({
     queryKey: ['organization', orgID],
     queryFn: () => getOrganizationDetails(orgID),

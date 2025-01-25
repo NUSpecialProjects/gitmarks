@@ -474,7 +474,6 @@ func (s *ClassroomService) inviteUserToClassroom(ctx context.Context, classroomI
 	}
 
 	// Invite the user to the organization
-	// classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom.OrgName, classroomToken.ClassroomID, classroomToken.ClassroomRole, user)
 	classroomUser, err = s.inviteUserToOrganization(ctx, s.appClient, classroom, classroomRole, *invitee)
 	if err != nil {
 		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
@@ -516,12 +515,7 @@ func (s *ClassroomService) getCurrentClassroomUser() fiber.Handler {
 			}
 		}
 
-		switch classroomUser.Status {
-		case models.UserStatusRemoved:
-			return errs.StudentRemovedFromClassroomError()
-		default:
-			return c.Status(http.StatusOK).JSON(fiber.Map{"user": classroomUser})
-		}
+		return c.Status(http.StatusOK).JSON(fiber.Map{"user": classroomUser})
 	}
 }
 
