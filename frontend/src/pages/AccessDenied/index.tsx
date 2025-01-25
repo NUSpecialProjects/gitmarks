@@ -3,10 +3,10 @@ import "./styles.css";
 import { useAuth } from "@/contexts/auth";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
-import { ClassroomUserStatus } from "@/types/enums";
+import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
 
 const AccessDenied: React.FC = () => {
-  const { selectedClassroom } = useCurrentClassroom();
+  const { selectedClassroom, loading: classroomLoading } = useCurrentClassroom();
   const { classroomUser } = useClassroomUser();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const AccessDenied: React.FC = () => {
     <div className="AccessDenied">
       <div className="AccessDenied__content">
         <h2>Access Denied</h2>
-        {classroomUser?.status === ClassroomUserStatus.ACTIVE ? (
+        {classroomUser?.status === ClassroomUserStatus.ACTIVE && classroomUser?.classroom_role !== ClassroomRole.STUDENT ? (
           <Navigate to={`/app/dashboard`} />  
         ) : classroomUser?.status === ClassroomUserStatus.ORG_INVITED ? (
           <>
@@ -28,16 +28,17 @@ const AccessDenied: React.FC = () => {
             <p>Please accept the invitation to access this page:</p>
               <Button
                 variant="primary"
-                href="https://github.com/orgs/NUSpecialProjects/invitation"
+                href={`https://github.com/orgs/${selectedClassroom?.org_name}/invitation`}
                 newTab={true}
                 className="AccessDenied__button"
+                disabled={classroomLoading}
               >
                 View Invitation on GitHub
               </Button>
           </>
         ) : (
           <>
-            <p>You do not have permission to view this page:</p>
+            <h4>Insufficient Permissions:</h4>
             {classroomUser?.status === ClassroomUserStatus.REMOVED ? (
               <p>You have been removed from this classroom.</p>
             ) : classroomUser?.status === ClassroomUserStatus.NOT_IN_ORG ? (
@@ -45,9 +46,8 @@ const AccessDenied: React.FC = () => {
             ) : classroomUser?.status === ClassroomUserStatus.REQUESTED ? (
               <p>You have requested to join this classroom.</p>
             ) : (
-              <p>You are not in this classroom.</p>
+              <p>You are not an administrator in this classroom.</p>
             )}
-            {/* TODO: not invited to classroom, removed from classroom, not in organization */}
             <p>Please contact your professor if you believe this is an error.</p>
             <Button
               variant="primary"
