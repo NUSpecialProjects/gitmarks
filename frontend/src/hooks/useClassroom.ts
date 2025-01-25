@@ -28,6 +28,8 @@ export const useClassroomValidation = (name: string) => {
     queryKey: ["classroomExists", name],
     queryFn: () => checkClassroomExists(name),
     enabled: !!name && name !== "Custom",
+    staleTime: 1000,
+    gcTime: 0,
   });
 };
 

@@ -13,9 +13,10 @@ import "./styles.css";
 import Input from "@/components/Input";
 import GenericDropdown from "@/components/Dropdown";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import useDebounce from "@/hooks/useDebounce";
 
 const ClassroomCreation: React.FC = () => {
-  const [name, setName] = React.useState("");
+  const [name, debouncedName, setName] = useDebounce<string>("", 100);
   const [showCustomNameInput, setShowCustomNameInput] = React.useState(false);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const ClassroomCreation: React.FC = () => {
   const orgID = location.state?.orgID;
 
   const { data: predefinedClassroomNames = [], isError: isNamesError } = useClassroomNames();
-  const { data: classroomExists = false } = useClassroomValidation(name);
+  const { data: classroomExists = false, isLoading: isClassroomExistsLoading } = useClassroomValidation(debouncedName);
   const allClassroomNames = [...predefinedClassroomNames, "Custom"];
   const { data: organization, isLoading: isOrgLoading, error: orgError } = useOrganizationDetails(orgID);
 
@@ -84,13 +85,26 @@ const ClassroomCreation: React.FC = () => {
             )}
 
             {(showCustomNameInput || allClassroomNames.length === 0) && (
-              <Input
-                label="Custom classroom name"
-                name="classroom-name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <div className="ClassroomCreation__inputWrapper">
+                <Input
+                  label="Custom classroom name"
+                  name="classroom-name"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                {name && (
+                  <div className="ClassroomCreation__validationIndicator">
+                    {isClassroomExistsLoading ? (
+                      <LoadingSpinner size={16} />
+                    ) : classroomExists ? (
+                      <span className="validation-icon invalid">✕</span>
+                    ) : (
+                      <span className="validation-icon valid">✓</span>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
 
             {(createClassroomMutation.error || orgError || isNamesError || classroomExists) && (
@@ -114,8 +128,8 @@ const ClassroomCreation: React.FC = () => {
             <div className="ClassroomCreation__buttonWrapper">
               <Button 
                 type="submit" 
-                disabled={createClassroomMutation.isPending || classroomExists}
-                variant={createClassroomMutation.isPending || classroomExists ? "disabled" : "primary"}
+                disabled={createClassroomMutation.isPending || classroomExists || isClassroomExistsLoading}
+                overrideVariant={createClassroomMutation.isPending || classroomExists ? "disabled" : "primary"}
               >
                 {createClassroomMutation.isPending ? "Creating..." : "Create Classroom"}
               </Button>
