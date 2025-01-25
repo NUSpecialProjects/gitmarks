@@ -7,7 +7,7 @@ import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
 
 const AccessDenied: React.FC = () => {
   const { selectedClassroom, loading: classroomLoading } = useCurrentClassroom();
-  const { classroomUser } = useClassroomUser();
+  const { classroomUser, error: classroomUserError } = useClassroomUser();
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -38,17 +38,42 @@ const AccessDenied: React.FC = () => {
           </>
         ) : (
           <>
-            <h4>Insufficient Permissions:</h4>
             {classroomUser?.status === ClassroomUserStatus.REMOVED ? (
-              <p>You have been removed from this classroom.</p>
+              <>
+                <h4>Insufficient Permissions:</h4>
+                <p>You have been removed from this classroom.</p>
+                <p>Please contact your professor if you believe this is an error.</p>
+              </>
             ) : classroomUser?.status === ClassroomUserStatus.NOT_IN_ORG ? (
-              <p>You are not in the GitHub organization.</p>
+              <>
+                <h4>Insufficient Permissions:</h4>
+                <p>You are not in the GitHub organization.</p>
+                <p>Please contact your professor if you believe this is an error.</p>
+              </>
             ) : classroomUser?.status === ClassroomUserStatus.REQUESTED ? (
-              <p>You have requested to join this classroom.</p>
+              <>
+                <h4>Insufficient Permissions:</h4>
+                <p>You have requested to join this classroom.</p>
+                <p>Please contact your professor if you believe this is an error.</p>
+              </>
+            ) : classroomUser?.classroom_role === ClassroomRole.STUDENT ? (
+              <>
+                <h4>Insufficient Permissions:</h4>
+                <p>You are not an administrator in this classroom.</p>
+                <p>Please contact your professor if you believe this is an error.</p>
+              </>
+            ) : classroomUserError ? (
+              <>
+                <h4>Unexpected Error: {classroomUserError.message}</h4>
+                <p>An error occurred while loading your classroom.</p>
+              </>
             ) : (
-              <p>You are not an administrator in this classroom.</p>
+              <>
+                <h4>Unexpected Error:</h4>
+                <p>We were unable to verify your classroom access.</p>
+                <p>Please try again later.</p>
+              </>
             )}
-            <p>Please contact your professor if you believe this is an error.</p>
             <Button
               variant="primary"
               href={`/app/classroom/select?org_id=${selectedClassroom?.org_id}`}
