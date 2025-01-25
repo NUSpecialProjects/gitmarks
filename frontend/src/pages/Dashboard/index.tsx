@@ -76,21 +76,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // if (classroomUser?.classroom_role === ClassroomRole.STUDENT) {
-  //   return (
-  //     <div className="Dashboard__unauthorized">
-  //       <h2>Access Denied</h2>
-  //       <p>
-  //         You do not have permission to view the classroom management dashboard.
-  //       </p>
-  //       <p>Please contact your professor if you believe this is an error.</p>
-  //       <Button variant="primary" onClick={() => navigate("/app/classroom/select", { state: { orgID: selectedClassroom?.org_id } })}>
-  //         Return to Classroom Selection
-  //       </Button>
-  //     </div>
-  //   );
-  // }
-
   if (classroomUsersError || assignmentsError) {
     return (
       <div className="Dashboard__error">
