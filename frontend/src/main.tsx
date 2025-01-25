@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
       staleTime: 5 * 1000, // 5 seconds
       gcTime: 5 * 60 * 1000, // 5 minutes
       refetchOnMount: 'always',
-      retry: 1,
+      retry: 3,
     },
   },
 });

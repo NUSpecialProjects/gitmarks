@@ -27,42 +27,57 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   const { classroomUser: currentClassroomUser } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const [loadingUserIds, setLoadingUserIds] = useState<Set<number>>(new Set());
 
   const { classroomUsers: users, error: classroomUsersError } = useClassroomUsersList(selectedClassroom?.id);
   const { data: inviteLink = "", error: classroomTokenError } = useClassroomInviteLink(selectedClassroom?.id, role_type, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
 
-  const removeUserFromList = (userId: number) => {
-    queryClient.setQueryData(
-      ['classroomUsers', selectedClassroom?.id, role_type],
-      (oldData: IClassroomUser[] = []) => oldData.filter(user => user.id !== userId)
-    );
-  };
-
-  const addUserToList = (user: IClassroomUser) => {
-    queryClient.setQueryData(
-      ['classroomUsers', selectedClassroom?.id, role_type],
-      (oldData: IClassroomUser[] = []) => [...oldData, user]
-    );
-  };
-
   const handleInviteUser = async (userId: number) => {
     try {
-      const { user } = await sendOrganizationInviteToUser(selectedClassroom!.id, role_type, userId);
-      removeUserFromList(userId);
-      addUserToList(user);
+      setLoadingUserIds(prev => new Set(prev).add(userId));
+      const response = await sendOrganizationInviteToUser(selectedClassroom!.id, role_type, userId);
+      // Update cache with the returned user data
+      queryClient.setQueryData(
+        ['classroomUsers', selectedClassroom?.id],
+        (oldData: IClassroomUser[] = []) => {
+          const updatedUsers = oldData.map(user => 
+            user.id === response.user.id ? response.user : user
+          );
+          return updatedUsers;
+        }
+      );
       setError(null);
     } catch (_) {
       setError("Failed to invite user. Please try again.");
+    } finally {
+      setLoadingUserIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
     }
   };
 
   const handleRevokeInvite = async (userId: number) => {
     try {
+      setLoadingUserIds(prev => new Set(prev).add(userId));
       await revokeOrganizationInvite(selectedClassroom!.id, userId);
-      removeUserFromList(userId);
+      // Remove user from the list since they're no longer invited
+      queryClient.setQueryData(
+        ['classroomUsers', selectedClassroom?.id],
+        (oldData: IClassroomUser[] = []) => {
+          return oldData.filter(user => user.id !== userId);
+        }
+      );
       setError(null);
     } catch (_) {
       setError("Failed to revoke invite. Please try again.");
+    } finally {
+      setLoadingUserIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
     }
   };
 
@@ -73,36 +88,55 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     }
 
     try {
+      setLoadingUserIds(prev => new Set(prev).add(userId));
       await removeUserFromClassroom(selectedClassroom!.id, userId);
-      removeUserFromList(userId);
+      // Remove user from the list
+      queryClient.setQueryData(
+        ['classroomUsers', selectedClassroom?.id],
+        (oldData: IClassroomUser[] = []) => {
+          return oldData.filter(user => user.id !== userId);
+        }
+      );
       setError(null);
     } catch (_) {
       setError("Failed to remove user. Please try again.");
+    } finally {
+      setLoadingUserIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
     }
   };
 
-  // Don't show buttons if (the current user is a professor) AND (the current user is not the target user)
-  function shouldShowActionButtons(user: IClassroomUser) {
-    return currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR && currentClassroomUser?.id !== user.id;
-  }
-
-  const showActionsColumn = users.some(user => shouldShowActionButtons(user));
-  const showDisabledButtons = showActionsColumn && !users.every(user => shouldShowActionButtons(user));
+  const showActionsColumn = currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR
 
   const getActionButton = (user: IClassroomUser) => {
-    const shouldShowButton = shouldShowActionButtons(user)
-    if (!shouldShowButton && !showDisabledButtons) {
-      return null;
-    }
-
+    const isDisabled = loadingUserIds.has(user.id) || currentClassroomUser?.id === user.id;
+  
     switch (user.status) {
       case ClassroomUserStatus.ACTIVE:
-        return <Button variant={!shouldShowButton && showDisabledButtons ? "disabled" : "warning-secondary"} size="small" onClick={() => handleRemoveUser(user.id)}>Remove User</Button>;
+        return <Button 
+          variant={"warning-secondary"} 
+          size="small" 
+          onClick={() => handleRemoveUser(user.id)}
+          disabled={isDisabled}
+        >{"Remove User"}</Button>;
       case ClassroomUserStatus.ORG_INVITED:
-        return <Button variant={!shouldShowButton && showDisabledButtons ? "disabled" : "warning-secondary"} size="small" onClick={() => handleRevokeInvite(user.id)}>Revoke Invitation</Button>;
+        return <Button 
+          variant={"warning-secondary"} 
+          size="small" 
+          onClick={() => handleRevokeInvite(user.id)}
+          disabled={isDisabled}
+        >{"Revoke Invitation"}</Button>;
       case ClassroomUserStatus.REQUESTED:
       case ClassroomUserStatus.NOT_IN_ORG:
-        return <Button variant="secondary" size="small" onClick={() => handleInviteUser(user.id)}>Invite User</Button>;
+        return <Button 
+          variant={"secondary"}
+          size="small" 
+          onClick={() => handleInviteUser(user.id)}
+          disabled={isDisabled}
+        >{"Invite User"}</Button>;
       default:
         return null;
     }

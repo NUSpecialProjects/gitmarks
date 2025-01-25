@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentClassroomUser, getClassroomUsers } from "@/api/classrooms";
-import { ClassroomRole, requireAtLeastClassroomRole } from "@/types/enums";
+import { ClassroomRole, ClassroomUserStatus, requireAtLeastClassroomRole } from "@/types/enums";
 import { useNavigate } from "react-router-dom";
 
 export function useClassroomUser(classroomId?: number, requiredRole: ClassroomRole | null = null, redirectPath: string | null = null) {
@@ -10,14 +10,25 @@ export function useClassroomUser(classroomId?: number, requiredRole: ClassroomRo
     queryKey: ['classroomUser', classroomId],
     queryFn: async () => {
       if (!classroomId) return null;
-      const user = await getCurrentClassroomUser(classroomId);
-      if (user.classroom_id !== classroomId) {
-        throw new Error("User is not in the specified classroom");
+      try {
+        const user = await getCurrentClassroomUser(classroomId);
+        if (user.classroom_id !== classroomId) {
+          throw new Error("User is not in the specified classroom");
+        }
+        if (user.status !== ClassroomUserStatus.ACTIVE) {
+          throw new Error("User is not active in this classroom");
+        }
+        if (requiredRole && !requireAtLeastClassroomRole(user.classroom_role, requiredRole)) {
+          throw new Error("User does not have the required role");
+        }
+        return user;
+      } catch (error) {
+        if (requiredRole && redirectPath) {
+          navigate(redirectPath, { replace: true });
+          return null;
+        }
+        throw error;
       }
-      if (requiredRole && redirectPath && !requireAtLeastClassroomRole(user.classroom_role, requiredRole)) {
-        navigate(redirectPath, { replace: true });
-      }
-      return user;
     },
     enabled: !!classroomId,
     retry: false

@@ -40,10 +40,4 @@ interface IClassroomUserResponse {
   user: IClassroomUser;
 }
 
-interface IClassroomInvitedUsersListResponse {
-  message: string;
-  invited_users: IClassroomUser[];
-  requested_users: IClassroomUser[];
-}
-
 

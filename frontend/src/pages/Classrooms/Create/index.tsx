@@ -22,14 +22,7 @@ const ClassroomCreation: React.FC = () => {
   const location = useLocation();
   const orgID = location.state?.orgID;
 
-  const { data: predefinedClassroomNames = [], isError: isNamesError } = useClassroomNames(
-    (firstClassName: string) => {
-      if (!name) {
-        setName(firstClassName);
-      }
-    }
-  );
-
+  const { data: predefinedClassroomNames = [], isError: isNamesError } = useClassroomNames();
   const { data: classroomExists = false } = useClassroomValidation(name);
   const allClassroomNames = [...predefinedClassroomNames, "Custom"];
   const { data: organization, isLoading: isOrgLoading, error: orgError } = useOrganizationDetails(orgID);
@@ -100,13 +93,13 @@ const ClassroomCreation: React.FC = () => {
               />
             )}
 
-            {(createClassroomMutation.error || orgError || isNamesError) && (
+            {(createClassroomMutation.error || orgError || isNamesError || classroomExists) && (
               <p className="error">
-                {createClassroomMutation.error
-                  ? "Failed to create classroom. Please try again."
-                  : orgError
-                  ? "Failed to fetch organization details. Please try again."
-                  : "Failed to fetch classroom names. Please try again."}
+                {createClassroomMutation.error ? "Failed to create classroom."
+                  : orgError ? "Failed to fetch organization details."
+                  : isNamesError ? "Failed to fetch classroom names."
+                  : classroomExists ? "Classroom name already exists."
+                  : ""}
               </p>
             )}
             

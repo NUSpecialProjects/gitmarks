@@ -444,7 +444,7 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 
 		// don't do anything if the user has been removed from the classroom
 		if classroomUser.Status == models.UserStatusRemoved {
-			return errs.InsufficientPermissionsError()
+			return errs.StudentRemovedFromClassroomError()
 		}
 
 		// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
@@ -457,18 +457,18 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			}
 		}
 
-		// Invite the user to the organization
-		// classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom.OrgName, classroomToken.ClassroomID, classroomToken.ClassroomRole, user)
-		classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom, classroomToken.ClassroomRole, user)
-		if err != nil {
-			return errs.InternalServerError()
-		}
+		// // Invite the user to the organization
+		// // classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom.OrgName, classroomToken.ClassroomID, classroomToken.ClassroomRole, user)
+		// classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom, classroomToken.ClassroomRole, user)
+		// if err != nil {
+		// 	return errs.InternalServerError()
+		// }
 
-		// Accept the pending invitation to the organization
-		err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
-		if err != nil {
-			return errs.InternalServerError()
-		}
+		// // Accept the pending invitation to the organization
+		// err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
+		// if err != nil {
+		// 	return errs.InternalServerError()
+		// }
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":        "Successfully joined classroom",
@@ -506,11 +506,20 @@ func (s *ClassroomService) getCurrentClassroomUser() fiber.Handler {
 			}
 		}
 
-		if classroomUser.Status == models.UserStatusNotInOrg || classroomUser.Status == models.UserStatusRemoved {
+		switch classroomUser.Status {
+		case models.UserStatusRemoved:
+			return errs.StudentRemovedFromClassroomError()
+		case models.UserStatusNotInOrg:
 			return errs.InconsistentOrgMembershipError()
+		case models.UserStatusOrgInvited:
+			return errs.InconsistentOrgMembershipError()
+		case models.UserStatusRequested:
+			return errs.InconsistentOrgMembershipError()
+		case models.UserStatusActive:
+			return c.Status(http.StatusOK).JSON(fiber.Map{"user": classroomUser})
+		default:
+			return errs.InternalServerError()
 		}
-
-		return c.Status(http.StatusOK).JSON(fiber.Map{"user": classroomUser})
 	}
 }
 
@@ -582,6 +591,10 @@ func (s *ClassroomService) sendOrganizationInviteToUser() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
+		if invitee.Status == models.UserStatusRemoved {
+			return errs.StudentRemovedFromClassroomError()
+		}
+
 		// use the current user's client to invite the user to the organization
 		invitee, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom, classroomRole, invitee.User)
 		if err != nil {
@@ -626,19 +639,28 @@ func (s *ClassroomService) denyRequestedUser() fiber.Handler {
 // Revokes an invite to a user to join the organization
 func (s *ClassroomService) revokeOrganizationInvite() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		client, err := middleware.GetClient(c, s.store, s.userCfg)
+		if err != nil {
+			return errs.AuthenticationError()
+		}
+
 		classroomID, err := strconv.ParseInt(c.Params("classroom_id"), 10, 64)
 		if err != nil {
 			return errs.BadRequest(err)
 		}
 
-		userID, err := strconv.ParseInt(c.Params("user_id"), 10, 64)
+		targetUserID, err := strconv.ParseInt(c.Params("user_id"), 10, 64)
 		if err != nil {
 			return errs.BadRequest(err)
 		}
 
-		targetUser, err := s.store.GetUserInClassroom(c.Context(), classroomID, userID)
+		targetUser, err := s.store.GetUserInClassroom(c.Context(), classroomID, targetUserID)
 		if err != nil {
 			return errs.InternalServerError()
+		}
+
+		if targetUser.Status == models.UserStatusRemoved {
+			return errs.StudentRemovedFromClassroomError()
 		}
 
 		// Only allow professors to remove users from classrooms
@@ -647,17 +669,17 @@ func (s *ClassroomService) revokeOrganizationInvite() fiber.Handler {
 			return err
 		}
 
-		err = s.store.RemoveUserFromClassroom(c.Context(), classroomID, userID)
-		if err != nil {
-			return errs.InternalServerError()
-		}
-
 		classroom, err := s.store.GetClassroomByID(c.Context(), classroomID)
 		if err != nil {
 			return errs.InternalServerError()
 		}
 
-		err = s.appClient.CancelOrgInvitation(c.Context(), classroom.OrgName, targetUser.GithubUsername)
+		err = client.CancelOrgInvitation(c.Context(), classroom.OrgName, targetUser.GithubUsername)
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+		err = s.store.RemoveUserFromClassroom(c.Context(), classroomID, *targetUser.ID)
 		if err != nil {
 			return errs.InternalServerError()
 		}
