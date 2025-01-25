@@ -2,9 +2,25 @@ import { useQuery } from "@tanstack/react-query";
 import { getCurrentClassroomUser, getClassroomUsers } from "@/api/classrooms";
 import { ClassroomRole, ClassroomUserStatus, requireAtLeastClassroomRole } from "@/types/enums";
 import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 
-export function useClassroomUser(classroomId?: number, requiredRole: ClassroomRole | null = null, redirectPath: string | null = null) {
+export function useCurrentClassroom() {
+  const context = useContext(SelectedClassroomContext);
+  if (context === null) {
+    throw new Error('useCurrentClassroom must be used within a SelectedClassroomProvider');
+  }
+  return context;
+}
+
+export function useClassroomUser(requiredRole: ClassroomRole | null = null, redirectPath: string | null = null) {
   const navigate = useNavigate();
+  const context = useContext(SelectedClassroomContext);
+  if (context === null) {
+    throw new Error('useClassroomUser must be used within a SelectedClassroomProvider');
+  }
+
+  const classroomId = context.selectedClassroom?.id;
 
   const { data: classroomUser, error, status } = useQuery({
     queryKey: ['classroomUser', classroomId],

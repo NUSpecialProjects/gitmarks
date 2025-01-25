@@ -1,9 +1,6 @@
-import { useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-
 import "./styles.css";
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
 import { getRubricsInClassroom } from "@/api/rubrics";
 import Button from "@/components/Button";
@@ -11,12 +8,12 @@ import RubricList from "@/components/RubricList";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
 import { MdAdd } from "react-icons/md";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import { ClassroomRole } from "@/types/enums";
 
 const Rubrics: React.FC = () => {
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  useClassroomUser(selectedClassroom?.id, ClassroomRole.PROFESSOR, "/access-denied");
+  const { selectedClassroom } = useCurrentClassroom();
+  useClassroomUser(ClassroomRole.PROFESSOR, "/access-denied");
 
   const { data: rubrics, isLoading, error } = useQuery({
     queryKey: ['rubrics', selectedClassroom?.id],

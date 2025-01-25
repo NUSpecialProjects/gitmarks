@@ -1,7 +1,6 @@
 import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom } from "@/api/classrooms";
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import { Table, TableCell, TableRow } from "@/components/Table";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
@@ -10,7 +9,7 @@ import Button from "@/components/Button";
 import CopyLink from "@/components/CopyLink";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
-import { useClassroomUser, useClassroomUsersList } from "@/hooks/useClassroomUser";
+import { useClassroomUser, useClassroomUsersList, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClassroomInviteLink } from "@/hooks/useClassroomInviteLink";
 
@@ -23,8 +22,8 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   role_label,
   role_type,
 }: GenericRolePageProps) => {
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { classroomUser: currentClassroomUser } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
+  const { selectedClassroom } = useCurrentClassroom();
+  const { classroomUser: currentClassroomUser } = useClassroomUser(ClassroomRole.TA, "/access-denied");
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const [loadingUserIds, setLoadingUserIds] = useState<Set<number>>(new Set());

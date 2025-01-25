@@ -1,13 +1,10 @@
 import { FaChevronRight, FaChevronDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { getAssignments } from "@/api/assignments";
 import { getStudentWorks } from "@/api/student_works";
 import { formatDateTime } from "@/utils/date";
-
 import {
   Table,
   TableRow,
@@ -19,7 +16,7 @@ import EmptyDataBanner from "@/components/EmptyDataBanner";
 import Button from "@/components/Button";
 import { MdAdd } from "react-icons/md";
 import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import { ClassroomRole, StudentWorkState } from "@/types/enums";
 
 import "./styles.css";
@@ -33,7 +30,7 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
   children,
 }) => {
   const [collapsed, setCollapsed] = useState(true);
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
+  const { selectedClassroom } = useCurrentClassroom();
   const navigate = useNavigate();
 
   const { data: studentAssignments } = useQuery({
@@ -148,8 +145,8 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
 };
 
 const Grading: React.FC = () => {
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { classroomUser } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/app/organization/select");
+  const { selectedClassroom } = useCurrentClassroom();
+  const { classroomUser } = useClassroomUser(ClassroomRole.TA, "/app/organization/select");
 
   const { data: assignments, isLoading, error } = useQuery({
     queryKey: ['assignments', selectedClassroom?.id],

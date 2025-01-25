@@ -14,8 +14,8 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 import * as Pages from "./pages";
 import Layout from "./components/Layout";
 import { AuthState, useAuth } from "./contexts/auth";
-import SelectedSemesterProvider from "./contexts/selectedClassroom";
-import "./global.css";
+import { SelectedClassroomProvider } from "./contexts/selectedClassroom";
+import "./global.css";  
 import { AuthProvider } from "./contexts/auth";
 
 /**
@@ -57,7 +57,6 @@ export default function App(): React.JSX.Element {
     >
       <Router>
         <AuthProvider>
-          <SelectedSemesterProvider>
             <Routes>
               {/******* LANDING PAGE & OAUTH CALLBACK *******/}
               <Route path="" element={<Pages.Login />} />
@@ -71,7 +70,7 @@ export default function App(): React.JSX.Element {
               </Route>
 
               {/******* APP ROUTES: AUTHENTICATED USER *******/}
-              <Route path="app" element={<PrivateRoute />}>
+              <Route path="app" element={<SelectedClassroomProvider><PrivateRoute /></SelectedClassroomProvider>}>
 
                 {/******* CLASS SELECTION: PRE-APP ACCESS STEP *******/}
                 <Route path="classroom">
@@ -110,7 +109,6 @@ export default function App(): React.JSX.Element {
               {/******* 404 CATCH ALL *******/}
               <Route path="404" element={<Pages.PageNotFound />} />
             </Routes>
-          </SelectedSemesterProvider>
         </AuthProvider>
       </Router>
     </PersistQueryClientProvider>

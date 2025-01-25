@@ -16,7 +16,7 @@ export const SelectedClassroomContext: React.Context<ISelectedClassroomContext> 
     loading: true,
   });
 
-const SelectedClassroomProvider: React.FC<{ children: React.ReactNode }> = ({
+export const SelectedClassroomProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [selectedClassroom, setSelectedClassroomState] =

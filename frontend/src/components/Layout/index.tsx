@@ -1,10 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { useContext } from "react";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
-
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 
 import LeftNav from "./LeftNav";
 import TopNav from "./TopNav";
@@ -19,8 +16,8 @@ import LoadingSpinner from "../LoadingSpinner";
 import Button from "../Button";
 
 const Layout: React.FC = () => {
-  const { selectedClassroom, loading: loadingSelectedClassroom } = useContext(SelectedClassroomContext);
-  const { classroomUser } = useClassroomUser(selectedClassroom?.id);
+  const { selectedClassroom, loading: loadingSelectedClassroom } = useCurrentClassroom();
+  const { classroomUser } = useClassroomUser();
   const navigate = useNavigate();
 
   const professorNavItems = [

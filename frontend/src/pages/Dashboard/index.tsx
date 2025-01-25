@@ -3,11 +3,9 @@ import UserGroupCard from "@/components/UserGroupCard";
 import { Table, TableRow, TableCell } from "@/components/Table";
 import { MdAdd } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import { useContext } from "react";
 import { getAssignments } from "@/api/assignments";
 import { formatDateTime, formatDate } from "@/utils/date";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import { useQuery } from "@tanstack/react-query";
 import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
 import Button from "@/components/Button";
@@ -19,10 +17,8 @@ import Metric from "@/components/Metrics";
 import { ClassroomRole, requireAtLeastClassroomRole } from "@/types/enums";
 
 const Dashboard: React.FC = () => {
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const {
-    classroomUser,
-  } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
+  const { selectedClassroom } = useCurrentClassroom();
+  const { classroomUser } = useClassroomUser(ClassroomRole.TA, "/access-denied");
 
   const {
     data: classroomUsersList = [],
