@@ -214,7 +214,7 @@ func (s *ClassroomService) updateClassroomName() fiber.Handler {
 // Returns the users of a classroom.
 func (s *ClassroomService) getClassroomUsers() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		client, err := middleware.GetClient(c, s.store, s.userCfg)
+		_, err := middleware.GetClient(c, s.store, s.userCfg)
 		if err != nil {
 			return errs.AuthenticationError()
 		}
@@ -243,7 +243,7 @@ func (s *ClassroomService) getClassroomUsers() fiber.Handler {
 		updatedUsersInClassroom := []models.ClassroomUser{}
 
 		for _, classroomUser := range usersInClassroom {
-			newClassroomUser, err := s.updateUserStatus(c.Context(), client, classroomUser.User, classroom)
+			newClassroomUser, err := s.updateUserStatus(c.Context(), s.appClient, classroomUser.User, classroom)
 			// don't include members who are not in the org
 			if newClassroomUser.Status == models.UserStatusRemoved {
 				continue
@@ -423,52 +423,10 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.ExpiredTokenError()
 		}
 
-		// Get the classroom from the DB
-		classroom, err := s.store.GetClassroomByID(c.Context(), classroomToken.ClassroomID)
+		classroom, classroomUser, err := s.inviteUserToClassroom(c.Context(), classroomToken.ClassroomID, classroomToken.ClassroomRole, &user, client)
 		if err != nil {
-			return errs.InternalServerError()
+			return err
 		}
-
-		classroomUser, err := s.store.GetUserInClassroom(c.Context(), classroomToken.ClassroomID, *user.ID)
-		if err != nil {
-			classroomUser, err = s.store.AddUserToClassroom(c.Context(), classroomToken.ClassroomID, string(classroomToken.ClassroomRole), models.UserStatusRequested, *user.ID)
-			if err != nil {
-				return errs.InternalServerError()
-			}
-		}
-
-		classroomUser, err = s.updateUserStatus(c.Context(), client, user, classroom)
-		if err != nil {
-			return errs.InternalServerError()
-		}
-
-		// don't do anything if the user has been removed from the classroom
-		if classroomUser.Status == models.UserStatusRemoved {
-			return errs.StudentRemovedFromClassroomError()
-		}
-
-		// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
-		roleComparison := classroomUser.Role.Compare(classroomToken.ClassroomRole)
-		if roleComparison < 0 {
-			// Upgrade the user's role in the classroom
-			classroomUser, err = s.store.ModifyUserRole(c.Context(), classroomToken.ClassroomID, string(classroomToken.ClassroomRole), *classroomUser.ID)
-			if err != nil {
-				return errs.InternalServerError()
-			}
-		}
-
-		// // Invite the user to the organization
-		// // classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom.OrgName, classroomToken.ClassroomID, classroomToken.ClassroomRole, user)
-		// classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom, classroomToken.ClassroomRole, user)
-		// if err != nil {
-		// 	return errs.InternalServerError()
-		// }
-
-		// // Accept the pending invitation to the organization
-		// err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
-		// if err != nil {
-		// 	return errs.InternalServerError()
-		// }
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":        "Successfully joined classroom",
@@ -478,10 +436,62 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 	}
 }
 
+// Invites a user to a classroom and attempts to accept their invitation
+// This should be called on the target user's behalf
+func (s *ClassroomService) inviteUserToClassroom(ctx context.Context, classroomID int64, classroomRole models.ClassroomRole, invitee *models.User, userClient github.GitHubUserClient) (models.Classroom, models.ClassroomUser, error) {
+	// Get the classroom from the DB
+	classroom, err := s.store.GetClassroomByID(ctx, classroomID)
+	if err != nil {
+		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+	}
+
+	classroomUser, err := s.store.GetUserInClassroom(ctx, classroomID, *invitee.ID)
+	if err != nil {
+		classroomUser, err = s.store.AddUserToClassroom(ctx, classroomID, string(classroomRole), models.UserStatusRequested, *invitee.ID)
+		if err != nil {
+			return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+		}
+	}
+
+	classroomUser, err = s.updateUserStatus(ctx, s.appClient, *invitee, classroom)
+	if err != nil {
+		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+	}
+
+	// don't do anything if the user has been removed from the classroom
+	if classroomUser.Status == models.UserStatusRemoved {
+		return models.Classroom{}, models.ClassroomUser{}, errs.StudentRemovedFromClassroomError()
+	}
+
+	// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
+	roleComparison := classroomUser.Role.Compare(classroomRole)
+	if roleComparison < 0 {
+		// Upgrade the user's role in the classroom
+		classroomUser, err = s.store.ModifyUserRole(ctx, classroomID, string(classroomRole), *classroomUser.ID)
+		if err != nil {
+			return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+		}
+	}
+
+	// Invite the user to the organization
+	// classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom.OrgName, classroomToken.ClassroomID, classroomToken.ClassroomRole, user)
+	classroomUser, err = s.inviteUserToOrganization(ctx, s.appClient, classroom, classroomRole, *invitee)
+	if err != nil {
+		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+	}
+
+	// Accept the pending invitation to the organization
+	err = s.acceptOrgInvitation(ctx, userClient, classroom.OrgName, classroomID, *invitee)
+	if err != nil {
+		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+	}
+	return classroom, classroomUser, nil
+}
+
 // Returns the user's status in the classroom, nil if not in the classroom
 func (s *ClassroomService) getCurrentClassroomUser() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		client, _, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
+		_, _, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
 		if err != nil {
 			return errs.AuthenticationError()
 		}
@@ -496,7 +506,7 @@ func (s *ClassroomService) getCurrentClassroomUser() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		classroomUser, err := s.updateUserStatus(c.Context(), client, user, classroom)
+		classroomUser, err := s.updateUserStatus(c.Context(), s.appClient, user, classroom)
 		if err != nil {
 			if err == errs.UserNotFoundInClassroomError() {
 				// User not found in classroom, return null
@@ -509,22 +519,15 @@ func (s *ClassroomService) getCurrentClassroomUser() fiber.Handler {
 		switch classroomUser.Status {
 		case models.UserStatusRemoved:
 			return errs.StudentRemovedFromClassroomError()
-		case models.UserStatusNotInOrg:
-			return errs.InconsistentOrgMembershipError()
-		case models.UserStatusOrgInvited:
-			return errs.InconsistentOrgMembershipError()
-		case models.UserStatusRequested:
-			return errs.InconsistentOrgMembershipError()
-		case models.UserStatusActive:
-			return c.Status(http.StatusOK).JSON(fiber.Map{"user": classroomUser})
 		default:
-			return errs.InternalServerError()
+			return c.Status(http.StatusOK).JSON(fiber.Map{"user": classroomUser})
 		}
 	}
 }
 
 // Updates the user's status in our DB to reflect their org membership, as of this moment
-func (s *ClassroomService) updateUserStatus(ctx context.Context, client github.GitHubUserClient, user models.User, classroom models.Classroom) (models.ClassroomUser, error) {
+// Note: currently only works for the app client as the user client doesn't ask for the right permissions
+func (s *ClassroomService) updateUserStatus(ctx context.Context, client github.GitHubBaseClient, user models.User, classroom models.Classroom) (models.ClassroomUser, error) {
 	classroomUser, err := s.store.GetUserInClassroom(ctx, classroom.ID, *user.ID)
 	if err != nil {
 		return models.ClassroomUser{}, errs.UserNotFoundInClassroomError()

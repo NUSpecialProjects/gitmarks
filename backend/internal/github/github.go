@@ -85,6 +85,9 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Get the membership of a user to an organization (404 if not a member or invited)
 	GetUserOrgMembership(ctx context.Context, orgName string, userName string) (*github.Membership, error)
 
+	// Get all the invitations to an organization
+	GetOrgInvitations(ctx context.Context, orgName string) ([]*github.Invitation, error)
+
 	// Invite a user to an organization
 	InviteUserToOrganization(ctx context.Context, orgName string, userID int64) error
 

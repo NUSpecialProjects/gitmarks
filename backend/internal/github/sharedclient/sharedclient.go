@@ -222,24 +222,26 @@ func (api *CommonAPI) SetUserMembershipInOrg(ctx context.Context, orgName string
 	}
 
 	return nil
+}
 
+func (api *CommonAPI) GetOrgInvitations(ctx context.Context, orgName string) ([]*github.Invitation, error) {
+	req, err := api.Client.NewRequest("GET", fmt.Sprintf("/orgs/%s/invitations", orgName), nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	var invitations []*github.Invitation
+
+	_, err = api.Client.Do(ctx, req, &invitations)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org invitations: %v", err)
+	}
+
+	return invitations, nil
 }
 
 func (api *CommonAPI) CancelOrgInvitation(ctx context.Context, orgName string, userName string) error {
-	// First get pending invitations
-	req, err := api.Client.NewRequest("GET", fmt.Sprintf("/orgs/%s/invitations", orgName), nil)
-	if err != nil {
-		return fmt.Errorf("error creating request: %v", err)
-	}
-
-	var invitations []struct {
-		ID     int64  `json:"id"`
-		Login  string `json:"login"`
-		NodeID string `json:"node_id"`
-		Email  string `json:"email"`
-	}
-
-	_, err = api.Client.Do(ctx, req, &invitations)
+	invitations, err := api.GetOrgInvitations(ctx, orgName)
 	if err != nil {
 		return fmt.Errorf("error getting org invitations: %v", err)
 	}
@@ -247,8 +249,8 @@ func (api *CommonAPI) CancelOrgInvitation(ctx context.Context, orgName string, u
 	// Find the invitation ID for the user
 	var invitationID int64
 	for _, inv := range invitations {
-		if inv.Login == userName {
-			invitationID = inv.ID
+		if *inv.Login == userName {
+			invitationID = *inv.ID
 			break
 		}
 	}
