@@ -1,9 +1,6 @@
 import { FaChevronRight, FaChevronDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getAssignments } from "@/api/assignments";
-import { getStudentWorks } from "@/api/student_works";
 import { formatDateTime } from "@/utils/date";
 import {
   Table,
@@ -20,6 +17,7 @@ import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser"
 import { ClassroomRole, StudentWorkState } from "@/types/enums";
 
 import "./styles.css";
+import { useAssignmentsList, useStudentWorks } from "@/hooks/useAssignment";
 
 interface IGradingAssignmentRow extends React.HTMLProps<HTMLDivElement> {
   assignment: IAssignmentOutline;
@@ -32,12 +30,7 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
   const [collapsed, setCollapsed] = useState(true);
   const { selectedClassroom } = useCurrentClassroom();
   const navigate = useNavigate();
-
-  const { data: studentAssignments } = useQuery({
-    queryKey: ['studentWorks', selectedClassroom?.id, assignment.id],
-    queryFn: () => getStudentWorks(selectedClassroom!.id, assignment.id),
-    enabled: !!selectedClassroom && !collapsed,
-  });
+  const { data: studentAssignments } = useStudentWorks(selectedClassroom?.id, assignment.id);
   
   const downloadGrades = () => {
     if (!studentAssignments) return;
@@ -147,12 +140,7 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
 const Grading: React.FC = () => {
   const { selectedClassroom } = useCurrentClassroom();
   const { classroomUser } = useClassroomUser(ClassroomRole.TA, "/app/organization/select");
-
-  const { data: assignments, isLoading, error } = useQuery({
-    queryKey: ['assignments', selectedClassroom?.id],
-    queryFn: () => getAssignments(selectedClassroom!.id),
-    enabled: !!selectedClassroom,
-  });
+  const { assignments, loading, error } = useAssignmentsList(selectedClassroom?.id)
 
   return (
     <div className="Grading">
@@ -162,7 +150,7 @@ const Grading: React.FC = () => {
           breadcrumbItems={[selectedClassroom?.name, "Grading"]}
         />
       )}
-      {isLoading ? (
+      {loading ? (
         <EmptyDataBanner>
           <LoadingSpinner />
         </EmptyDataBanner>

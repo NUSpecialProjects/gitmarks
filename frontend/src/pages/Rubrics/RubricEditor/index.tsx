@@ -30,7 +30,7 @@ const RubricEditor: React.FC = () => {
     const navigate = useNavigate();
 
     const { selectedClassroom } = useCurrentClassroom();
-    useClassroomUser(ClassroomRole.PROFESSOR, "/access-denied");
+    useClassroomUser(ClassroomRole.PROFESSOR, "/app/access-denied");
 
     // potential data for the assignment
     const [assignmentData, setAssignmentData] = useState<IAssignmentOutline>()

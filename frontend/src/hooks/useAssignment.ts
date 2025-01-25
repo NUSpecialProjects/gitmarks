@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import {
   getAssignmentIndirectNav,
+  getAssignments,
   getAssignmentTemplate,
   postAssignmentToken,
 } from "@/api/assignments";
@@ -11,6 +12,29 @@ import {
 } from "@/api/metrics";
 import { getStudentWorks } from "@/api/student_works";
 import { ChartData } from 'chart.js';
+
+export const useAssignmentsList = (classroomId: number | undefined) => {
+  const {
+    data: assignments = [],
+    error,
+    isLoading
+  } = useQuery<IAssignmentOutline[]>({
+    queryKey: ['assignments', classroomId],
+    queryFn: () => {
+      if (!classroomId) {
+        throw new Error('No classroom selected');
+      }
+      return getAssignments(classroomId);
+    },
+    enabled: !!classroomId,
+  });
+
+  return {
+    assignments,
+    error,
+    loading: isLoading
+  };
+};
 
 export const useAssignment = (classroomId: number | undefined, assignmentId: number | undefined) => {
   const location = useLocation();

@@ -57,11 +57,11 @@ export default function App(): React.JSX.Element {
     >
       <Router>
         <AuthProvider>
+          <SelectedClassroomProvider>
             <Routes>
               {/******* LANDING PAGE & OAUTH CALLBACK *******/}
               <Route path="" element={<Pages.Login />} />
               <Route path="oauth/callback" element={<Pages.Callback />} />
-              <Route path="access-denied" element={<Pages.AccessDenied />} />
 
               {/******* TOKEN ROUTES *******/}
               <Route path="token">
@@ -70,7 +70,10 @@ export default function App(): React.JSX.Element {
               </Route>
 
               {/******* APP ROUTES: AUTHENTICATED USER *******/}
-              <Route path="app" element={<SelectedClassroomProvider><PrivateRoute /></SelectedClassroomProvider>}>
+              <Route path="app" element={<PrivateRoute />}>
+
+                {/******* ACCESS DENIED *******/}
+                <Route path="access-denied" element={<Pages.AccessDenied />} />
 
                 {/******* CLASS SELECTION: PRE-APP ACCESS STEP *******/}
                 <Route path="classroom">
@@ -109,6 +112,7 @@ export default function App(): React.JSX.Element {
               {/******* 404 CATCH ALL *******/}
               <Route path="404" element={<Pages.PageNotFound />} />
             </Routes>
+          </SelectedClassroomProvider>
         </AuthProvider>
       </Router>
     </PersistQueryClientProvider>

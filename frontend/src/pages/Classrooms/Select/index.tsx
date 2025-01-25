@@ -3,17 +3,16 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "./styles.css";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { Link } from "react-router-dom";
-import { getClassroomsInOrg } from "@/api/classrooms";
 import { Table, TableRow, TableCell } from "@/components/Table";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
 import Button from "@/components/Button";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { MdAdd } from "react-icons/md";
-import { useQuery } from "@tanstack/react-query";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { ClassroomRole, OrgRole } from "@/types/enums";
 import { toClassroom } from "@/types/enums";
+import { useOrganizationClassrooms } from "@/hooks/useOrganization";
 
 const ClassroomSelection: React.FC = () => {
   const location = useLocation();
@@ -27,17 +26,7 @@ const ClassroomSelection: React.FC = () => {
     }
   }, [orgID, navigate]);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['classrooms', orgID],
-    queryFn: async () => {
-      if (!orgID || isNaN(Number(orgID))) {
-        throw new Error("Invalid organization ID");
-      }
-      return getClassroomsInOrg(Number(orgID));
-    },
-    enabled: !!orgID && !isNaN(Number(orgID)),
-    retry: false
-  });
+  const { data, isLoading, error } = useOrganizationClassrooms(orgID);
 
   const classrooms = data?.classroom_users || [];
   const orgRole = data?.org_role || OrgRole.MEMBER;

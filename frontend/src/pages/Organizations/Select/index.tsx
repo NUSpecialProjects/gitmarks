@@ -3,24 +3,17 @@ import "./styles.css";
 import OrganizationDropdown from "@/components/Dropdown/Organization";
 import Panel from "@/components/Panel";
 import Button from "@/components/Button";
-import {
-  getAppInstallations,
-  getOrganizationDetails,
-} from "@/api/organizations";
-import { useQuery } from "@tanstack/react-query";
+import { getOrganizationDetails } from "@/api/organizations";
 import { useCurrentClassroom } from "@/hooks/useClassroomUser";
+import { useAppInstallations } from "@/hooks/useOrganization";
 
 const OrganizationSelection: React.FC = () => {
   const [selectedOrg, setSelectedOrg] = useState<IOrganization | null>(null);
   const { selectedClassroom } = useCurrentClassroom();
   const githubAppName = import.meta.env.VITE_GITHUB_APP_NAME;
+  const { data: installationsData, isLoading: loadingOrganizations, error: installationsError } = useAppInstallations();
 
-  const { data: installationsData, isLoading: loadingOrganizations, error: installationsError } = useQuery({
-    queryKey: ['organizations'],
-    queryFn: getAppInstallations,
-  });
-
-  useEffect(() => {
+  useEffect(() => { // set initially selected org
     if (selectedClassroom) {
       getOrganizationDetails(selectedClassroom.org_name)
         .then(orgDetails => {
@@ -30,18 +23,8 @@ const OrganizationSelection: React.FC = () => {
     }
   }, [selectedClassroom]);
 
-  const { error: orgDetailsError } = useQuery({
-    queryKey: ['org-details', selectedOrg?.login],
-    queryFn: async () => {
-      if (!selectedOrg?.login) return null;
-      return await getOrganizationDetails(selectedOrg.login);
-    },
-    enabled: !!selectedOrg?.login,
-  });
-
   const orgsWithApp = installationsData?.orgs_with_app || [];
   const orgsWithoutApp = installationsData?.orgs_without_app || [];
-  const error = installationsError || orgDetailsError;
 
   const handleOrganizationSelect = async (org: IOrganization) => {
     setSelectedOrg(org);
@@ -83,7 +66,7 @@ const OrganizationSelection: React.FC = () => {
           <a className="Organization__link" href={`https://github.com/apps/${githubAppName}/installations/select_target`} target="_blank" rel="noopener noreferrer">
             {"Don't see your organization?"}
           </a>
-        {error && <div className="error">{error instanceof Error ? error.message : "An error occurred"}</div>}
+        {installationsError && <div className="error">{installationsError.message}</div>}
       </div>
     </Panel>
   );

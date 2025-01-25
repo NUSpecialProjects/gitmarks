@@ -1,11 +1,10 @@
 import "./styles.css";
 import { useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import ErrorMessage from "@/components/Error";
-import { getCallbackURL } from "@/api/auth";
 import { FaGithub } from "react-icons/fa6";
 import Button from "@/components/Button";
 import { useEffect, useState } from "react";
+import { useCallbackURL } from "@/hooks/useCallbackURL";
 
 const Login: React.FC = () => {
   const location = useLocation();
@@ -13,18 +12,7 @@ const Login: React.FC = () => {
   const errorFromQuery = queryParams.get("error");
   const [error, setError] = useState<string | null>(null);
 
-  // Use React Query to handle the API call
-  const { data: callbackData, error: callbackError, isLoading, refetch } = useQuery({
-    queryKey: ['callback'],
-    queryFn: async () => {
-      const resp = await getCallbackURL();
-      if (!resp.url) {
-        throw new Error("Callback URL is empty");
-      }
-      return resp;
-    },
-    retry: false,
-  });
+  const { data: callbackData, error: callbackError, isLoading, refetch } = useCallbackURL();
 
   // Handle error from query params
   useEffect(() => {

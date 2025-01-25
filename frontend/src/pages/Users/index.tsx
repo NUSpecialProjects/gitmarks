@@ -1,4 +1,3 @@
-import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom } from "@/api/classrooms";
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
 import React, { useState } from "react";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
@@ -9,8 +8,7 @@ import Button from "@/components/Button";
 import CopyLink from "@/components/CopyLink";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
-import { useClassroomUser, useClassroomUsersList, useCurrentClassroom } from "@/hooks/useClassroomUser";
-import { useQueryClient } from "@tanstack/react-query";
+import { useClassroomUser, useClassroomUsersList, useCurrentClassroom, useInviteClassroomUser, useRevokeClassroomInvite, useRemoveClassroomUser } from "@/hooks/useClassroomUser";
 import { useClassroomInviteLink } from "@/hooks/useClassroomInviteLink";
 
 interface GenericRolePageProps {
@@ -23,90 +21,20 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   role_type,
 }: GenericRolePageProps) => {
   const { selectedClassroom } = useCurrentClassroom();
-  const { classroomUser: currentClassroomUser } = useClassroomUser(ClassroomRole.TA, "/access-denied");
-  const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
+  const { classroomUser: currentClassroomUser } = useClassroomUser(ClassroomRole.TA, "/app/access-denied");
   const [loadingUserIds, setLoadingUserIds] = useState<Set<number>>(new Set());
 
   const { classroomUsers: users, error: classroomUsersError } = useClassroomUsersList(selectedClassroom?.id);
   const { data: inviteLink = "", error: classroomTokenError } = useClassroomInviteLink(selectedClassroom?.id, role_type, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
+  const { inviteUser, error: inviteError } = useInviteClassroomUser(selectedClassroom?.id);
+  const { revokeInvite, error: revokeError } = useRevokeClassroomInvite(selectedClassroom?.id);
+  const { removeUser, error: removeError } = useRemoveClassroomUser(selectedClassroom?.id, currentClassroomUser?.id);
 
-  const handleInviteUser = async (userId: number) => {
-    try {
-      setLoadingUserIds(prev => new Set(prev).add(userId));
-      const response = await sendOrganizationInviteToUser(selectedClassroom!.id, role_type, userId);
-      // Update cache with the returned user data
-      queryClient.setQueryData(
-        ['classroomUsers', selectedClassroom?.id],
-        (oldData: IClassroomUser[] = []) => {
-          const updatedUsers = oldData.map(user => 
-            user.id === response.user.id ? response.user : user
-          );
-          return updatedUsers;
-        }
-      );
-      setError(null);
-    } catch (_) {
-      setError("Failed to invite user. Please try again.");
-    } finally {
-      setLoadingUserIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
-      });
-    }
-  };
+  const handleInviteUser = (userId: number) => inviteUser(userId, role_type, setLoadingUserIds);
+  const handleRevokeInvite = (userId: number) => revokeInvite(userId, setLoadingUserIds);
+  const handleRemoveUser = (userId: number) => removeUser(userId, setLoadingUserIds);
 
-  const handleRevokeInvite = async (userId: number) => {
-    try {
-      setLoadingUserIds(prev => new Set(prev).add(userId));
-      await revokeOrganizationInvite(selectedClassroom!.id, userId);
-      // Remove user from the list since they're no longer invited
-      queryClient.setQueryData(
-        ['classroomUsers', selectedClassroom?.id],
-        (oldData: IClassroomUser[] = []) => {
-          return oldData.filter(user => user.id !== userId);
-        }
-      );
-      setError(null);
-    } catch (_) {
-      setError("Failed to revoke invite. Please try again.");
-    } finally {
-      setLoadingUserIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
-      });
-    }
-  };
-
-  const handleRemoveUser = async (userId: number) => {
-    if (userId === currentClassroomUser?.id) {
-      setError("You cannot remove yourself from the classroom.");
-      return;
-    }
-
-    try {
-      setLoadingUserIds(prev => new Set(prev).add(userId));
-      await removeUserFromClassroom(selectedClassroom!.id, userId);
-      // Remove user from the list
-      queryClient.setQueryData(
-        ['classroomUsers', selectedClassroom?.id],
-        (oldData: IClassroomUser[] = []) => {
-          return oldData.filter(user => user.id !== userId);
-        }
-      );
-      setError(null);
-    } catch (_) {
-      setError("Failed to remove user. Please try again.");
-    } finally {
-      setLoadingUserIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
-      });
-    }
-  };
+  const error = inviteError || revokeError || removeError;
 
   const showActionsColumn = currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR
 

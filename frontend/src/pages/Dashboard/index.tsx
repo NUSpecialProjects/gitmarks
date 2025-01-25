@@ -3,52 +3,32 @@ import UserGroupCard from "@/components/UserGroupCard";
 import { Table, TableRow, TableCell } from "@/components/Table";
 import { MdAdd } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
-import { getAssignments } from "@/api/assignments";
 import { formatDateTime, formatDate } from "@/utils/date";
-import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
-import { useQuery } from "@tanstack/react-query";
+import { useClassroomUser, useClassroomUsersList, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
 import Button from "@/components/Button";
 import MetricPanel from "@/components/Metrics/MetricPanel";
-import { getClassroomUsers } from "@/api/classrooms";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
 import Metric from "@/components/Metrics";
 import { ClassroomRole, requireAtLeastClassroomRole } from "@/types/enums";
+import { useAssignmentsList } from "@/hooks/useAssignment";
 
 const Dashboard: React.FC = () => {
   const { selectedClassroom } = useCurrentClassroom();
-  const { classroomUser } = useClassroomUser(ClassroomRole.TA, "/access-denied");
+  const { classroomUser } = useClassroomUser(ClassroomRole.TA, "/app/access-denied");
 
   const {
-    data: classroomUsersList = [],
+    classroomUsers: classroomUsersList = [],
     error: classroomUsersError,
-    isLoading: classroomUsersLoading
-  } = useQuery({
-    queryKey: ['classroomUsers', selectedClassroom?.id],
-    queryFn: () => {
-      if (!selectedClassroom?.id) {
-        throw new Error('No classroom selected');
-      }
-      return getClassroomUsers(selectedClassroom.id);
-    },
-    enabled: !!selectedClassroom?.id,
-  });
+    loading: classroomUsersLoading
+  } = useClassroomUsersList(selectedClassroom?.id);
 
   const {
-    data: assignments = [],
+    assignments = [],
     error: assignmentsError,
-    isLoading: assignmentsLoading
-  } = useQuery({
-    queryKey: ['assignments', selectedClassroom?.id],
-    queryFn: () => {
-      if (!selectedClassroom?.id) {
-        throw new Error('No classroom selected');
-      }
-      return getAssignments(selectedClassroom.id);
-    },
-    enabled: !!selectedClassroom?.id,
-  });
+    loading: assignmentsLoading
+  } = useAssignmentsList(selectedClassroom?.id);
 
   const navigate = useNavigate();
 

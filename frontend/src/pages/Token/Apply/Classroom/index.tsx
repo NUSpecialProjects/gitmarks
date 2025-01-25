@@ -1,13 +1,13 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useClassroomToken } from "@/api/classrooms";
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import TokenApplyPage from "../Generic";
 import { ClassroomRole } from "@/types/enums";
+import { useCurrentClassroom } from "@/hooks/useClassroomUser";
 
 const ClassroomTokenApply: React.FC = () => {
   const navigate = useNavigate();
-  const { setSelectedClassroom } = useContext(SelectedClassroomContext);
+  const { setSelectedClassroom } = useCurrentClassroom();
 
   const handleSuccess = (data: IClassroomJoinResponse) => {
     if (data) {
