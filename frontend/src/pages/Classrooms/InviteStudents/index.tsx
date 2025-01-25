@@ -6,7 +6,7 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 
 import "../styles.css";
 import { ClassroomRole } from "@/types/enums";
-import { useClassroomInviteLink } from "@/hooks/useClassroomInviteLink";
+import { useClassroomInviteLink } from "@/hooks/useClassroom";
 
 const InviteStudents: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);

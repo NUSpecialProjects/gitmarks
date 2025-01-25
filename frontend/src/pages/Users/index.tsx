@@ -9,7 +9,7 @@ import CopyLink from "@/components/CopyLink";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { useClassroomUser, useClassroomUsersList, useCurrentClassroom, useInviteClassroomUser, useRevokeClassroomInvite, useRemoveClassroomUser } from "@/hooks/useClassroomUser";
-import { useClassroomInviteLink } from "@/hooks/useClassroomInviteLink";
+import { useClassroomInviteLink } from "@/hooks/useClassroom";
 
 interface GenericRolePageProps {
   role_label: string;

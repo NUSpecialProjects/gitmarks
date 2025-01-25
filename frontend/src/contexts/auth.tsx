@@ -6,6 +6,9 @@ import { SelectedClassroomContext } from "./selectedClassroom";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { NavigateFunction } from "react-router-dom";
 
+/**
+ * The possible authentication states for a user.
+ */
 export enum AuthState {
   LOGGING_IN = "LOGGING_IN",
   LOGGED_IN = "LOGGED_IN",
@@ -22,6 +25,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+/**
+ * Provides the authentication context.
+ * 
+ * @param children - The children to render.
+ * @returns The authentication context.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>(AuthState.LOGGING_IN);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
@@ -74,6 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Provides the authentication context.
+ * 
+ * @returns The authentication context.
+ */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === null) {
@@ -82,6 +96,11 @@ export function useAuth() {
   return context;
 }
 
+/**
+ * Navigates to the redirect URL and clears it.
+ * 
+ * @param navigate - The navigation function.
+ */
 export const goToRedirectUrl = (navigate: NavigateFunction) => {
   const redirectUrl = getRedirectUrl();
   if (redirectUrl) {
@@ -90,6 +109,9 @@ export const goToRedirectUrl = (navigate: NavigateFunction) => {
   }
 }
 
+/**
+ * Sets the redirect URL to the current location.
+ */
 export const setRedirectUrl = () => {
   const currentUrl = location.pathname + location.search + location.hash;
   if (!currentUrl.startsWith('/oauth')) {
@@ -97,5 +119,14 @@ export const setRedirectUrl = () => {
   }
 }
 
+/**
+ * Gets the redirect URL from local storage.
+ * 
+ * @returns The redirect URL.
+ */
 export const getRedirectUrl = () => localStorage.getItem("redirectAfterLogin");
+
+/**
+ * Clears the redirect URL from local storage.
+ */
 const clearRedirectUrl = () => localStorage.removeItem("redirectAfterLogin");

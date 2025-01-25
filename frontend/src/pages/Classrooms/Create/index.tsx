@@ -6,8 +6,8 @@ import Panel from "@/components/Panel";
 import Button from "@/components/Button";
 import { useMutation } from "@tanstack/react-query";
 import { useOrganizationDetails } from "@/hooks/useOrganization";
-import { useClassroomNames } from "@/hooks/useClassroomNames";
-import { useClassroomValidation } from "@/hooks/useClassroomNames";
+import { useClassroomNames } from "@/hooks/useClassroom";
+import { useClassroomValidation } from "@/hooks/useClassroom";
 
 import "./styles.css";
 import Input from "@/components/Input";

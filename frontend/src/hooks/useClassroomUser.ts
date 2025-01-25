@@ -6,6 +6,11 @@ import { useContext, useState } from "react";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom } from "@/api/classrooms";
 
+/**
+ * Provides the currently selected classroom based on the selected classroom cookie.
+ * 
+ * @returns The currently selected classroom.
+ */
 export function useCurrentClassroom() {
   const context = useContext(SelectedClassroomContext);
   if (context === null) {
@@ -14,6 +19,14 @@ export function useCurrentClassroom() {
   return context;
 }
 
+/**
+ * Provides the currently selected classroom user.
+ * Optionally redirects the user if they do not have the required role.
+ * 
+ * @param requiredRole - (Optional) The role required to access the page.
+ * @param redirectPath - (Optional) The path to redirect to if the user does not have the required role.
+ * @returns The currently selected classroom user.
+ */
 export function useClassroomUser(requiredRole?: ClassroomRole, redirectPath?: string) {
   const navigate = useNavigate();
   const context = useContext(SelectedClassroomContext);
@@ -62,6 +75,12 @@ export function useClassroomUser(requiredRole?: ClassroomRole, redirectPath?: st
   };
 }
 
+/**
+ * Provides the list of classroom users.
+ * 
+ * @param classroomId - The ID of the classroom to fetch users for.
+ * @returns The list of classroom users.
+ */
 export function useClassroomUsersList(classroomId: number | undefined) {
   const { data: classroomUsers, error, isLoading } = useQuery({
     queryKey: ['classroomUsers', classroomId],
@@ -79,6 +98,18 @@ export function useClassroomUsersList(classroomId: number | undefined) {
   };
 }
 
+function removeFromSet(set: Set<number>, value: number) {
+  const newSet = new Set(set);
+  newSet.delete(value);
+  return newSet;
+}
+
+/**
+ * Provides a function to invite a user to the classroom.
+ * 
+ * @param classroomId - The ID of the classroom to invite the user to.
+ * @returns The function to invite a user to the classroom.
+ */
 export function useInviteClassroomUser(classroomId: number | undefined) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -100,9 +131,7 @@ export function useInviteClassroomUser(classroomId: number | undefined) {
       setError("Failed to invite user. Please try again.");
     } finally {
       setLoadingUserIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
+        return removeFromSet(prev, userId);
       });
     }
   };
@@ -110,6 +139,12 @@ export function useInviteClassroomUser(classroomId: number | undefined) {
   return { inviteUser, error };
 }
 
+/**
+ * Provides a function to revoke an invite to a user.
+ * 
+ * @param classroomId - The ID of the classroom to revoke the invite from.
+ * @returns The function to revoke an invite to a user.
+ */
 export function useRevokeClassroomInvite(classroomId: number | undefined) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -129,9 +164,7 @@ export function useRevokeClassroomInvite(classroomId: number | undefined) {
       setError("Failed to revoke invite. Please try again.");
     } finally {
       setLoadingUserIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
+        return removeFromSet(prev, userId);
       });
     }
   };
@@ -139,6 +172,13 @@ export function useRevokeClassroomInvite(classroomId: number | undefined) {
   return { revokeInvite, error };
 }
 
+/**
+ * Provides a function to remove a user from the classroom.
+ * 
+ * @param classroomId - The ID of the classroom to remove the user from.
+ * @param currentUserId - The ID of the current user.
+ * @returns The function to remove a user from the classroom.
+ */
 export function useRemoveClassroomUser(classroomId: number | undefined, currentUserId: number | undefined) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -163,9 +203,7 @@ export function useRemoveClassroomUser(classroomId: number | undefined, currentU
       setError("Failed to remove user. Please try again.");
     } finally {
       setLoadingUserIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
+        return removeFromSet(prev, userId);
       });
     }
   };

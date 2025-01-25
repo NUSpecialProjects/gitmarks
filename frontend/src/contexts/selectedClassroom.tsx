@@ -9,6 +9,11 @@ interface ISelectedClassroomContext {
   loading: boolean;
 }
 
+/**
+ * The selected classroom context.
+ * 
+ * @returns The selected classroom context.
+ */
 export const SelectedClassroomContext: React.Context<ISelectedClassroomContext> =
   createContext<ISelectedClassroomContext>({
     selectedClassroom: null,
@@ -16,6 +21,12 @@ export const SelectedClassroomContext: React.Context<ISelectedClassroomContext> 
     loading: true,
   });
 
+/**
+ * Provides the selected classroom context.
+ * 
+ * @param children - The children to render.
+ * @returns The selected classroom context.
+ */
 export const SelectedClassroomProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {

@@ -13,6 +13,12 @@ import {
 import { getStudentWorks } from "@/api/student_works";
 import { ChartData } from 'chart.js';
 
+/**
+ * Provides the list of assignments for a classroom.
+ * 
+ * @param classroomId - The ID of the classroom to fetch assignments for.
+ * @returns The list of assignments for the classroom.
+ */
 export const useAssignmentsList = (classroomId: number | undefined) => {
   const {
     data: assignments = [],
@@ -36,6 +42,13 @@ export const useAssignmentsList = (classroomId: number | undefined) => {
   };
 };
 
+/**
+ * Provides a single assignment
+ * 
+ * @param classroomId - The ID of the classroom to fetch the assignment for.
+ * @param assignmentId - The ID of the assignment to fetch.
+ * @returns The assignment for the classroom.
+ */
 export const useAssignment = (classroomId: number | undefined, assignmentId: number | undefined) => {
   const location = useLocation();
 
@@ -69,6 +82,14 @@ export const useStudentWorks = (classroomId: number | undefined, assignmentId: n
   });
 };
 
+/**
+ * Provides an invite link for an assignment.
+ * 
+ * @param classroomId - The ID of the classroom to fetch the invite link for.
+ * @param assignmentId - The ID of the assignment to fetch the invite link for.
+ * @param baseUrl - The base URL to use for the invite link.
+ * @returns The invite link for the assignment.
+ */
 export const useAssignmentInviteLink = (classroomId: number | undefined, assignmentId: number | undefined, baseUrl: string) => {
   return useQuery({
     queryKey: ['assignmentToken', classroomId, assignmentId],
@@ -81,6 +102,13 @@ export const useAssignmentInviteLink = (classroomId: number | undefined, assignm
   });
 };
 
+/**
+ * Provides a template assignment
+ * 
+ * @param classroomId - The ID of the classroom to fetch the template for.
+ * @param assignmentId - The ID of the assignment to fetch the template for.
+ * @returns The assignment template.
+ */
 export const useAssignmentTemplate = (classroomId: number | undefined, assignmentId: number | undefined) => {
   return useQuery({
     queryKey: ['assignmentTemplate', classroomId, assignmentId],
@@ -92,7 +120,13 @@ export const useAssignmentTemplate = (classroomId: number | undefined, assignmen
   });
 };
 
-// unknown type is for properties that we aren't using, so unknown is ok
+/**
+ * Provides the acceptance metrics for an assignment.
+ * 
+ * @param classroomId - The ID of the classroom to fetch the acceptance metrics for.
+ * @param assignmentId - The ID of the assignment to fetch the acceptance metrics for.
+ * @returns The acceptance metrics for the assignment.
+ */
 export const useAssignmentMetrics = (classroomId: number | undefined, assignmentId: number | undefined) => {
   const { data: acceptanceData } = useQuery({
     queryKey: ['acceptanceMetrics', classroomId, assignmentId],

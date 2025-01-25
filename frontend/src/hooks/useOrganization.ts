@@ -2,6 +2,12 @@ import { getAppInstallations, getOrganizationDetails } from "@/api/organizations
 import { useQuery } from "@tanstack/react-query";
 import { getClassroomsInOrg } from "@/api/classrooms";
 
+/**
+ * Provides the details of an organization.
+ * 
+ * @param orgID - The ID of the organization to fetch the details for.
+ * @returns The organization.
+ */
 export const useOrganizationDetails = (orgID: string) => {
   return useQuery({
     queryKey: ['organization', orgID],
@@ -10,6 +16,12 @@ export const useOrganizationDetails = (orgID: string) => {
   });
 };
 
+/**
+ * Provides the classrooms in an organization.
+ * 
+ * @param orgID - The ID of the organization to fetch the classrooms for.
+ * @returns The classrooms in the organization.
+ */
 export const useOrganizationClassrooms = (orgID: number | undefined) => {
   return useQuery({
     queryKey: ['classrooms', orgID],
@@ -24,7 +36,11 @@ export const useOrganizationClassrooms = (orgID: number | undefined) => {
   });
 };
 
-
+/**
+ * Provides the installationa of the GitHub App.
+ * 
+ * @returns The app installations
+ */
 export const useAppInstallations = () => {
   return useQuery({
     queryKey: ['app-installations'],
