@@ -43,37 +43,47 @@ const Grader: React.FC = () => {
 
   return (
 
-
-    <div>
+    <>
 
 
 
       {dataRetrievalError && (
-        <div>
-          <div className="Grader__title">
-            <Link to="/app/grading">
-              <FaChevronLeft />
-            </Link>
+        <div className="Grader">
 
-            <div> Grading</div>
+          <div className="Grader__head">
+            <div className="Grader__title">
+              <Link to="/app/grading">
+                <FaChevronLeft />
+              </Link>
+
+              <div> 
+                <h2>Grading</h2>
+
+              </div>
+            </div>
+
           </div>
-
           <div>Unable to retrieve students work</div>
+
         </div>
       )}
 
       {(loadingGitTree || loadingStudentWork) && (
-        <div>
-          <div className="Grader__title">
-            <Link to="/app/grading">
-              <FaChevronLeft />
-            </Link>
+        <div className="Grader">
+          <div className="Grader__head">
+            <div className="Grader__title">
+              <Link to="/app/grading">
+                <FaChevronLeft />
+              </Link>
+              <div>
+                <h2>Loading...</h2>
+                <span>Loading...</span>
+              </div>
+            </div>
 
-            <div>Grading</div>
           </div>
-          <div> Loading... </div>
-
         </div>
+
 
       )}
 
@@ -152,9 +162,8 @@ const Grader: React.FC = () => {
         </div>
       )}
 
-    </div>
 
-
+    </>
 
 
 
