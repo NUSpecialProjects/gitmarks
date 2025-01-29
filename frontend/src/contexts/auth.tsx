@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         break;
     }
-  }, [user, status, authState]);
+  }, [user, status]);
 
   const logoutMutation = useMutation({
     mutationFn: logoutApi,

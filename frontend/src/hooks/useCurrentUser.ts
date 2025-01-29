@@ -17,8 +17,6 @@ export const useCurrentUser = () => {
       return user;
     },
     refetchOnWindowFocus: true,
-    staleTime: 0,
-    gcTime: 0,
-    retry: false
+    retry: false,
   });
 };

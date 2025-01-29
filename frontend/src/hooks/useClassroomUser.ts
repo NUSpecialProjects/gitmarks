@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { sendOrganizationInviteToUser, revokeOrganizationInvite, removeUserFromClassroom } from "@/api/classrooms";
+import { useCurrentUser } from "./useCurrentUser";
 
 /**
  * Provides the currently selected classroom based on the selected classroom cookie.
@@ -28,7 +29,6 @@ export function useCurrentClassroom() {
  * @returns The currently selected classroom user.
  */
 export function useClassroomUser(requiredRole?: ClassroomRole, redirectPath?: string) {
-  const navigate = useNavigate();
   const context = useContext(SelectedClassroomContext);
   if (context === null) {
     throw new Error('useClassroomUser must be used within a SelectedClassroomProvider');
@@ -36,24 +36,27 @@ export function useClassroomUser(requiredRole?: ClassroomRole, redirectPath?: st
 
   const classroomId = context.selectedClassroom?.id;
 
+  const navigate = useNavigate();
+  const { error: currentUserError } = useCurrentUser();
+
   const { data: classroomUser, error, status } = useQuery({
     queryKey: ['classroomUser', classroomId],
     queryFn: async () => {
       if (!classroomId) return null;
       try {
-        const user = await getCurrentClassroomUser(classroomId);
+        const classroomUser = await getCurrentClassroomUser(classroomId);
         if (requiredRole && redirectPath) {
-          if (user.classroom_id !== classroomId) {
+          if (classroomUser.classroom_id !== classroomId) {
             throw new Error("User is not in the specified classroom");
           }
-          if (user.status !== ClassroomUserStatus.ACTIVE) {
+          if (classroomUser.status !== ClassroomUserStatus.ACTIVE) {
             throw new Error("User is not active in this classroom");
           }
-          if (requiredRole && !requireAtLeastClassroomRole(user.classroom_role, requiredRole)) {
+          if (requiredRole && !requireAtLeastClassroomRole(classroomUser.classroom_role, requiredRole)) {
             throw new Error("User does not have the required role");
           }
         }
-        return user;
+        return classroomUser;
       } catch (error) {
         if (requiredRole && redirectPath) {
           navigate(redirectPath, { replace: true });
@@ -69,7 +72,7 @@ export function useClassroomUser(requiredRole?: ClassroomRole, redirectPath?: st
 
   return { 
     classroomUser: classroomUser || null, 
-    error: error as Error | null,
+    error: error || currentUserError,
     status: status,
     loading: status === "pending"
   };
