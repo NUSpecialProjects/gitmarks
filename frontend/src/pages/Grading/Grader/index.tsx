@@ -10,6 +10,8 @@ import { GraderContext, GraderProvider } from "@/contexts/grader";
 
 import "./styles.css";
 import RubricTree from "@/components/CodeBrowser/RubricTree";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import ErrorMessage from "@/components/Error";
 
 const GraderWrapper: React.FC = () => {
   const { assignmentID, studentWorkID } = useParams();
@@ -44,9 +46,6 @@ const Grader: React.FC = () => {
   return (
 
     <>
-
-
-
       {dataRetrievalError && (
         <div className="Grader">
 
@@ -63,28 +62,18 @@ const Grader: React.FC = () => {
             </div>
 
           </div>
-          <div>Unable to retrieve students work</div>
+          <div className="Grader_loading">
+            <ErrorMessage message="Unable to retrieve students work"></ErrorMessage>
+
+          </div>
 
         </div>
       )}
 
       {(loadingGitTree || loadingStudentWork) && (
-        <div className="Grader">
-          <div className="Grader__head">
-            <div className="Grader__title">
-              <Link to="/app/grading">
-                <FaChevronLeft />
-              </Link>
-              <div>
-                <h2>Loading...</h2>
-                <span>Loading...</span>
-              </div>
-            </div>
-
-          </div>
+        <div className="Grader__loading">
+          <LoadingSpinner/>
         </div>
-
-
       )}
 
 
