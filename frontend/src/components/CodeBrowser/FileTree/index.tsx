@@ -15,28 +15,19 @@ import "./styles.css";
  ****************/
 export const FileTree: React.FC<IFileTree> = ({ selectFileCallback }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { assignmentID, studentWorkID } = useContext(GraderContext);
+  const { assignmentID, studentWorkID, fileTree } = useContext(GraderContext);
+
 
   const [gitTree, setGitTree] = useState<IGitTreeNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>("");
   const [root, setRoot] = useState<IFileTreeNode | null>(null);
   const [treeDepth, setTreeDepth] = useState(0);
 
+
   // fetch git tree from student assignment repo
   useEffect(() => {
-    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-
-    getFileTree(
-      selectedClassroom.id,
-      Number(assignmentID),
-      Number(studentWorkID)
-    )
-      .then((resp) => {
-        setGitTree(resp);
-      })
-      .catch((_: unknown) => {
-        setGitTree([]);
-      });
+    if (!fileTree) return;
+      setGitTree(fileTree);
   }, []);
 
   useEffect(() => {
