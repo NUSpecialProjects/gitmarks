@@ -232,6 +232,8 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context,  orgName, repoNam
 			map[string]interface{}{
 				"type": "non_fast_forward",
 			},
+
+			// KHO-315
 			/*
 			map[string]interface{}{
 				"type": "deletion",
