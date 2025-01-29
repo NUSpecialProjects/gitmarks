@@ -2,9 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { FaChevronRight, FaChevronDown } from "react-icons/fa";
 import SimpleBar from "simplebar-react";
 
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { GraderContext } from "@/contexts/grader";
-import { getFileTree } from "@/api/grader";
 import { buildTree, renderTree, sortTreeNode } from "./funcs";
 import ResizablePanel from "../ResizablePanel";
 
@@ -14,8 +12,7 @@ import "./styles.css";
  * TREE COMPONENT
  ****************/
 export const FileTree: React.FC<IFileTree> = ({ selectFileCallback }) => {
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { assignmentID, studentWorkID, fileTree } = useContext(GraderContext);
+  const { fileTree } = useContext(GraderContext);
 
 
   const [gitTree, setGitTree] = useState<IGitTreeNode[]>([]);
