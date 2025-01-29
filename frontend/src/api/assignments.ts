@@ -119,7 +119,6 @@ export const getAssignmentTemplate = async (
   }
 
   const data: IAssignmentTemplate = (await result.json()).assignment_template;
-  console.log(data);
   return data;
 };
 

@@ -2,8 +2,8 @@ import { useLocation, useParams, Link } from "react-router-dom";
 import { MdEdit, MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
-import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, registerables } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
@@ -39,7 +39,7 @@ const Assignment: React.FC = () => {
   const [assignmentTemplate, setAssignmentTemplate] = useState<IAssignmentTemplate>();
   const [studentWorks, setStudentAssignment] = useState<IStudentWork[]>([]);
   const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { id } = useParams();
+  const { id: assignmentID } = useParams();
   const [inviteLink, setInviteLink] = useState<string>("");
   const [linkError, setLinkError] = useState<string | null>(null);
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
@@ -70,10 +70,10 @@ const Assignment: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!selectedClassroom || !id) return;
+    if (!selectedClassroom || !assignmentID) return;
 
     // populate acceptance metrics
-    getAssignmentAcceptanceMetrics(selectedClassroom.id, Number(id)).then(
+    getAssignmentAcceptanceMetrics(selectedClassroom.id, Number(assignmentID)).then(
       (metrics) => {
         acceptanceMetrics.datasets[0].data = [
           metrics.not_accepted,
@@ -87,12 +87,23 @@ const Assignment: React.FC = () => {
     );
 
     // populate graded status metrics
-    getAssignmentGradedMetrics(selectedClassroom.id, Number(id)).then(
+    getAssignmentGradedMetrics(selectedClassroom.id, Number(assignmentID)).then(
       (metrics) => {
         gradedMetrics.datasets[0].data = [metrics.graded, metrics.ungraded];
         setGradedMetrics(gradedMetrics);
       }
     );
+  }, [selectedClassroom]);
+
+  useEffect(() => {
+    if (!selectedClassroom || !assignmentID) return;
+    getAssignmentTemplate(selectedClassroom.id, Number(assignmentID))
+      .then(assignmentTemplate => {
+        setAssignmentTemplate(assignmentTemplate);
+      })
+      .catch(_ => {
+        // do nothing
+      });
   }, [selectedClassroom]);
 
   useEffect(() => {
@@ -103,14 +114,6 @@ const Assignment: React.FC = () => {
 
       // sync student assignments
       if (selectedClassroom !== null && selectedClassroom !== undefined) {
-        getAssignmentTemplate(selectedClassroom.id, a.id)
-        .then(assignmentTemplate => {
-          setAssignmentTemplate(assignmentTemplate);
-        })
-        .catch(_ => {
-          // do nothing
-        });
-
         (async () => {
           try {
             const studentWorks = await getStudentWorks(
@@ -127,12 +130,12 @@ const Assignment: React.FC = () => {
       }
     } else {
       // fetch the assignment from backend
-      if (id && selectedClassroom !== null && selectedClassroom !== undefined) {
+      if (assignmentID && selectedClassroom !== null && selectedClassroom !== undefined) {
         (async () => {
           try {
             const fetchedAssignment = await getAssignmentIndirectNav(
               selectedClassroom.id,
-              +id
+              +assignmentID
             );
             if (fetchedAssignment !== null && fetchedAssignment !== undefined) {
               setAssignment(fetchedAssignment);
@@ -151,6 +154,8 @@ const Assignment: React.FC = () => {
       }
     }
   }, [selectedClassroom]);
+
+  
 
   useEffect(() => {
     const generateInviteLink = async () => {
@@ -250,7 +255,7 @@ const Assignment: React.FC = () => {
                     maintainAspectRatio: true,
                     plugins: {
                       legend: {
-                        onClick: () => {},
+                        onClick: () => { },
                         display: true,
                         position: "bottom",
                         labels: {

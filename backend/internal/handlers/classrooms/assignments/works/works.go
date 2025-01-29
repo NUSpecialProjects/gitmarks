@@ -10,6 +10,7 @@ import (
 	"github.com/CamPlume1/khoury-classroom/internal/middleware"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/go-github/github"
 )
 
 // Helper function for getting a student work by ID
@@ -277,6 +278,36 @@ func (s *WorkService) GetCommitCount() fiber.Handler {
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"work_id":      work.ID,
 			"commit_count": work.CommitAmount,
+		})
+	}
+}
+
+func (s *WorkService) GetCommitsPerDay() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		work, err := s.getWork(c)
+		if err != nil {
+			return err
+		}
+
+		var opts github.CommitsListOptions
+		opts.Author = work.Contributors[0].GithubUsername
+		commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+		if err != nil {
+			return errs.GithubAPIError(err)
+		}
+
+		commitDatesMap := make(map[time.Time]int)
+		for _, commit := range commits {
+			commitDate := commit.GetCommit().GetCommitter().Date
+			if commitDate != nil {
+				// Standardize times to midday UTC
+				truncatedDate := time.Date(commitDate.Year(), commitDate.Month(), commitDate.Day(), 12, 0, 0, 0, commitDate.Location())
+				commitDatesMap[truncatedDate] = commitDatesMap[truncatedDate] + 1
+			}
+		}
+
+		return c.Status(http.StatusOK).JSON(fiber.Map{
+			"dated_commits": commitDatesMap,
 		})
 	}
 }

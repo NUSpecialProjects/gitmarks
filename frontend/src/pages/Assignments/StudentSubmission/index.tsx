@@ -6,9 +6,15 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import MetricPanel from "@/components/Metrics/MetricPanel";
 import Metric from "@/components/Metrics";
 import Button from "@/components/Button";
-import { getStudentWorkById } from "@/api/student_works";
+import { getStudentWorkById, getStudentWorkCommitsPerDay } from "@/api/student_works";
 import { getFirstCommit, getTotalCommits } from "@/api/student_works";
 import { formatDate } from "@/utils/date";
+
+import { ChartData, Chart as ChartJS, ChartOptions, Point, registerables } from "chart.js";
+import { Line } from 'react-chartjs-2'
+import ChartDataLabels from "chartjs-plugin-datalabels";
+ChartJS.register(...registerables);
+ChartJS.register(ChartDataLabels);
 
 import { MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
@@ -21,8 +27,14 @@ const StudentSubmission: React.FC = () => {
   const assignmentID = location.state.assignmentId;
   const [firstCommit, setFirstCommit] = useState<string>("");
   const [totalCommits, setTotalCommits] = useState<string>();
+  const [noCommits, setNoCommits] = useState(false)
+  const [loadingAllCommits, setLoadingAllCommits] = useState(true)
 
-  console.log(location.state);
+
+  const [commitsPerDay, setCommitsPerDay] = useState<Map<Date, number>>(new Map());
+  const [lineData, setLineData] = useState<ChartData<"line", (number | Point | null)[], unknown>>()
+  const [lineOptions, setLineOptions] = useState<ChartOptions<"line">>()
+
 
   useEffect(() => {
     if (location.state && location.state.submission) {
@@ -87,11 +99,15 @@ const StudentSubmission: React.FC = () => {
             submission.student_work_id
           );
 
-          console.log(total);
           if (totalCommits !== null && totalCommits !== undefined) {
             setTotalCommits(total.toString());
           } else {
             setTotalCommits("N/A");
+          }
+
+          const cPD = await getStudentWorkCommitsPerDay(selectedClassroom.id, assignmentID, submission.student_work_id)
+          if (cPD !== null && cPD !== undefined) {
+            setCommitsPerDay(cPD)
           }
         } catch (_) {
           // do nothing
@@ -99,6 +115,115 @@ const StudentSubmission: React.FC = () => {
       })();
     }
   }, [selectedClassroom, submission]);
+
+  // useEffect for line chart 
+  useEffect(() => {
+    if (commitsPerDay) {
+      const sortedDates = Array.from(commitsPerDay.keys()).sort((a, b) => a.valueOf() - b.valueOf())
+      // end dates at today or due date, whichever is sooner
+      if (submission) {
+        const today = new Date()
+        today.setUTCHours(0)
+        today.setUTCMinutes(0)
+        today.setUTCSeconds(0)
+        if (sortedDates.length === 0) {
+          setNoCommits(true)
+        } else if (sortedDates[sortedDates.length - 1].toDateString() !== (today.toDateString())) {
+          sortedDates.push(new Date())
+        }
+      }
+
+      const sortedCounts: number[] = (sortedDates.map((date) => commitsPerDay.get(date) ?? 0))
+      const sortedDatesStrings = sortedDates.map((date) => `${date.getMonth()+1}/${date.getDate()}`)
+
+      //add in days with 0 commits
+      const sortedDatesStringsCopy = [...sortedDatesStrings]
+      let index = 0
+      for (let i = 0; i < sortedDatesStringsCopy.length - 1; i++) {
+
+        const month = Number(sortedDatesStringsCopy[i].split("/")[0])
+        const day = Number(sortedDatesStringsCopy[i].split("/")[1])
+        const followingDay = Number(sortedDatesStringsCopy[i + 1].split("/")[1])
+
+
+        const difference = day - followingDay
+
+        const adjacent = (difference === -1)
+        const adjacentWrapped = ((difference === 30 || difference === 29 || difference === 27) && (followingDay === 1))
+
+        if (!adjacent && !adjacentWrapped) {
+          for (let j = 1; j < Math.abs(difference); j++) {
+            
+            const nextDay = (new Date(sortedDates[i].getUTCFullYear(), month-1, day))
+            nextDay.setDate(nextDay.getDate()+j)
+
+            sortedDatesStrings.splice(index + j, 0, `${nextDay.getUTCMonth()+1}/${nextDay.getDate()}`)
+            sortedCounts.splice(index + j, 0, 0)
+          }
+          index += (Math.abs(difference))
+
+        }
+      }
+
+      if (sortedDates.length > 0) {
+        setLoadingAllCommits(false)
+      }
+
+      const lineData = {
+        labels: sortedDatesStrings,
+        datasets: [
+          {
+            data: sortedCounts,
+            borderColor: 'rgba(13, 148, 136, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.05,
+          },
+        ],
+      }
+      setLineData(lineData)
+
+      const lineOptions = {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          title: {
+            display: false,
+          },
+          datalabels: {
+            display: false,
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false,
+            },
+          },
+          y: {
+            grid: {
+              display: false,
+            },
+            ticks: {
+              maxTicksLimit: 5,
+              beginAtZero: true,
+            },
+          },
+        },
+        elements: {
+          point: {
+            radius: 1,
+          },
+          labels: {
+            display: false
+          }
+        },
+      }
+      setLineOptions(lineOptions)
+    }
+
+  }, [commitsPerDay])
 
   return (
     <div className="StudentWork">
@@ -129,8 +254,29 @@ const StudentSubmission: React.FC = () => {
         <MetricPanel>
           <Metric title="First Commit Date">{firstCommit}</Metric>
           <Metric title="Total Commits">{totalCommits ?? "N/A"}</Metric>
-          <Metric title="First Commit Date">Put Chart Here</Metric>
+          {lineData && lineOptions && (
+            <Metric title="Commits Over Time" className="Metric__bigContent">
+              <div>
+                {noCommits && (
+                  <div>N/A</div>
+                )}
+
+                {!noCommits && loadingAllCommits &&
+                  <div>Loading...</div>
+                }
+
+                {!noCommits && !loadingAllCommits && (
+                  <Line className="StudentSubmission__commitsOverTimeChart"
+                    options={lineOptions}
+                    data={lineData}
+                  />
+                )}
+              </div>
+            </Metric>
+          )}
         </MetricPanel>
+
+        <div>{}</div>
       </div>
     </div>
   );

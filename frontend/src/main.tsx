@@ -78,6 +78,7 @@ export default function App(): React.JSX.Element {
               </Route>
               {/******* CLASS SELECTED: INNER APP *******/}
               <Route path="" element={<Layout />}>
+                <Route path="about-us" element={<Pages.AboutUs />} />
                 <Route path="assignments" element={<Pages.Assignments />} />
                 <Route
                   path="assignments/create"
@@ -111,6 +112,8 @@ export default function App(): React.JSX.Element {
                 <Route path="dashboard" element={<Pages.Dashboard />} />
               </Route>
             </Route>
+
+            <Route path="access-denied" element={<Pages.AccessDenied />} />
 
             {/******* 404 CATCH ALL *******/}
             <Route path="404" element={<Pages.PageNotFound />} />

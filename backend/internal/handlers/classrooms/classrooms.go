@@ -2,9 +2,11 @@ package classrooms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +18,12 @@ import (
 	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	"github.com/gofiber/fiber/v2"
 )
+
+// Helper method to check if a classroom exists
+func (s *ClassroomService) doesClassroomExist(ctx context.Context, name string) (bool, error) {
+	_, err := s.store.GetClassroomByName(ctx, name)
+	return err == nil, nil // If no error, classroom exists
+}
 
 // Returns the classrooms the authenticated user is part of.
 func (s *ClassroomService) getUserClassrooms() fiber.Handler {
@@ -32,6 +40,8 @@ func (s *ClassroomService) getClassroom() fiber.Handler {
 		if err != nil {
 			return errs.BadRequest(err)
 		}
+
+		// Only allow TAs and Profs to get classroom info
 		_, err = s.RequireAtLeastRole(c, classroomID, models.TA)
 		if err != nil {
 			return err
@@ -43,6 +53,30 @@ func (s *ClassroomService) getClassroom() fiber.Handler {
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{"classroom": classroomData})
+	}
+}
+
+func (s *ClassroomService) checkClassroomExists() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		classroomName := c.Params("classroom_name")
+		if classroomName == "" {
+			return errs.BadRequest(errors.New("classroom name is required"))
+		}
+
+		// Decode the URL-encoded classroom name
+		decodedName, err := url.QueryUnescape(classroomName)
+		if err != nil {
+			return errs.BadRequest(errors.New("invalid classroom name encoding"))
+		}
+
+		exists, err := s.doesClassroomExist(c.Context(), decodedName)
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+		return c.Status(http.StatusOK).JSON(fiber.Map{
+			"exists": exists,
+		})
 	}
 }
 
@@ -58,6 +92,14 @@ func (s *ClassroomService) createClassroom() fiber.Handler {
 		err = c.BodyParser(&classroomData)
 		if err != nil {
 			return errs.InvalidRequestBody(models.Classroom{})
+		}
+
+		// check if classroom exists already
+		exists, err := s.doesClassroomExist(c.Context(), classroomData.Name)
+		if err != nil {
+			return errs.InternalServerError()
+		} else if exists {
+			return c.Status(http.StatusConflict).SendString("Classroom already exists")
 		}
 
 		membership, err := client.GetUserOrgMembership(c.Context(), classroomData.OrgName, githubUser.Login)
@@ -118,6 +160,7 @@ func (s *ClassroomService) updateClassroom() fiber.Handler {
 		}
 		classroomData.ID = classroomID
 
+		// Only allow professors to update classrooms
 		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
@@ -147,6 +190,7 @@ func (s *ClassroomService) updateClassroomName() fiber.Handler {
 		}
 		classroomData.ID = classroomID
 
+		// Only allow professors to update classroom names
 		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
@@ -180,6 +224,7 @@ func (s *ClassroomService) getClassroomUsers() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
+		// Only allow TAs and Profs to get users in classrooms
 		_, err = s.RequireAtLeastRole(c, classroomID, models.TA)
 		if err != nil {
 			return err
@@ -256,7 +301,8 @@ func (s *ClassroomService) removeUserFromClassroom() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
-		_, err = s.RequireAtLeastRole(c, classroomID, models.TA)
+		// Only allow professors to remove users from classrooms
+		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
 		}
@@ -311,12 +357,8 @@ func (s *ClassroomService) generateClassroomToken() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
-		// Allow professors to invite other professors (only role that should be allowed to invite ppl of the same level)
-		if classroomRole == models.Professor {
-			_, err = s.RequireAtLeastRole(c, classroomID, classroomRole)
-		} else {
-			_, err = s.RequireGreaterThanRole(c, classroomID, classroomRole)
-		}
+		// Only allow professors to invite people to classrooms
+		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
 		}
@@ -516,7 +558,8 @@ func (s *ClassroomService) sendOrganizationInvitesToRequestedUsers() fiber.Handl
 			return errs.BadRequest(err)
 		}
 
-		_, err = s.RequireGreaterThanRole(c, classroomID, classroomRole)
+		// Only allow professors to invite people to org
+		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
 		}
@@ -569,7 +612,8 @@ func (s *ClassroomService) sendOrganizationInviteToUser() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
-		_, err = s.RequireGreaterThanRole(c, classroomID, classroomRole)
+		// Only allow professors to invite people to org
+		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
 		}
@@ -610,12 +654,8 @@ func (s *ClassroomService) denyRequestedUser() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
-		targetUser, err := s.store.GetUserInClassroom(c.Context(), classroomID, userID)
-		if err != nil {
-			return errs.InternalServerError()
-		}
-
-		_, err = s.RequireGreaterThanRole(c, classroomID, targetUser.Role)
+		// Only allow professors to remove users from classrooms
+		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
 		}
@@ -647,7 +687,8 @@ func (s *ClassroomService) revokeOrganizationInvite() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		_, err = s.RequireGreaterThanRole(c, classroomID, targetUser.Role)
+		// Only allow professors to remove users from classrooms
+		_, err = s.RequireAtLeastRole(c, classroomID, models.Professor)
 		if err != nil {
 			return err
 		}

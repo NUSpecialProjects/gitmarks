@@ -1,0 +1,36 @@
+.AccessDenied {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+
+  &__content {
+    text-align: center;
+    max-width: 600px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  &__content h2 {
+    margin-bottom: 1rem;
+    font-size: 2rem;
+  }
+  
+  &__content p {
+    margin-bottom: 0;
+  }
+  
+  &__content p + p {
+    margin-top: 0.25rem;
+  }
+  
+  &__content p:last-of-type {
+    margin-bottom: 2rem;
+  }
+
+  &__button {
+    margin-bottom: 1rem;
+  }
+}

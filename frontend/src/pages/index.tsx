@@ -24,6 +24,8 @@ import InviteTAs from "./Classrooms/InviteTAs";
 import InviteStudents from "./Classrooms/InviteStudents";
 import Success from "./Classrooms/Sucess";
 import Landing from "./Classrooms/Landing";
+import AccessDenied from "./AccessDenied";
+import AboutUs from "./AboutUs";
 
 export {
   PageNotFound,
@@ -52,4 +54,6 @@ export {
   InviteStudents,
   Success,
   Landing,
+  AccessDenied,
+  AboutUs,
 };

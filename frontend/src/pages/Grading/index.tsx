@@ -17,7 +17,8 @@ import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
 import Button from "@/components/Button";
 
 import "./styles.css";
-import { StudentWorkState } from "@/types/enums";
+import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { ClassroomRole, StudentWorkState } from "@/types/enums";
 
 interface IGradingAssignmentRow extends React.HTMLProps<HTMLDivElement> {
   assignment: IAssignmentOutline;
@@ -34,6 +35,7 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
   const { selectedClassroom: selectedClassroom } = useContext(
     SelectedClassroomContext
   );
+  useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
   const navigate = useNavigate();
 
   const downloadGrades = () => {
@@ -156,6 +158,7 @@ const Grading: React.FC = () => {
   const { selectedClassroom: selectedClassroom } = useContext(
     SelectedClassroomContext
   );
+  useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/app/organization/select");
   useEffect(() => {
     if (!selectedClassroom) return;
     getAssignments(selectedClassroom.id)

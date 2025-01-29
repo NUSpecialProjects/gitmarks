@@ -10,15 +10,11 @@ import { ClassroomRole } from "@/types/enums";
 const ClassroomTokenApply: React.FC = () => {
   const navigate = useNavigate();
   const { selectedClassroom, setSelectedClassroom } = useContext(SelectedClassroomContext);
-  const { classroomUser, loading: loadingCurrentClassroomUser } = useClassroomUser(selectedClassroom?.id);
+  const { classroomUser, loading: loadingCurrentClassroomUser } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/app/classroom/landing");
 
   useEffect(() => {
     if (!loadingCurrentClassroomUser && classroomUser && selectedClassroom) {
-      if (classroomUser.classroom_role === ClassroomRole.STUDENT) {
-        navigate("/app/classroom/landing", { replace: true });
-      } else {
-        navigate("/app/dashboard", { replace: true });
-      }
+      navigate("/app/dashboard", { replace: true });
     }
   }, [loadingCurrentClassroomUser, classroomUser, selectedClassroom, navigate]);
 

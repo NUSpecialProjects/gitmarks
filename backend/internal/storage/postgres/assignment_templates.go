@@ -53,7 +53,7 @@ func (db *DB) GetAssignmentTemplateByID(ctx context.Context, templateID int64) (
 
 func (db *DB) GetAssignmentTemplateByAssignmentID(ctx context.Context, assignmentID int64) (models.AssignmentTemplate, error) {
 	var assignmentTemplate models.AssignmentTemplate
-	err := db.connPool.QueryRow(ctx, "SELECT * FROM assignment_templates JOIN assignment_outlines ON assignment_templates.template_repo_id = assignment_outlines.template_id WHERE assignment_outlines.id = $1", assignmentID).Scan(
+	err := db.connPool.QueryRow(ctx, "SELECT assignment_templates.* FROM assignment_templates JOIN assignment_outlines ON assignment_templates.template_repo_id = assignment_outlines.template_id WHERE assignment_outlines.id = $1", assignmentID).Scan(
 		&assignmentTemplate.TemplateID,
 		&assignmentTemplate.TemplateRepoOwner,
 		&assignmentTemplate.TemplateRepoName,

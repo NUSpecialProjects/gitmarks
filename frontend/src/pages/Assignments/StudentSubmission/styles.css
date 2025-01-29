@@ -21,4 +21,11 @@
     &__subSectionWrapper {
         padding: 20px;
       }
+
+      &__commitsOverTimeChart {
+        width: 700px;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: center;
+      }
 }
