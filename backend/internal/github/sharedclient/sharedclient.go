@@ -232,16 +232,19 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context,  orgName, repoNam
 			map[string]interface{}{
 				"type": "non_fast_forward",
 			},
+			/*
 			map[string]interface{}{
 				"type": "deletion",
 			},
+			*/
+			/*
 			map[string]interface{}{
 				"type": "update",
 				"parameters": map[string]interface{}{
 				  "update_allows_fetch_and_merge": true,
 				},
 			  },
-			  
+			  */
 			map[string]interface{}{
 				"type": "pull_request",
 				"parameters" : map[string]interface{}{
@@ -260,10 +263,10 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context,  orgName, repoNam
 					"do_not_enforce_on_create": false,
 					"required_status_checks": []map[string]string{
 						map[string]string{
-							"context": "check-date",
+							"context": "deadline-enforcement",
 						},
 						map[string]string{
-							"context": "check-target",
+							"context": "check-pr-target-branch",
 						},
 
 					},
@@ -281,7 +284,7 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context,  orgName, repoNam
 
 func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName string) error {
 	addition := models.RepositoryAddition{
-		FilePath: ".github/workflows/deadline.yml",
+		FilePath: ".github/workflows/deadline-enforcement.yml",
 		RepoName: repoName,
 		OwnerName: orgName,
 		DestinationBranch: branchName,
@@ -296,7 +299,7 @@ func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *t
 func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName, branchName string) error {
 
 	addition := models.RepositoryAddition{
-		FilePath: ".github/workflows/branchProtections.yml",
+		FilePath: ".github/workflows/check-pr-target-branch.yml",
 		RepoName: repoName,
 		OwnerName: orgName,
 		DestinationBranch: branchName,
@@ -613,8 +616,9 @@ func (api *CommonAPI) EnableWorkflow(ctx context.Context, ownerName, repoName, w
 func (api *CommonAPI) EnableActions(ctx context.Context, ownerName, repoName string) error {
 	endpoint := fmt.Sprintf("/repos/%s/%s/actions/permissions", ownerName, repoName)
 
-	body := map[string]bool{
+	body := map[string]interface{}{
 		"enabled": true,
+		"allowed_actions": "all",
 	}
 
 	req, err := api.Client.NewRequest("PUT", endpoint, body)

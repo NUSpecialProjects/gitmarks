@@ -2,7 +2,6 @@ package assignments
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -306,27 +305,8 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return err
 		}
 		
-		err = client.EnableActions(c.Context(), classroom.OrgName, forkName)
-		if err != nil {
-			fmt.Println("enabling actions failed, attempting with application client")
-			err = s.appClient.EnableActions(c.Context(), classroom.OrgName, forkName)
-			if err != nil {
-				fmt.Println("Enabling actions failed with both clients. Back to the drawing board.")
-			}
-		}
 
-		err = client.EnableWorkflow(c.Context(), classroom.OrgName, forkName, "deadline.yml")
-		if err != nil {
-			fmt.Println("deceased")
-			fmt.Println("Attempting app client workflow injection")
-			err = s.appClient.EnableWorkflow(c.Context(), classroom.OrgName, forkName, "deadline.yml")
-			if err != nil {
-				fmt.Println("Not client related")
-			} else {
-				fmt.Println("Client related")
-			}
-			return err
-		}
+		// TODO Here: Enable Github Actions on student repo.
 
 		// Instead of getting the repository immediately, construct the expected URL
 		return c.Status(http.StatusOK).JSON(fiber.Map{
