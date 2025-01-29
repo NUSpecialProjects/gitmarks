@@ -229,7 +229,7 @@ func (db *DB) GetUserInClassroom(ctx context.Context, classroomID int64, userID 
 	FROM users u
 	JOIN classroom_membership cm ON u.id = cm.user_id
 	JOIN classrooms c ON c.id = cm.classroom_id
-	WHERE cm.classroom_id = $1 AND u.id = $2 AND cm.status != $3`, classroomID, userID, models.UserStatusRemoved).Scan(
+	WHERE cm.classroom_id = $1 AND u.id = $2`, classroomID, userID).Scan(
 		&userData.ID,
 		&userData.FirstName,
 		&userData.LastName,

@@ -421,22 +421,13 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		classroomUser, err := s.store.GetUserInClassroom(c.Context(), classroomToken.ClassroomID, *user.ID)
-		if err != nil {
+        // Gets a user from the classroom
+        classroomUser, err := s.store.GetUserInClassroom(c.Context(), classroomToken.ClassroomID, *user.ID)
+		if err != nil && classroomUser.Status != models.UserStatusRemoved{
 			classroomUser, err = s.store.AddUserToClassroom(c.Context(), classroomToken.ClassroomID, string(classroomToken.ClassroomRole), models.UserStatusRequested, *user.ID)
 			if err != nil {
 				return errs.InternalServerError()
 			}
-		}
-
-		classroomUser, err = s.updateUserStatus(c.Context(), client, user, classroom)
-		if err != nil {
-			return errs.InternalServerError()
-		}
-
-		// don't do anything if the user has been removed from the classroom
-		if classroomUser.Status == models.UserStatusRemoved {
-			return errs.InsufficientPermissionsError()
 		}
 
 		// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
@@ -456,8 +447,20 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		// Accept the pending invitation to the organization
-		err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
+		// Accept the pending invitation to the organization only if they 
+        if classroomUser.Status != models.UserStatusRemoved {
+		    err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
+	    	if err != nil {
+		    	return errs.InternalServerError()
+		    }
+        }
+        
+        // If the user was removed, move them to the requested state 
+		if classroomUser.Status == models.UserStatusRemoved {
+            classroomUser.Status = models.UserStatusRequested
+		}
+
+		classroomUser, err = s.updateUserStatus(c.Context(), client, user, classroom)
 		if err != nil {
 			return errs.InternalServerError()
 		}
