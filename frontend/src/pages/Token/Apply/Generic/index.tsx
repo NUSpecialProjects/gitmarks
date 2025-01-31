@@ -12,6 +12,7 @@ export interface TokenHandlerConfig<T extends ITokenUseResponse> {
     successCallback: (response: T) => void;
     loadingMessage?: string;
     successMessage?: (response: T) => string;
+    children?: React.ReactNode;
   }
   
   const TokenApplyPage = <T extends ITokenUseResponse>({
@@ -19,6 +20,7 @@ export interface TokenHandlerConfig<T extends ITokenUseResponse> {
     successCallback = () => {throw new Error("successCallback not implemented")},
     loadingMessage = "Applying token...",
     successMessage = () => "Success! Redirecting...",
+    children,
 }: TokenHandlerConfig<T>) => {
     const { authState } = useAuth();
     const navigate = useNavigate();
@@ -75,6 +77,7 @@ export interface TokenHandlerConfig<T extends ITokenUseResponse> {
       <div className="token-container">
         {loading && <LoadingSpinner />} 
         {message && <p>{message}</p>}
+        {children}
       </div>
     );
   };
