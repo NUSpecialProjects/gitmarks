@@ -1,12 +1,17 @@
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { useAuth } from "@/contexts/auth";
+import { AuthState } from "@/contexts/auth";
+import { setRedirectUrl } from "@/contexts/auth";
 import useUrlParameter from "@/hooks/useUrlParameter";
 import { useEffect, useState } from "react";
-import ClipLoader from "react-spinners/ClipLoader";
+import { useNavigate } from "react-router-dom";
+import "./styles.css";
 
 export interface TokenHandlerConfig<T extends ITokenUseResponse> {
-        useTokenFunction: (token: string) => Promise<T>;
-        successCallback: (response: T) => void;
-        loadingMessage?: string;
-        successMessage?: (response: T) => string;
+    useTokenFunction: (token: string) => Promise<T>;
+    successCallback: (response: T) => void;
+    loadingMessage?: string;
+    successMessage?: (response: T) => string;
   }
   
   const TokenApplyPage = <T extends ITokenUseResponse>({
@@ -15,16 +20,39 @@ export interface TokenHandlerConfig<T extends ITokenUseResponse> {
     loadingMessage = "Applying token...",
     successMessage = () => "Success! Redirecting...",
 }: TokenHandlerConfig<T>) => {
+    const { authState } = useAuth();
+    const navigate = useNavigate();
     const inputToken = useUrlParameter("token");
-    const [message, setMessage] = useState<string>("Loading...");
+    const [message, setMessage] = useState<string>(mapAuthStateToMessage(authState));
     const [loading, setLoading] = useState<boolean>(true);
     const [success, setSuccess] = useState<boolean>(false);
-  
+
+
+    function mapAuthStateToMessage(authState: AuthState): string {
+      switch (authState) {
+        case AuthState.LOGGED_IN:
+          return loadingMessage;
+        case AuthState.LOGGING_IN:
+          return "Logging in...";
+        case AuthState.LOGGED_OUT:
+          return "Redirecting to login...";
+      }
+    }
+
     useEffect(() => {
-      if (inputToken && !success) {
+      if (authState === AuthState.LOGGED_OUT) {
+        setRedirectUrl();
+        setMessage(mapAuthStateToMessage(authState));
+        setTimeout(() => { // delay to allow message to be displayed
+          navigate("/");
+        }, 1000);
+        return;
+      }
+
+      if (authState === AuthState.LOGGED_IN && inputToken && !success) {
         handleUseToken();
       }
-    }, [inputToken]);
+    }, [authState, inputToken]);
   
     const handleUseToken = async () => {
       setLoading(true);
@@ -44,10 +72,10 @@ export interface TokenHandlerConfig<T extends ITokenUseResponse> {
     };
   
     return (
-        <>
-          <ClipLoader size={50} color={"#123abc"} loading={loading} />
-          <p>{message}</p>
-        </>
+      <div className="token-container">
+        {loading && <LoadingSpinner />} 
+        {message && <p>{message}</p>}
+      </div>
     );
   };
   

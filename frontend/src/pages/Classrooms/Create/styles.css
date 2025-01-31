@@ -1,9 +1,42 @@
 .ClassroomCreation {
   &__buttonWrapper {
-    margin-top: 30px;
+    margin-top: 35px;
     padding: 10px;
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
+}
+
+.ClassroomCreation__inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.ClassroomCreation__validationIndicator {
+  position: absolute;
+  right: -24px;
+  top: 48px; 
+}
+
+.validation-icon {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.validation-icon.valid {
+  color: var(--green);
+}
+
+.validation-icon.invalid {
+  color: var(--red);
+}
+
+.error {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 14px;
+  color: var(--red);
 }
