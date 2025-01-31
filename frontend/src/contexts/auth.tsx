@@ -19,6 +19,7 @@ interface AuthContextType {
   currentUser: IUserResponse | null;
   authState: AuthState;
   loading: boolean;
+  error: Error | null;
   logout: () => void;
   refetch: () => void;
 }
@@ -34,9 +35,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>(AuthState.LOGGING_IN);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
-  const { data: user, status, refetch } = useCurrentUser();
+  const { data: user, status, refetch, error } = useCurrentUser();
 
-  
   useEffect(() => {
     switch (status) {
       case 'pending':
@@ -72,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     currentUser: user || null,
     authState,
     loading: status === 'pending',
+    error,
     logout,
     refetch,
   };

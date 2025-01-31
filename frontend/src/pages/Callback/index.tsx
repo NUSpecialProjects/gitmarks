@@ -1,58 +1,32 @@
-import { useContext, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./styles.css";
-import { sendCode } from "@/api/auth";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { AuthState, getRedirectUrl, goToRedirectUrl, useAuth } from "@/contexts/auth";
-// import { goToRedirectUrlOrDefault } from "@/contexts/auth";
+import { useAuthCallback } from "@/hooks/useCallbackURL";
 
 const Callback: React.FC = () => {
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { authState, refetch } = useAuth();
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   const navigate = useNavigate();
-  const hasRun = useRef(false);
-  const authStateRef = useRef(authState);
+  const { authState, refetch } = useAuth();
 
-  useEffect(() => { // Keep the ref up to date with the latest authState for timeout function
-    authStateRef.current = authState;
-  }, [authState]);
+  const isLoading = useAuthCallback(code, () => {
+    refetch();
+  }, (err: Error) => {
+    navigate(`/?error=${encodeURIComponent(err.message)}`, { replace: true });
+  });
 
   useEffect(() => {
+    if (isLoading) return;
     if (authState === AuthState.LOGGED_IN) {
       if (getRedirectUrl()) {
         goToRedirectUrl(navigate);
-      } else if (selectedClassroom) {
-        navigate(`/app/dashboard`);
       } else {
-        navigate("/app/organization/select");
+        navigate(`/app/dashboard`);
       }
     }
-  }, [authState]);
-
-  useEffect(() => {
-    if (hasRun.current) return; // prevent multiple executions
-    hasRun.current = true;
-
-    // if code, good, else, route to home
-    if (!code) {
-      navigate(`/?error=${encodeURIComponent("No login code provided")}`, { replace: true });
-      return;
-    }
-
-    sendCode(code)
-      .then(() => {
-        refetch();
-      })
-      .catch((err: Error) => {
-        navigate(
-          `/?error=${encodeURIComponent(err.message)}`,
-          { replace: true }
-        );
-      });
-  }, [code]);
+  }, [authState, isLoading]);
 
   return (
     <div className="callback-container">
