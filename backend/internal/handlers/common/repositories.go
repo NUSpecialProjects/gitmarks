@@ -43,7 +43,6 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 			return errs.InternalServerError()
 		}
 	}
-
 	// If the branches do not exist, create them
 	if !branchesExist {
 		// Get the master branch name (use main if not specified)
@@ -69,12 +68,12 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 		if err != nil {
 			return errs.InternalServerError()
 		}
+	}
 
-		// Update the base repo initialized field in the database
-		err = store.UpdateBaseRepoInitialized(ctx, *repository.ID, true)
-		if err != nil {
-			return errs.InternalServerError()
-		}
+	// Update the base repo initialized field in the database
+	err = store.UpdateBaseRepoInitialized(ctx, *repository.ID, true)
+	if err != nil {
+		return errs.InternalServerError()
 	}
 
 	// Find the associated assignment and classroom
