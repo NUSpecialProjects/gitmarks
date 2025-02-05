@@ -67,7 +67,6 @@ export const getStudentWorkCommitsPerDay = async (
   const commitsMap = new Map<Date, number>(
     Object.entries(resp.dated_commits).map(([key, value]) => [(new Date(key)), value])
   );
-  console.log(commitsMap)
 
   return commitsMap;
 }
