@@ -14,7 +14,6 @@ export async function getCurrentClassroomUser(
     }
   );
   if (!response.ok) {
-    console.log("Error getting current classroom user:", response.statusText);
     throw new Error(response.statusText);
   }
   const resp: { user: IClassroomUser } = await response.json();
@@ -124,28 +123,6 @@ export async function useClassroomToken(
 
   const resp: IClassroomJoinResponse = await response.json();
   return resp;
-}
-
-export async function sendOrganizationInvitesToRequestedUsers(
-  classroomId: number,
-  role: string
-): Promise<IClassroomInvitedUsersListResponse> {
-  const response = await fetch(
-    `${base_url}/classrooms/classroom/${classroomId}/invite/role/${role}`,
-    {
-      method: "PUT",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(response.statusText);
-  }
-
-  return await response.json();
 }
 
 export async function sendOrganizationInviteToUser(

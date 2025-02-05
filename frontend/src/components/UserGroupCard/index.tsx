@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useQueries } from '@tanstack/react-query';
+import React from "react";
 import "./styles.css";
 import { fetchUser } from "@/api/users";
 
@@ -13,41 +14,29 @@ const UserGroupCard: React.FC<IUserGroupCardProps> = ({
   givenUsersList,
   onClick,
 }) => {
-  const [userMap, setUserMap] = useState<Map<IClassroomUser, IGitHubUser>>(
-    new Map()
-  );
-  useEffect(() => {
-    const loadGitHubUsers = async () => {
-      if (givenUsersList) {
-        const newMap = new Map();
-        await Promise.all(
-          givenUsersList.map(async (classroomUser) => {
-            await fetchUser(classroomUser.github_username)
-              .then((userResponse: IGitHubUserResponse) => {
-                newMap.set(classroomUser, userResponse.user);
-              })
-              .catch((_) => {
-                // do nothing
-              });
-          })
-        );
-        setUserMap(newMap);
-      }
-    };
-
-    void loadGitHubUsers();
-  }, [givenUsersList]);
+  const userQueries = useQueries({
+    queries: givenUsersList.map((classroomUser) => ({
+      queryKey: ['user', classroomUser.github_username],
+      queryFn: () => fetchUser(classroomUser.github_username),
+      staleTime: 1000 * 60 * 60, // 1 hour
+      cacheTime: 1000 * 60 * 60 * 24, // 24 hours
+    }))
+  });
 
   let userIcons: React.ReactNode[] = [];
   const MAX_USERS_TO_SHOW = 3;
 
   if (givenUsersList && givenUsersList.length > 0) {
     const usersToShow = givenUsersList.slice(0, MAX_USERS_TO_SHOW);
-    userIcons = usersToShow.map((classroomUser, index) => {
-      const githubUser = userMap.get(classroomUser);
+    userIcons = usersToShow.map((_, index) => {
+      const userQuery = userQueries[index];
+      const githubUser = userQuery.data?.github_user;
+
+      const showPlaceholder = userQuery.isLoading || !userQuery.data || !githubUser;
+
       return (
         <div key={index}>
-          {!githubUser ? (
+          {showPlaceholder ? (
             <div className="UserGroupCard__icon-placeholder" />
           ) : (
             <img

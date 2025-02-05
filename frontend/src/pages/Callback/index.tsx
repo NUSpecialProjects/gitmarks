@@ -1,54 +1,36 @@
-import { AuthContext } from "@/contexts/auth";
-import { useContext, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import ClipLoader from "react-spinners/ClipLoader";
 import "./styles.css";
-import { sendCode } from "@/api/auth";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { AuthState, getRedirectUrl, goToRedirectUrl, useAuth } from "@/contexts/auth";
+import { useAuthCallback } from "@/hooks/useCallbackURL";
 
 const Callback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
-  const hasRun = useRef(false);
+  const { authState, refetch } = useAuth();
 
-  const handleSuccessfulLogin = () => {
-    const redirectUrl = localStorage.getItem("redirectAfterLogin");
-    login(); // set the user's login status to true
-    if (redirectUrl) {
-      localStorage.removeItem("redirectAfterLogin");
-      navigate(redirectUrl, { replace: true }); // redirect to the page that was requested before login
-    } else {
-      navigate("/app/organization/select", { replace: true }); // default redirect after login
-    }
-  };
+  const isLoading = useAuthCallback(code, () => {
+    refetch();
+  }, (err: Error) => {
+    navigate(`/?error=${encodeURIComponent(err.message)}`, { replace: true });
+  });
 
   useEffect(() => {
-    if (hasRun.current) return; // prevent multiple executions
-    hasRun.current = true;
-
-    //if code, good, else, route to home
-    if (code) {
-      sendCode(code)
-        .then(() => {
-          //Successful login. Handle redirect
-          handleSuccessfulLogin();
-        })
-        .catch((err: Error) => {
-          // Navigate back to login page with an error message attached
-          navigate(
-            `/?error=${encodeURIComponent(err.message)}`,
-            { replace: true }
-          );
-        });
-    } else {
-      navigate("/", { replace: true });
+    if (isLoading) return;
+    if (authState === AuthState.LOGGED_IN) {
+      if (getRedirectUrl()) {
+        goToRedirectUrl(navigate);
+      } else {
+        navigate(`/app/dashboard`);
+      }
     }
-  }, []);
+  }, [authState, isLoading]);
 
   return (
     <div className="callback-container">
-      <ClipLoader size={50} color={"#123abc"} loading={true} />
+      <LoadingSpinner />
       <p>Logging in...</p>
     </div>
   );

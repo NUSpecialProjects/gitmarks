@@ -1,53 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./styles.css";
 import OrganizationDropdown from "@/components/Dropdown/Organization";
 import Panel from "@/components/Panel";
 import Button from "@/components/Button";
-import {
-  getAppInstallations,
-  getOrganizationDetails,
-} from "@/api/organizations";
+import { useAppInstallations } from "@/hooks/useOrganization";
 
 const OrganizationSelection: React.FC = () => {
-  const [orgsWithApp, setOrgsWithApp] = useState<IOrganization[]>([]);
-  const [orgsWithoutApp, setOrgsWithoutApp] = useState<IOrganization[]>([]);
-  const [loadingOrganizations, setLoadingOrganizations] = useState(true);
   const [selectedOrg, setSelectedOrg] = useState<IOrganization | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const githubAppName = import.meta.env.VITE_GITHUB_APP_NAME;
-
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const data: IOrganizationsResponse = await getAppInstallations();
-        //checking if data exists before populating and setting lists
-        if (data.orgs_with_app) {
-          setOrgsWithApp(data.orgs_with_app);
-        }
-        if (data.orgs_without_app) {
-          setOrgsWithoutApp(data.orgs_without_app);
-        }
-
-        setError(null);
-      } catch (_) {
-        setError("Error fetching organizations");
-      } finally {
-        setLoadingOrganizations(false);
-      }
-    };
-
-    void fetchOrganizations();
-  }, []);
+  const { data: installationsData, isLoading: loadingOrganizations, error: installationsError } = useAppInstallations();
+  const orgsWithApp = installationsData?.orgs_with_app || [];
+  const orgsWithoutApp = installationsData?.orgs_without_app || [];
 
   const handleOrganizationSelect = async (org: IOrganization) => {
     setSelectedOrg(org);
-    await getOrganizationDetails(org.login)
-      .then((orgDetails) => {
-        setSelectedOrg(orgDetails);
-      })
-      .catch((_) => {
-        setError("Error fetching organization details");
-      });
   };
 
   return (
@@ -66,7 +32,8 @@ const OrganizationSelection: React.FC = () => {
             orgsWithApp.some((org) => org.login === selectedOrg.login) && (
               <Button
                 variant="primary"
-                href={`/app/classroom/select?org_id=${selectedOrg.id}`}
+                href="/app/classroom/select"
+                state={{ orgID: selectedOrg.id }}
               >
                 View Classrooms
               </Button>
@@ -85,7 +52,7 @@ const OrganizationSelection: React.FC = () => {
           <a className="Organization__link" href={`https://github.com/apps/${githubAppName}/installations/select_target`} target="_blank" rel="noopener noreferrer">
             {"Don't see your organization?"}
           </a>
-        {error && <div className="error">{error}</div>}
+        {installationsError && <div className="error">{installationsError.message}</div>}
       </div>
     </Panel>
   );
