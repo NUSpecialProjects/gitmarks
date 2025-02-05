@@ -461,7 +461,10 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
         if (classroomUser.Status == models.UserStatusRemoved) {
             // if the user was removed, move them to requested without adding them to the classroom
             classroomUser, err = s.store.ModifyUserStatus(c.Context(), classroomToken.ClassroomID, models.UserStatusRequested, *user.ID)
-            
+            if err != nil {
+                return errs.InternalServerError()
+            }
+
             return c.Status(http.StatusOK).JSON(fiber.Map{
                 "message":   "Token applied successfully, user requested access",
                 "user":      classroomUser,
