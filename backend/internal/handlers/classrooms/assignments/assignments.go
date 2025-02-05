@@ -1,6 +1,7 @@
 package assignments
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -8,10 +9,12 @@ import (
 	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
+	"github.com/CamPlume1/khoury-classroom/internal/github"
 	"github.com/CamPlume1/khoury-classroom/internal/middleware"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	"github.com/gofiber/fiber/v2"
+	gh "github.com/google/go-github/github"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -213,41 +216,62 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return err
 		}
 
-		// Check if fork already exists
-		forkName := generateSlugCase(classroom.Name, assignment.Name, user.Login)
-		studentWorkRepo, _ := client.GetRepository(c.Context(), classroom.OrgName, forkName)
-		if studentWorkRepo != nil {
-			// Ensure student team is removed
-			err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, forkName)
+		var studentWorkRepo *gh.Repository
+		// Check if the user has already accepted the assignment (student work exists already)
+		studentWork, err := s.store.GetWorkByGitHubUserID(c.Context(), int(classroom.ID), int(assignment.ID), user.ID)
+		if err == nil { // student work exists
+			// We can assume the student has access to see this repository since it is their own work
+			studentWorkRepo, err := client.GetRepository(c.Context(), classroom.OrgName, studentWork.RepoName)
 			if err != nil {
 				return errs.GithubAPIError(err)
 			}
 
-			// Get the student work
-			studentWork, err := s.store.GetWorkByRepoName(c.Context(), *studentWorkRepo.Name)
-			if err != nil {
-				// Recover from the case where the student work does not exist, but the repo does exist
-				studentWork, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
-				if err != nil {
-					return errs.InternalServerError()
-				}
-			} else if studentWork.WorkState == models.WorkStateNotAccepted {
-				// Recover from the case where the workstate is out of sync with the github state (repo exists but student work is not accepted)
-				updatedStudentWork := studentWork
-				updatedStudentWork.WorkState = models.WorkStateAccepted
-				_, err = s.store.UpdateStudentWork(c.Context(), updatedStudentWork)
-				if err != nil {
-					return errs.InternalServerError()
-				}
+			if studentWork.WorkState != models.WorkStateNotAccepted { // This is a bit redundant, but it's good to be explicit
+				return c.Status(http.StatusOK).JSON(fiber.Map{
+					"message":  "Assignment already accepted",
+					"repo_url": studentWorkRepo.HTMLURL,
+				})
 			}
-
-			return c.Status(http.StatusOK).JSON(fiber.Map{
-				"message":  "Assignment already accepted",
-				"repo_url": studentWorkRepo.HTMLURL,
-			})
 		}
 
-		// Otherwise generate fork
+		// Generate fork name, appending a numeric suffix if necessary
+		forkName, err := generateForkName(c.Context(), client, classroom.OrgName, classroom.Name, assignment.Name, user.Login)
+		if err != nil {
+			return err
+		}
+		// studentWorkRepo, _ := client.GetRepository(c.Context(), classroom.OrgName, forkName)
+		// if studentWorkRepo != nil {
+		// 	// Ensure student team is removed
+		// 	err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, forkName)
+		// 	if err != nil {
+		// 		return errs.GithubAPIError(err)
+		// 	}
+
+		// 	// Get the student work
+		// 	studentWork, err := s.store.GetWorkByRepoName(c.Context(), *studentWorkRepo.Name)
+		// 	if err != nil {
+		// 		// Recover from the case where the student work does not exist, but the repo does exist
+		// 		studentWork, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
+		// 		if err != nil {
+		// 			return errs.InternalServerError()
+		// 		}
+		// 	} else if studentWork.WorkState == models.WorkStateNotAccepted {
+		// 		// Recover from the case where the workstate is out of sync with the github state (repo exists but student work is not accepted)
+		// 		updatedStudentWork := studentWork
+		// 		updatedStudentWork.WorkState = models.WorkStateAccepted
+		// 		_, err = s.store.UpdateStudentWork(c.Context(), updatedStudentWork)
+		// 		if err != nil {
+		// 			return errs.InternalServerError()
+		// 		}
+		// 	}
+
+		// 	return c.Status(http.StatusOK).JSON(fiber.Map{
+		// 		"message":  "Assignment already accepted",
+		// 		"repo_url": studentWorkRepo.HTMLURL,
+		// 	})
+		// }
+
+		// Generate fork
 		err = client.ForkRepository(c.Context(),
 			baseRepo.BaseRepoOwner,
 			baseRepo.BaseRepoName,
@@ -265,7 +289,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		maxDelay := 30 * time.Second
 
 		for {
-			studentWorkRepo, _ = client.GetRepository(c.Context(), classroom.OrgName, forkName)
+			studentWorkRepo, _ := client.GetRepository(c.Context(), classroom.OrgName, forkName)
 			if studentWorkRepo != nil {
 				if client.CheckForkIsReady(c.Context(), studentWorkRepo) {
 					break
@@ -328,6 +352,23 @@ func (s *AssignmentService) checkAssignmentName() fiber.Handler {
 			"exists": assignment != nil,
 		})
 	}
+}
+
+func generateForkName(ctx context.Context, client github.GitHubBaseClient, orgName string, classroomName string, assignmentName string, studentName string) (string, error) {
+	// Check if fork name already exists
+	suffixStr := ""
+	maxAttempts := 10
+	for i := 0; i < maxAttempts; i++ {
+		forkName := generateSlugCase(classroomName, assignmentName, studentName, suffixStr)
+		studentWorkRepo, _ := client.GetRepository(ctx, orgName, forkName) // don't check error because we are checking if repo exists
+		if studentWorkRepo == nil {
+			return forkName, nil
+		}
+		i++
+		suffixStr = strconv.Itoa(i)
+	}
+
+	return "", errs.GithubAPIError(errors.New("failed to generate unique fork name"))
 }
 
 // KHO-209

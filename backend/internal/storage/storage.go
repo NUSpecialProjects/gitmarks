@@ -33,6 +33,7 @@ type Works interface {
 	CreateStudentWork(ctx context.Context, assignmentOutlineID int32, gitHubUserID int64, repoName string, workState models.WorkState, dueDate *time.Time) (models.StudentWork, error)
 	UpdateStudentWork(ctx context.Context, UpdateStudentWork models.StudentWork) (models.StudentWork, error)
 	GetWorkByRepoName(ctx context.Context, repoName string) (models.StudentWork, error)
+	GetWorkByGitHubUserID(ctx context.Context, classroomID int, assignmentID int, gitHubUserID int64) (models.StudentWork, error)
 }
 
 type Test interface {

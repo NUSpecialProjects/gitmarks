@@ -91,6 +91,7 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	SetUserMembershipInOrg(ctx context.Context, orgName string, userName string, role string) error
 
 	CancelOrgInvitation(ctx context.Context, orgName string, userName string) error
+
 	// Get the details of a repository
 	GetRepository(ctx context.Context, owner string, repoName string) (*github.Repository, error)
 
