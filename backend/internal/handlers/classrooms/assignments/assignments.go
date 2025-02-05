@@ -211,18 +211,10 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		// Check if repo is initialized
-		initialized, err := common.CheckBaseRepoInitialized(c.Context(), s.store, baseRepo.BaseID)
+		// Initialize the base repository if it is not initialized already
+		err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
 		if err != nil {
 			return errs.InternalServerError()
-		}
-
-		// Initialize repo if it is not initialized
-		if !initialized {
-			err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
-			if err != nil {
-				return errs.InternalServerError()
-			}
 		}
 
 		// Get classroom

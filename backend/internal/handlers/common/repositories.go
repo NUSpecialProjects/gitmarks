@@ -6,6 +6,7 @@ import (
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/github"
 	"github.com/CamPlume1/khoury-classroom/internal/storage"
+	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	gh "github.com/google/go-github/github"
 )
 
@@ -28,28 +29,52 @@ func InitializeRepo(ctx context.Context, appClient github.GitHubAppClient, store
 }
 
 func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClient, store storage.Storage, repository *gh.PushEventRepository) error {
-	// Get the master branch name (use main if not specified)
-	mainBranch := MainRepoBranch
-	if repository.MasterBranch != nil {
-		mainBranch = *repository.MasterBranch
+	baseRepo, err := store.GetBaseRepoByID(ctx, *repository.ID)
+	if err != nil {
+		return errs.InternalServerError()
 	}
 
-	// Create necessary repo branches
-	for _, branch := range OtherRepoBranches {
-		_, err := appClient.CreateBranch(ctx,
-			*repository.Organization,
-			*repository.Name,
-			mainBranch,
-			branch)
+	// Is the base repo initialized according to the database?
+	branchesExist := baseRepo.Initialized
+	if !branchesExist {
+		// If not, check if the branches exist on GitHub
+		branchesExist, err = checkBranchesExist(ctx, appClient, *repository.Organization, *repository.Name)
 		if err != nil {
 			return errs.InternalServerError()
 		}
 	}
 
-	// Create empty commit (will create a diff that allows feedback PR to be created)
-	err := appClient.CreateEmptyCommit(ctx, *repository.Owner.Name, *repository.Name)
-	if err != nil {
-		return errs.InternalServerError()
+	// If the branches do not exist, create them
+	if !branchesExist {
+		// Get the master branch name (use main if not specified)
+		mainBranch := MainRepoBranch
+		if repository.MasterBranch != nil {
+			mainBranch = *repository.MasterBranch
+		}
+
+		// Create necessary repo branches
+		for _, branch := range OtherRepoBranches {
+			_, err := appClient.CreateBranch(ctx,
+				*repository.Organization,
+				*repository.Name,
+				mainBranch,
+				branch)
+			if err != nil {
+				return errs.InternalServerError()
+			}
+		}
+
+		// Create empty commit (will create a diff that allows feedback PR to be created)
+		err = appClient.CreateEmptyCommit(ctx, *repository.Owner.Name, *repository.Name)
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+		// Update the base repo initialized field in the database
+		err = store.UpdateBaseRepoInitialized(ctx, *repository.ID, true)
+		if err != nil {
+			return errs.InternalServerError()
+		}
 	}
 
 	// Find the associated assignment and classroom
@@ -70,11 +95,6 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 		return errs.InternalServerError()
 	}
 
-	err = store.UpdateBaseRepoInitialized(ctx, *repository.ID, true)
-	if err != nil {
-		return errs.InternalServerError()
-	}
-
 	return nil
 }
 
@@ -86,4 +106,21 @@ func CheckBaseRepoInitialized(ctx context.Context, store storage.Storage, repoID
 	}
 
 	return baseRepo.Initialized, nil
+}
+
+func checkBranchesExist(ctx context.Context, client github.GitHubBaseClient, repoOwner string, repoName string) (bool, error) {
+	branches, err := client.GetBranches(ctx, repoOwner, repoName)
+	if err != nil {
+		return false, err
+	}
+
+	branchNames := utils.Map(branches, func(b *gh.Branch) string { return *b.Name })
+
+	for _, branch := range OtherRepoBranches {
+		if !utils.Contains(branchNames, branch) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
