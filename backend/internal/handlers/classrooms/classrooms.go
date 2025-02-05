@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
-	"github.com/CamPlume1/khoury-classroom/internal/github"
+	"github.com/CamPlume1/khoury-classroom/internal/handlers/common"
 	"github.com/CamPlume1/khoury-classroom/internal/middleware"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/CamPlume1/khoury-classroom/internal/utils"
@@ -243,7 +243,7 @@ func (s *ClassroomService) getClassroomUsers() fiber.Handler {
 		updatedUsersInClassroom := []models.ClassroomUser{}
 
 		for _, classroomUser := range usersInClassroom {
-			newClassroomUser, err := s.updateUserStatus(c.Context(), s.appClient, classroomUser.User, classroom)
+			newClassroomUser, err := common.UpdateUserStatus(c.Context(), s.appClient, s.store, classroomUser.User, classroom)
 			// don't include members who are not in the org
 			if newClassroomUser.Status == models.UserStatusRemoved {
 				continue
@@ -423,7 +423,7 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.ExpiredTokenError()
 		}
 
-		classroom, classroomUser, err := s.inviteUserToClassroom(c.Context(), classroomToken.ClassroomID, classroomToken.ClassroomRole, &user, client)
+		classroom, classroomUser, err := common.InviteUserToClassroom(c.Context(), s.store, s.appClient, client, classroomToken.ClassroomID, classroomToken.ClassroomRole, &user)
 		if err != nil {
 			return err
 		}
@@ -434,57 +434,6 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			"classroom":      classroom,
 		})
 	}
-}
-
-// Invites a user to a classroom and attempts to accept their invitation
-// This should be called on the target user's behalf
-func (s *ClassroomService) inviteUserToClassroom(ctx context.Context, classroomID int64, classroomRole models.ClassroomRole, invitee *models.User, userClient github.GitHubUserClient) (models.Classroom, models.ClassroomUser, error) {
-	// Get the classroom from the DB
-	classroom, err := s.store.GetClassroomByID(ctx, classroomID)
-	if err != nil {
-		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
-	}
-
-	classroomUser, err := s.store.GetUserInClassroom(ctx, classroomID, *invitee.ID)
-	if err != nil {
-		classroomUser, err = s.store.AddUserToClassroom(ctx, classroomID, string(classroomRole), models.UserStatusRequested, *invitee.ID)
-		if err != nil {
-			return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
-		}
-	}
-
-	classroomUser, err = s.updateUserStatus(ctx, s.appClient, *invitee, classroom)
-	if err != nil {
-		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
-	}
-
-	// don't do anything if the user has been removed from the classroom
-	if classroomUser.Status == models.UserStatusRemoved {
-		return models.Classroom{}, models.ClassroomUser{}, errs.StudentRemovedFromClassroomError()
-	}
-
-	// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
-	roleComparison := classroomUser.Role.Compare(classroomRole)
-	if roleComparison < 0 {
-		// Upgrade the user's role in the classroom
-		classroomUser, err = s.store.ModifyUserRole(ctx, classroomID, string(classroomRole), *classroomUser.ID)
-		if err != nil {
-			return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
-		}
-	}
-
-	// Invite the user to the organization
-	classroomUser, err = s.inviteUserToOrganization(ctx, s.appClient, classroom, classroomRole, *invitee)
-	if err != nil {
-		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
-	}
-
-	// Accept the pending invitation to the organization
-	err = s.acceptOrgInvitation(ctx, userClient, classroom.OrgName, classroomID, *invitee)
-	if err != nil {
-		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
-	}
-	return classroom, classroomUser, nil
 }
 
 // Returns the user's status in the classroom, nil if not in the classroom
@@ -505,7 +454,7 @@ func (s *ClassroomService) getCurrentClassroomUser() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		classroomUser, err := s.updateUserStatus(c.Context(), s.appClient, user, classroom)
+		classroomUser, err := common.UpdateUserStatus(c.Context(), s.appClient, s.store, user, classroom)
 		if err != nil {
 			if err == errs.UserNotFoundInClassroomError() {
 				// User not found in classroom, return null
@@ -517,41 +466,6 @@ func (s *ClassroomService) getCurrentClassroomUser() fiber.Handler {
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{"user": classroomUser})
 	}
-}
-
-// Updates the user's status in our DB to reflect their org membership, as of this moment
-// Note: currently only works for the app client as the user client doesn't ask for the right permissions
-func (s *ClassroomService) updateUserStatus(ctx context.Context, client github.GitHubBaseClient, user models.User, classroom models.Classroom) (models.ClassroomUser, error) {
-	classroomUser, err := s.store.GetUserInClassroom(ctx, classroom.ID, *user.ID)
-	if err != nil {
-		return models.ClassroomUser{}, errs.UserNotFoundInClassroomError()
-	}
-
-	// if the user has been removed from the classroom, don't update their org membership
-	if classroomUser.Status == models.UserStatusRemoved {
-		return classroomUser, nil
-	}
-
-	membership, err := client.GetUserOrgMembership(ctx, classroom.OrgName, user.GithubUsername)
-	if err != nil && classroomUser.Status != models.UserStatusRequested { // if the user is in the requested state, we don't want to change their status
-		// user isn't in the org, set them to NOT IN ORG (this probably means they have been removed from the org OR they denied their invite)
-		classroomUser, err = s.store.ModifyUserStatus(ctx, classroom.ID, models.UserStatusNotInOrg, *user.ID)
-		if err != nil {
-			return models.ClassroomUser{}, errs.InternalServerError()
-		}
-		return classroomUser, nil
-	} else if membership != nil && *membership.State == "active" { // user is in the org, set them to active
-		classroomUser, err = s.store.ModifyUserStatus(ctx, classroom.ID, models.UserStatusActive, *user.ID)
-		if err != nil {
-			return models.ClassroomUser{}, errs.InternalServerError()
-		}
-	} else if membership != nil && *membership.State == "pending" { // user has a pending invitation, set them to invited
-		classroomUser, err = s.store.ModifyUserStatus(ctx, classroom.ID, models.UserStatusOrgInvited, *user.ID)
-		if err != nil {
-			return models.ClassroomUser{}, errs.InternalServerError()
-		}
-	}
-	return classroomUser, nil
 }
 
 // Sends an invite to a user to join the organization
@@ -593,7 +507,7 @@ func (s *ClassroomService) sendOrganizationInviteToUser() fiber.Handler {
 		}
 
 		// use the current user's client to invite the user to the organization
-		invitee, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom, classroomRole, invitee.User)
+		invitee, err = common.InviteUserToOrganization(c.Context(), s.appClient, s.store, classroom, classroomRole, invitee.User)
 		if err != nil {
 			return errs.InternalServerError()
 		}
@@ -683,75 +597,6 @@ func (s *ClassroomService) revokeOrganizationInvite() fiber.Handler {
 
 		return c.SendStatus(http.StatusOK)
 	}
-}
-
-// Helper function to invite a user to the organization (delegates based on the role supplied)
-func (s *ClassroomService) inviteUserToOrganization(ctx context.Context, client github.GitHubBaseClient, classroom models.Classroom, classroomRole models.ClassroomRole, user models.User) (models.ClassroomUser, error) {
-	var classroomUser models.ClassroomUser
-	var err error
-	if classroomRole == models.Student {
-		// Get the team ID
-		studentTeam, err := client.GetTeamByName(ctx, classroom.OrgName, *classroom.StudentTeamName)
-		if err != nil {
-			return models.ClassroomUser{}, errs.InternalServerError()
-		}
-
-		// Invite the user to the organization
-		classroomUser, err = s.inviteMemberToOrganization(ctx, client, *studentTeam.ID, classroom.ID, user)
-		if err != nil {
-			return models.ClassroomUser{}, errs.InternalServerError()
-		}
-	} else {
-		// Invite the user to the organization
-		classroomUser, err = s.inviteAdminToOrganization(ctx, client, classroom.OrgName, classroom.ID, user)
-		if err != nil {
-			return models.ClassroomUser{}, errs.InternalServerError()
-		}
-	}
-
-	return classroomUser, nil
-}
-
-// Helper function to invite a student to the organization (adds them to the student team as well on acceptance)
-func (s *ClassroomService) inviteMemberToOrganization(context context.Context, client github.GitHubBaseClient, teamID int64, classroomID int64, invitee models.User) (models.ClassroomUser, error) {
-	err := client.AddTeamMember(context, teamID, invitee.GithubUsername, nil)
-	if err != nil {
-		return models.ClassroomUser{}, errs.InternalServerError()
-	}
-	classroomUser, err := s.store.ModifyUserStatus(context, classroomID, models.UserStatusOrgInvited, *invitee.ID)
-	if err != nil {
-		return models.ClassroomUser{}, errs.InternalServerError()
-	}
-
-	return classroomUser, nil
-}
-
-// Helper function to invite an admin to the organization
-func (s *ClassroomService) inviteAdminToOrganization(context context.Context, client github.GitHubBaseClient, orgName string, classroomID int64, invitee models.User) (models.ClassroomUser, error) {
-	err := client.SetUserMembershipInOrg(context, orgName, invitee.GithubUsername, "admin")
-	if err != nil {
-		return models.ClassroomUser{}, errs.InternalServerError()
-	}
-	classroomUser, err := s.store.ModifyUserStatus(context, classroomID, models.UserStatusOrgInvited, *invitee.ID)
-	if err != nil {
-		return models.ClassroomUser{}, errs.InternalServerError()
-	}
-	return classroomUser, nil
-}
-
-// Helper function to accept a pending invitation to an organization (Assumes there is a pending invitation)
-func (s *ClassroomService) acceptOrgInvitation(context context.Context, userClient github.GitHubUserClient, orgName string, classroomID int64, invitee models.User) error {
-	// user has a pending invitation, accept it
-	err := userClient.AcceptOrgInvitation(context, orgName)
-	if err != nil {
-		return errs.InternalServerError()
-	}
-	_, err = s.store.ModifyUserStatus(context, classroomID, models.UserStatusActive, *invitee.ID)
-	if err != nil {
-		return errs.InternalServerError()
-	}
-
-	return nil
 }
 
 var semesterNameMap = map[time.Month]string{

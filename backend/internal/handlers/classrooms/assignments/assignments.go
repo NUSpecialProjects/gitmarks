@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
+	"github.com/CamPlume1/khoury-classroom/internal/handlers/common"
 	"github.com/CamPlume1/khoury-classroom/internal/middleware"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/CamPlume1/khoury-classroom/internal/utils"
@@ -185,6 +186,12 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.BadRequest(errors.New("token is required"))
 		}
 
+		// Get client and user
+		client, githubUser, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
+		if err != nil {
+			return errs.AuthenticationError()
+		}
+
 		// Get assignment using the token
 		assignment, err := s.store.GetAssignmentByToken(c.Context(), token)
 		if err != nil {
@@ -197,16 +204,18 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		// Retrieve user client and session
-		client, err := middleware.GetClient(c, s.store, s.userCfg)
+		// Check if repo is initialized
+		initialized, err := common.CheckRepoInitialized(c.Context(), s.appClient, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
 		if err != nil {
-			return errs.AuthenticationError()
+			return errs.InternalServerError()
 		}
 
-		// Get user
-		user, err := client.GetCurrentUser(c.Context())
-		if err != nil {
-			return errs.GithubAPIError(err)
+		// Initialize repo if it is not initialized
+		if !initialized {
+			err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
+			if err != nil {
+				return errs.InternalServerError()
+			}
 		}
 
 		// Get classroom
@@ -218,11 +227,19 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		// Check if user has at least student role
 		_, err = s.RequireAtLeastRole(c, classroom.ID, models.Student)
 		if err != nil {
-			return err
+			_, _, err = common.InviteUserToClassroom(c.Context(), s.store, s.appClient, client, classroom.ID, models.Student, &user)
+			if err != nil {
+				return errs.InternalServerError()
+			}
+
+			_, err = s.RequireAtLeastRole(c, classroom.ID, models.Student)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Check if fork already exists
-		forkName := generateSlugCase(classroom.Name, assignment.Name, user.Login)
+		forkName := generateSlugCase(classroom.Name, assignment.Name, githubUser.Login)
 		studentWorkRepo, _ := client.GetRepository(c.Context(), classroom.OrgName, forkName)
 		if studentWorkRepo != nil {
 			// Ensure student team is removed
@@ -235,7 +252,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			studentWork, err := s.store.GetWorkByRepoName(c.Context(), *studentWorkRepo.Name)
 			if err != nil {
 				// Recover from the case where the student work does not exist, but the repo does exist
-				studentWork, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
+				studentWork, err = s.store.CreateStudentWork(c.Context(), assignment.ID, githubUser.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
 				if err != nil {
 					return errs.InternalServerError()
 				}
@@ -288,20 +305,20 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			initialDelay *= 2
 		}
 
+		// Create initial feedback pull request
+		err = client.CreateFeedbackPR(c.Context(), *studentWorkRepo.Organization.Login, *studentWorkRepo.Name)
+		if err != nil {
+			return errs.GithubAPIError(err)
+		}
+
 		// Remove student team's access to forked repo
 		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, *studentWorkRepo.Name)
 		if err != nil {
 			return errs.GithubAPIError(err)
 		}
 
-		// Create initial feedback pull request
-		err = client.CreateFeedbackPR(c.Context(), classroom.OrgName, *studentWorkRepo.Name)
-		if err != nil {
-			return errs.GithubAPIError(err)
-		}
-
 		// Insert into DB
-		_, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
+		_, err = s.store.CreateStudentWork(c.Context(), assignment.ID, githubUser.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
 		if err != nil {
 			return err
 		}
