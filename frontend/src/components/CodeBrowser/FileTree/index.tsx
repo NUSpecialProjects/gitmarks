@@ -2,9 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { FaChevronRight, FaChevronDown } from "react-icons/fa";
 import SimpleBar from "simplebar-react";
 
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { GraderContext } from "@/contexts/grader";
-import { getFileTree } from "@/api/grader";
 import { buildTree, renderTree, sortTreeNode } from "./funcs";
 import ResizablePanel from "../ResizablePanel";
 
@@ -14,29 +12,19 @@ import "./styles.css";
  * TREE COMPONENT
  ****************/
 export const FileTree: React.FC<IFileTree> = ({ selectFileCallback }) => {
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  const { assignmentID, studentWorkID } = useContext(GraderContext);
+  const { fileTree } = useContext(GraderContext);
+
 
   const [gitTree, setGitTree] = useState<IGitTreeNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>("");
   const [root, setRoot] = useState<IFileTreeNode | null>(null);
   const [treeDepth, setTreeDepth] = useState(0);
 
+
   // fetch git tree from student assignment repo
   useEffect(() => {
-    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-
-    getFileTree(
-      selectedClassroom.id,
-      Number(assignmentID),
-      Number(studentWorkID)
-    )
-      .then((resp) => {
-        setGitTree(resp);
-      })
-      .catch((_: unknown) => {
-        setGitTree([]);
-      });
+    if (!fileTree) return;
+      setGitTree(fileTree);
   }, []);
 
   useEffect(() => {
