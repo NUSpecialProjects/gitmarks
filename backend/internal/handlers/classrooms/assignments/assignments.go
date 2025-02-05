@@ -109,7 +109,11 @@ func (s *AssignmentService) createAssignment() fiber.Handler {
 		}
 
 		// Create base repository and store locally
-		baseRepoName := generateSlugCase(classroom.OrgName, classroom.Name, assignmentData.Name)
+		baseRepoName, err := generateRepoName(c.Context(), s.appClient, classroom.OrgName, classroom.Name, assignmentData.Name, "")
+		if err != nil {
+			return err
+		}
+
 		baseRepo, err := s.appClient.CreateRepoFromTemplate(c.Context(), classroom.OrgName, template.TemplateRepoName, baseRepoName)
 		if err != nil {
 			return err
@@ -260,7 +264,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		}
 
 		// Generate fork name, appending a numeric suffix if necessary
-		forkName, err := generateForkName(c.Context(), client, classroom.OrgName, classroom.Name, assignment.Name, githubUser.Login)
+		forkName, err := generateRepoName(c.Context(), client, classroom.OrgName, classroom.Name, assignment.Name, githubUser.Login)
 		if err != nil {
 			return err
 		}
@@ -379,7 +383,7 @@ func (s *AssignmentService) checkAssignmentName() fiber.Handler {
 	}
 }
 
-func generateForkName(ctx context.Context, client github.GitHubBaseClient, orgName string, classroomName string, assignmentName string, studentName string) (string, error) {
+func generateRepoName(ctx context.Context, client github.GitHubBaseClient, orgName string, classroomName string, assignmentName string, studentName string) (string, error) {
 	// Check if fork name already exists
 	suffixStr := ""
 	maxAttempts := 10
