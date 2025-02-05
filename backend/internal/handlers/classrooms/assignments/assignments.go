@@ -109,7 +109,6 @@ func (s *AssignmentService) createAssignment() fiber.Handler {
 		}
 
 		// Create base repository and store locally
-		// baseRepoName := generateSlugCase(classroom.OrgName, classroom.Name, assignmentData.Name)
 		baseRepoName, err := generateUniqueRepoName(c.Context(), s.appClient, classroom.OrgName, classroom.Name, assignmentData.Name)
 		if err != nil {
 			return err
@@ -235,11 +234,13 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		// Check if user has at least student role
 		_, err = s.RequireAtLeastRole(c, classroom.ID, models.Student)
 		if err != nil {
+			// Add them to the classroom as a student
 			_, _, err = common.InviteUserToClassroom(c.Context(), s.store, s.appClient, client, classroom.ID, models.Student, &user)
 			if err != nil {
 				return errs.InternalServerError()
 			}
 
+			// Ensure they have student role now and have successfully joined the classroom
 			_, err = s.RequireAtLeastRole(c, classroom.ID, models.Student)
 			if err != nil {
 				return err
@@ -329,7 +330,6 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return err
 		}
 
-		// Instead of getting the repository immediately, construct the expected URL
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":  "Assignment Accepted!",
 			"repo_url": studentWorkRepo.GetHTMLURL(),
