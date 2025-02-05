@@ -6,7 +6,6 @@ import (
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/github"
 	"github.com/CamPlume1/khoury-classroom/internal/storage"
-	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	gh "github.com/google/go-github/github"
 )
 
@@ -71,22 +70,20 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 		return errs.InternalServerError()
 	}
 
+	err = store.UpdateBaseRepoInitialized(ctx, *repository.ID, true)
+	if err != nil {
+		return errs.InternalServerError()
+	}
+
 	return nil
 }
 
-func CheckRepoInitialized(ctx context.Context, client github.GitHubBaseClient, repoOwner string, repoName string) (bool, error) {
-	branches, err := client.GetBranches(ctx, repoOwner, repoName)
+// Checks if a repository is initialized by checking if the initialized field in the database is true.
+func CheckBaseRepoInitialized(ctx context.Context, store storage.Storage, repoID int64) (bool, error) {
+	baseRepo, err := store.GetBaseRepoByID(ctx, repoID)
 	if err != nil {
-		return false, err
+		return false, errs.InternalServerError()
 	}
 
-	branchNames := utils.Map(branches, func(b *gh.Branch) string { return *b.Name })
-
-	for _, branch := range OtherRepoBranches {
-		if !utils.Contains(branchNames, branch) {
-			return false, nil
-		}
-	}
-
-	return true, nil
+	return baseRepo.Initialized, nil
 }

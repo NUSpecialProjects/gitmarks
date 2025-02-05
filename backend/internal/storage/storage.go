@@ -96,6 +96,7 @@ type AssignmentTemplate interface {
 type AssignmentBaseRepo interface {
 	CreateBaseRepo(ctx context.Context, baseRepoData models.AssignmentBaseRepo) error
 	GetBaseRepoByID(ctx context.Context, id int64) (models.AssignmentBaseRepo, error)
+	UpdateBaseRepoInitialized(ctx context.Context, id int64, initialized bool) error
 }
 
 type Rubric interface {
