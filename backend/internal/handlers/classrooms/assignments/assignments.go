@@ -333,7 +333,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		// Instead of getting the repository immediately, construct the expected URL
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":  "Assignment Accepted!",
-			"repo_url": studentWorkRepo.HTMLURL,
+			"repo_url": &studentWorkRepo.HTMLURL,
 		})
 	}
 }
