@@ -67,6 +67,9 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Create a new branch in a repository
 	CreateBranch(ctx context.Context, owner, repo, baseBranch, newBranchName string) (*github.Reference, error)
 
+	// Get the branches in a repository
+	GetBranches(ctx context.Context, owner, repo string) ([]*github.Branch, error)
+
 	// Get the details of a pull request
 	GetPullRequest(ctx context.Context, owner string, repo string, pullNumber int) (*github.PullRequest, error)
 
