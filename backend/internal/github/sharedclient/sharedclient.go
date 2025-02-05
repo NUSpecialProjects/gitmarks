@@ -204,6 +204,23 @@ func (api *CommonAPI) InviteUserToOrganization(ctx context.Context, orgName stri
 	return nil
 }
 
+func (api *CommonAPI) RemoveUserFromOrganization(ctx context.Context, orgName string, userName string) error {
+    endpoint := fmt.Sprintf("/orgs/%s/members/%s", orgName, userName)
+    req, err := api.Client.NewRequest("DELETE", endpoint, nil)
+    if err != nil {
+        return fmt.Errorf("error creating request: %v", err)
+    }
+
+    _, err = api.Client.Do(ctx, req, nil)
+    if err != nil {
+        return fmt.Errorf("error creating request: %v", err)
+    }
+
+    return nil
+
+}
+
+
 func (api *CommonAPI) SetUserMembershipInOrg(ctx context.Context, orgName string, userName string, role string) error {
 	body := map[string]interface{}{
 		"role": role,

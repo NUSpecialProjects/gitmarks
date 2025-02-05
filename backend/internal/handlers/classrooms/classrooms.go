@@ -312,22 +312,30 @@ func (s *ClassroomService) removeUserFromClassroom() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		studentTeam, err := s.appClient.GetTeamByName(c.Context(), classroom.OrgName, *classroom.StudentTeamName)
+		/*studentTeam, err := s.appClient.GetTeamByName(c.Context(), classroom.OrgName, *classroom.StudentTeamName)
 		if err != nil {
 			return errs.InternalServerError()
-		}
+		}*/
 
 		toBeRemovedUser, err := s.store.GetUserByID(c.Context(), userID)
 		if err != nil {
 			return errs.InternalServerError()
 		}
 
+        // remove the user from the Org
+        err = s.appClient.RemoveUserFromOrganization(c.Context(), classroom.OrgName, toBeRemovedUser.GithubUsername)
+        if err != nil {
+            log.Default().Println("Warning: Failed to remove user from org, ", err)
+
+        }
+
+
 		// remove the user from the student team
-		err = s.appClient.RemoveTeamMember(c.Context(), classroom.OrgName, *studentTeam.ID, toBeRemovedUser.GithubUsername)
+		/*err = s.appClient.RemoveTeamMember(c.Context(), classroom.OrgName, *studentTeam.ID, toBeRemovedUser.GithubUsername)
 		if err != nil {
 			log.Default().Println("Warning: Failed to remove user from student team", err)
 			// do nothing, the user has already been removed from the team or they were never in the team
-		}
+		}*/
 
 		err = s.store.RemoveUserFromClassroom(c.Context(), classroomID, userID)
 		if err != nil {
@@ -423,13 +431,16 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 
         // Gets a user from the classroom
         classroomUser, err := s.store.GetUserInClassroom(c.Context(), classroomToken.ClassroomID, *user.ID)
-		if err != nil && classroomUser.Status != models.UserStatusRemoved{
+        fmt.Println(classroomUser.GithubUsername)
+        fmt.Println(classroomUser.Status)
+
+		if err != nil && classroomUser.Status != models.UserStatusRemoved {
 			classroomUser, err = s.store.AddUserToClassroom(c.Context(), classroomToken.ClassroomID, string(classroomToken.ClassroomRole), models.UserStatusRequested, *user.ID)
 			if err != nil {
 				return errs.InternalServerError()
 			}
 		}
-
+        
 		// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
 		roleComparison := classroomUser.Role.Compare(classroomToken.ClassroomRole)
 		if roleComparison < 0 {
@@ -440,6 +451,24 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			}
 		}
 
+		classroomUser, err = s.updateUserStatus(c.Context(), client, user, classroom)
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+
+        // if the user's staus is removed, they are trying to rejoin the class. more them 
+        if (classroomUser.Status == models.UserStatusRemoved) {
+            // if the user was removed, move them to requested without adding them to the classroom
+            classroomUser, err = s.store.ModifyUserStatus(c.Context(), classroomToken.ClassroomID, models.UserStatusRequested, *user.ID)
+            
+            return c.Status(http.StatusOK).JSON(fiber.Map{
+                "message":   "Token applied successfully, user requested access",
+                "user":      classroomUser,
+                "classroom": classroom,
+            })
+        }
+
 		// Invite the user to the organization
 		// classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom.OrgName, classroomToken.ClassroomID, classroomToken.ClassroomRole, user)
 		classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom, classroomToken.ClassroomRole, user)
@@ -447,23 +476,12 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		// Accept the pending invitation to the organization only if they 
-        if classroomUser.Status != models.UserStatusRemoved {
-		    err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
-	    	if err != nil {
-		    	return errs.InternalServerError()
-		    }
-        }
-        
-        // If the user was removed, move them to the requested state 
-		if classroomUser.Status == models.UserStatusRemoved {
-            classroomUser.Status = models.UserStatusRequested
-		}
-
-		classroomUser, err = s.updateUserStatus(c.Context(), client, user, classroom)
+		// Accept the pending invitation to the organization 
+        err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
 		if err != nil {
-			return errs.InternalServerError()
-		}
+	    	return errs.InternalServerError()
+	    }
+        
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":   "Token applied successfully",
