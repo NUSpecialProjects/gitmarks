@@ -336,7 +336,21 @@ func (s *AssignmentService) checkAssignmentName() fiber.Handler {
 func generateSlugCase(parts ...string) string {
 	var processedParts []string
 	for _, part := range parts {
-		processedParts = append(processedParts, strings.ReplaceAll(strings.ToLower(part), " ", "-"))
+		// Replace spaces with hyphens and remove characters that GitHub API doesn't allow
+		processed := strings.Map(func(r rune) rune {
+			switch {
+			case r == ' ':
+				return '-'
+			case r == '/' || r == '\\' || r == ':' || r == '*' || r == '?' || r == '"' || r == '<' || r == '>' || r == '|':
+				return -1
+			default:
+				return r
+			}
+		}, part)
+
+		if processed != "" {
+			processedParts = append(processedParts, processed)
+		}
 	}
 
 	return strings.Join(processedParts, "-")
