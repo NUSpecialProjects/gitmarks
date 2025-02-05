@@ -10,6 +10,8 @@ import { GraderContext, GraderProvider } from "@/contexts/grader";
 
 import "./styles.css";
 import RubricTree from "@/components/CodeBrowser/RubricTree";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import ErrorMessage from "@/components/Error";
 
 const GraderWrapper: React.FC = () => {
   const { assignmentID, studentWorkID } = useParams();
@@ -26,6 +28,9 @@ const Grader: React.FC = () => {
     studentWorkID,
     studentWork,
     selectedFile,
+    loadingGitTree,
+    loadingStudentWork,
+    dataRetrievalError,
     setSelectedFile,
   } = useContext(GraderContext);
   const [graderFontSize, setGraderFontSize] = useState(13);
@@ -39,79 +44,118 @@ const Grader: React.FC = () => {
   };
 
   return (
-    studentWork && (
-      <div className="Grader">
-        <div className="Grader__head">
-          <div className="Grader__title">
-            <Link to="/app/grading">
-              <FaChevronLeft />
-            </Link>
-            <div>
-              <h2>{studentWork.contributors.map((contributor) => contributor.full_name).join(", ")}</h2>
-              <span>{studentWork.assignment_name}</span>
+
+    <>
+      {dataRetrievalError && (
+        <div className="Grader">
+
+          <div className="Grader__head">
+            <div className="Grader__title">
+              <Link to="/app/grading">
+                <FaChevronLeft />
+              </Link>
+
+              <div> 
+                <h2>Grading</h2>
+
+              </div>
+            </div>
+
+          </div>
+          <div className="Grader_loading">
+            <ErrorMessage message="Unable to retrieve students work"></ErrorMessage>
+
+          </div>
+
+        </div>
+      )}
+
+      {(loadingGitTree || loadingStudentWork) && (
+        <div className="Grader__loading">
+          <LoadingSpinner/>
+        </div>
+      )}
+
+
+      {studentWork && !loadingGitTree && !loadingStudentWork && !dataRetrievalError && (
+        <div className="Grader">
+          <div className="Grader__head">
+            <div className="Grader__title">
+              <Link to="/app/grading">
+                <FaChevronLeft />
+              </Link>
+              <div>
+                <h2>{studentWork.contributors.map((contributor) => contributor.full_name).join(", ")}</h2>
+                <span>{studentWork.assignment_name}</span>
+              </div>
+            </div>
+            <div className="Grader__nav">
+              <span>
+                Student Work {studentWork.row_num}/
+                {studentWork.total_student_works}
+              </span>
+              <div>
+                <div className="Grader__navButtons">
+                  {studentWork.previous_student_work_id && (
+                    <Button
+                      variant="secondary"
+                      href={`/app/grading/assignment/${assignmentID}/student/${studentWork.previous_student_work_id}`}
+                    >
+                      <FaChevronLeft />
+                      Previous
+                    </Button>
+                  )}
+                  {studentWork.next_student_work_id && (
+                    <Button
+                      variant="secondary"
+                      href={`/app/grading/assignment/${assignmentID}/student/${studentWork.next_student_work_id}`}
+                    >
+                      Next
+                      <FaChevronRight />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          <div className="Grader__nav">
-            <span>
-              Student Work {studentWork.row_num}/
-              {studentWork.total_student_works}
-            </span>
-            <div>
-              <div className="Grader__navButtons">
-                {studentWork.previous_student_work_id && (
-                  <Button
-                    variant="secondary"
-                    href={`/app/grading/assignment/${assignmentID}/student/${studentWork.previous_student_work_id}`}
-                  >
-                    <FaChevronLeft />
-                    Previous
-                  </Button>
-                )}
-                {studentWork.next_student_work_id && (
-                  <Button
-                    variant="secondary"
-                    href={`/app/grading/assignment/${assignmentID}/student/${studentWork.next_student_work_id}`}
-                  >
-                    Next
-                    <FaChevronRight />
-                  </Button>
-                )}
+          <div className="Grader__body">
+            <div className="Grader__toolBar">
+              <div className="Grader__toolBar__fileName">
+                {selectedFile ? selectedFile.path : "No file selected"}
               </div>
+              <div className="Grader__toolBar__zoomButtons">
+                <div className="Grader__toolBar__zoomButton" onClick={zoomIn}>
+                  <GoZoomIn />
+                </div>
+                <div className="Grader__toolBar__zoomButton" onClick={zoomOut}>
+                  <GoZoomOut />
+                </div>
+              </div>
+            </div>
+            <div
+              className="Grader__viewPort"
+              style={{ fontSize: graderFontSize }}
+            >
+              <FileTree
+                className="Grader__files"
+                selectFileCallback={setSelectedFile}
+              />
+              <CodeBrowser
+                assignmentID={assignmentID}
+                studentWorkID={studentWorkID}
+                file={selectedFile}
+              />
+              <RubricTree />
             </div>
           </div>
         </div>
-        <div className="Grader__body">
-          <div className="Grader__toolBar">
-            <div className="Grader__toolBar__fileName">
-              {selectedFile ? selectedFile.path : "No file selected"}
-            </div>
-            <div className="Grader__toolBar__zoomButtons">
-              <div className="Grader__toolBar__zoomButton" onClick={zoomIn}>
-                <GoZoomIn />
-              </div>
-              <div className="Grader__toolBar__zoomButton" onClick={zoomOut}>
-                <GoZoomOut />
-              </div>
-            </div>
-          </div>
-          <div
-            className="Grader__viewPort"
-            style={{ fontSize: graderFontSize }}
-          >
-            <FileTree
-              className="Grader__files"
-              selectFileCallback={setSelectedFile}
-            />
-            <CodeBrowser
-              assignmentID={assignmentID}
-              studentWorkID={studentWorkID}
-              file={selectedFile}
-            />
-            <RubricTree />
-          </div>
-        </div>
-      </div>
-    )
+      )}
+
+
+    </>
+
+
+
   );
 };
 

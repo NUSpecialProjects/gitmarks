@@ -11,6 +11,13 @@
     gap: 10px;
     padding-bottom: 10px;
   }
+  
+  &__loading {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
+
   &__title {
     display: flex;
     align-items: stretch;
