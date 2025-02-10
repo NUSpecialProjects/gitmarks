@@ -88,8 +88,8 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Invite a user to an organization
 	InviteUserToOrganization(ctx context.Context, orgName string, userID int64) error
 
-    // Remove a user from an organization
-    RemoveUserFromOrganization(ctx context.Context, orgName string, userName string) error
+	// Remove a user from an organization
+	RemoveUserFromOrganization(ctx context.Context, orgName string, userName string) error
 
 	SetUserMembershipInOrg(ctx context.Context, orgName string, userName string, role string) error
 

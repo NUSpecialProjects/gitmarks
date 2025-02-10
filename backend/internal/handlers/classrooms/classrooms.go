@@ -317,12 +317,12 @@ func (s *ClassroomService) removeUserFromClassroom() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-        // remove the user from the org and the github student team 
-       err = s.appClient.RemoveUserFromOrganization(c.Context(), classroom.OrgName, toBeRemovedUser.GithubUsername)
-        if err != nil {
-            log.Default().Println("Warning: Failed to remove user from org, ", err)
+		// remove the user from the org and the github student team
+		err = s.appClient.RemoveUserFromOrganization(c.Context(), classroom.OrgName, toBeRemovedUser.GithubUsername)
+		if err != nil {
+			log.Default().Println("Warning: Failed to remove user from org, ", err)
 
-        }
+		}
 
 		err = s.store.RemoveUserFromClassroom(c.Context(), classroomID, userID)
 		if err != nil {
@@ -416,8 +416,8 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-        // Gets a user from the classroom
-        classroomUser, err := s.store.GetUserInClassroom(c.Context(), classroomToken.ClassroomID, *user.ID)
+		// Gets a user from the classroom
+		classroomUser, err := s.store.GetUserInClassroom(c.Context(), classroomToken.ClassroomID, *user.ID)
 
 		if err != nil && classroomUser.Status != models.UserStatusRemoved {
 			classroomUser, err = s.store.AddUserToClassroom(c.Context(), classroomToken.ClassroomID, string(classroomToken.ClassroomRole), models.UserStatusRequested, *user.ID)
@@ -425,7 +425,7 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 				return errs.InternalServerError()
 			}
 		}
-        
+
 		// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
 		roleComparison := classroomUser.Role.Compare(classroomToken.ClassroomRole)
 		if roleComparison < 0 {
@@ -441,21 +441,20 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
+		// if the user's staus is removed, they are trying to rejoin the class. more them
+		if classroomUser.Status == models.UserStatusRemoved {
+			// if the user was removed, move them to requested without adding them to the classroom
+			classroomUser, err = s.store.ModifyUserStatus(c.Context(), classroomToken.ClassroomID, models.UserStatusRequested, *user.ID)
+			if err != nil {
+				return errs.InternalServerError()
+			}
 
-        // if the user's staus is removed, they are trying to rejoin the class. more them 
-        if (classroomUser.Status == models.UserStatusRemoved) {
-            // if the user was removed, move them to requested without adding them to the classroom
-            classroomUser, err = s.store.ModifyUserStatus(c.Context(), classroomToken.ClassroomID, models.UserStatusRequested, *user.ID)
-            if err != nil {
-                return errs.InternalServerError()
-            }
-
-            return c.Status(http.StatusOK).JSON(fiber.Map{
-                "message":   "Token applied successfully, user requested access",
-                "user":      classroomUser,
-                "classroom": classroom,
-            })
-        }
+			return c.Status(http.StatusOK).JSON(fiber.Map{
+				"message":   "Token applied successfully, user requested access",
+				"user":      classroomUser,
+				"classroom": classroom,
+			})
+		}
 
 		// Invite the user to the organization
 		// classroomUser, err = s.inviteUserToOrganization(c.Context(), s.appClient, classroom.OrgName, classroomToken.ClassroomID, classroomToken.ClassroomRole, user)
@@ -464,12 +463,11 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		// Accept the pending invitation to the organization 
-        err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
+		// Accept the pending invitation to the organization
+		err = s.acceptOrgInvitation(c.Context(), client, classroom.OrgName, classroomToken.ClassroomID, user)
 		if err != nil {
-	    	return errs.InternalServerError()
-	    }
-        
+			return errs.InternalServerError()
+		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":   "Token applied successfully",
