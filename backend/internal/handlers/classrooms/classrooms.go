@@ -312,30 +312,17 @@ func (s *ClassroomService) removeUserFromClassroom() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		/*studentTeam, err := s.appClient.GetTeamByName(c.Context(), classroom.OrgName, *classroom.StudentTeamName)
-		if err != nil {
-			return errs.InternalServerError()
-		}*/
-
 		toBeRemovedUser, err := s.store.GetUserByID(c.Context(), userID)
 		if err != nil {
 			return errs.InternalServerError()
 		}
 
-        // remove the user from the Org
-        err = s.appClient.RemoveUserFromOrganization(c.Context(), classroom.OrgName, toBeRemovedUser.GithubUsername)
+        // remove the user from the org and the github student team 
+       err = s.appClient.RemoveUserFromOrganization(c.Context(), classroom.OrgName, toBeRemovedUser.GithubUsername)
         if err != nil {
             log.Default().Println("Warning: Failed to remove user from org, ", err)
 
         }
-
-
-		// remove the user from the student team
-		/*err = s.appClient.RemoveTeamMember(c.Context(), classroom.OrgName, *studentTeam.ID, toBeRemovedUser.GithubUsername)
-		if err != nil {
-			log.Default().Println("Warning: Failed to remove user from student team", err)
-			// do nothing, the user has already been removed from the team or they were never in the team
-		}*/
 
 		err = s.store.RemoveUserFromClassroom(c.Context(), classroomID, userID)
 		if err != nil {
@@ -431,8 +418,6 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 
         // Gets a user from the classroom
         classroomUser, err := s.store.GetUserInClassroom(c.Context(), classroomToken.ClassroomID, *user.ID)
-        fmt.Println(classroomUser.GithubUsername)
-        fmt.Println(classroomUser.Status)
 
 		if err != nil && classroomUser.Status != models.UserStatusRemoved {
 			classroomUser, err = s.store.AddUserToClassroom(c.Context(), classroomToken.ClassroomID, string(classroomToken.ClassroomRole), models.UserStatusRequested, *user.ID)
