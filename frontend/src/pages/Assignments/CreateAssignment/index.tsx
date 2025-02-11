@@ -29,7 +29,7 @@ const CreateAssignment: React.FC = () => {
       if (orgName) {
         setLoadingTemplates(true);
 
-        // TODO: Implement dynamic pagination in template dropdown
+        // TODO: KHO-211 Implement dynamic pagination in template dropdown
         // Currently, only the first 100 templates are fetched,
         // which are not necessarily all templates.
         getOrganizationTemplates(orgName, "100", "1")
