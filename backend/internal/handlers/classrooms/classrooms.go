@@ -363,7 +363,7 @@ func (s *ClassroomService) generateClassroomToken() fiber.Handler {
 			return err
 		}
 
-		// if the link is permenant, use the existing permanent token
+		// if the link is permanent, use the existing permanent token
 		if body.Duration == nil {
 			classroomToken, err := s.store.GetPermanentClassroomTokenByClassroomIDAndRole(c.Context(), classroomID, classroomRole)
 			if err == nil {
