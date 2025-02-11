@@ -94,6 +94,10 @@ func StudentNotInStudentTeamError() APIError {
 	return NewAPIError(http.StatusBadRequest, fmt.Errorf("student is not in the student team"))
 }
 
+func StudentRemovedFromClassroomError() APIError {
+	return NewAPIError(http.StatusForbidden, fmt.Errorf("student has been removed from the classroom"))
+}
+
 func InconsistentOrgMembershipError() APIError {
 	return NewAPIError(http.StatusBadRequest, fmt.Errorf("user status is inconsistent with org membership, were they removed from the GitHub organization?"))
 }

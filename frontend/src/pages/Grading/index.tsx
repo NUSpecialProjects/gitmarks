@@ -1,24 +1,23 @@
 import { FaChevronRight, FaChevronDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import React, { useContext, useEffect, useState } from "react";
-
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import { getAssignments } from "@/api/assignments";
-import { getStudentWorks } from "@/api/student_works";
+import React, { useState } from "react";
 import { formatDateTime } from "@/utils/date";
-
 import {
   Table,
   TableRow,
   TableCell,
   TableDiv,
 } from "@/components/Table/index.tsx";
-import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import EmptyDataBanner from "@/components/EmptyDataBanner";
 import Button from "@/components/Button";
+import { MdAdd } from "react-icons/md";
+import BreadcrumbPageHeader from "@/components/PageHeader/BreadcrumbPageHeader";
+import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
+import { ClassroomRole, StudentWorkState } from "@/types/enums";
 
 import "./styles.css";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
-import { ClassroomRole, StudentWorkState } from "@/types/enums";
+import { useAssignmentsList, useStudentWorks } from "@/hooks/useAssignment";
 
 interface IGradingAssignmentRow extends React.HTMLProps<HTMLDivElement> {
   assignment: IAssignmentOutline;
@@ -29,16 +28,12 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
   children,
 }) => {
   const [collapsed, setCollapsed] = useState(true);
-  const [studentAssignments, setStudentAssignments] = useState<IStudentWork[]>(
-    []
-  );
-  const { selectedClassroom: selectedClassroom } = useContext(
-    SelectedClassroomContext
-  );
-  useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/access-denied");
+  const { selectedClassroom } = useCurrentClassroom();
   const navigate = useNavigate();
-
+  const { data: studentAssignments } = useStudentWorks(selectedClassroom?.id, assignment.id);
+  
   const downloadGrades = () => {
+    if (!studentAssignments) return;
     const csvContent =
       "Student,Auto Grader Score,Manual Feedback Score,Overall Score\n" +
       studentAssignments
@@ -68,17 +63,6 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
-
-  useEffect(() => {
-    if (!selectedClassroom) return;
-    getStudentWorks(selectedClassroom.id, assignment.id)
-      .then((studentAssignments) => {
-        setStudentAssignments(studentAssignments);
-      })
-      .catch((err: unknown) => {
-        console.error("Error fetching student assignments:", err);
-      });
-  }, []);
 
   return (
     <>
@@ -154,29 +138,27 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
 };
 
 const Grading: React.FC = () => {
-  const [assignments, setAssignments] = useState<IAssignmentOutline[]>([]);
-  const { selectedClassroom: selectedClassroom } = useContext(
-    SelectedClassroomContext
-  );
-  useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/app/organization/select");
-  useEffect(() => {
-    if (!selectedClassroom) return;
-    getAssignments(selectedClassroom.id)
-      .then((assignments) => {
-        setAssignments(assignments);
-      })
-      .catch((err: unknown) => {
-        console.error("Error fetching assignments:", err);
-      });
-  }, []);
+  const { selectedClassroom } = useCurrentClassroom();
+  const { classroomUser } = useClassroomUser(ClassroomRole.TA, "/app/organization/select");
+  const { assignments, loading, error } = useAssignmentsList(selectedClassroom?.id)
 
   return (
-    selectedClassroom && (
-      <div className="Grading">
+    <div className="Grading">
+      {selectedClassroom && (
         <BreadcrumbPageHeader
           pageTitle={selectedClassroom?.org_name}
           breadcrumbItems={[selectedClassroom?.name, "Grading"]}
         />
+      )}
+      {loading ? (
+        <EmptyDataBanner>
+          <LoadingSpinner />
+        </EmptyDataBanner>
+      ) : error ? (
+        <EmptyDataBanner>
+          Error loading assignments: {error instanceof Error ? error.message : "Unknown error"}
+        </EmptyDataBanner>
+      ) : assignments && assignments.length > 0 ? (
         <Table cols={4} primaryCol={1} className="AssignmentsTable">
           <TableRow style={{ borderTop: "none" }}>
             <TableCell></TableCell>
@@ -184,20 +166,31 @@ const Grading: React.FC = () => {
             <TableCell>Assigned Date</TableCell>
             <TableCell>Due Date</TableCell>
           </TableRow>
-          {assignments
-            ? assignments.map((assignment, i: number) => (
-                <GradingAssignmentRow key={i} assignment={assignment}>
-                  <TableCell>{assignment.name}</TableCell>
-                  <TableCell>{formatDateTime(assignment.created_at)}</TableCell>
-                  <TableCell>
-                    {formatDateTime(assignment.main_due_date)}
-                  </TableCell>
-                </GradingAssignmentRow>
-              ))
-            : "No assignments yet."}
+          {assignments && assignments.map((assignment, i: number) => (
+            <GradingAssignmentRow key={i} assignment={assignment}>
+              <TableCell>{assignment.name}</TableCell>
+              <TableCell>{formatDateTime(assignment.created_at)}</TableCell>
+              <TableCell>{formatDateTime(assignment.main_due_date)}</TableCell>
+            </GradingAssignmentRow>
+          ))}
         </Table>
-      </div>
-    )
+      ) : (
+        <EmptyDataBanner>
+          <div className="emptyDataBannerMessage">
+            No assignments found.
+          </div>
+          {classroomUser?.classroom_role === ClassroomRole.PROFESSOR && (
+            <Button
+              variant="primary"
+              size="small"
+              href={`/app/assignments/create?org_name=${selectedClassroom?.org_name}`}
+              >
+              <MdAdd className="icon" /> Create Assignment
+            </Button>
+          )}
+        </EmptyDataBanner>
+      )}
+    </div>
   );
 };
 

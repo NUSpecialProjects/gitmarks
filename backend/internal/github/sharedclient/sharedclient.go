@@ -222,11 +222,49 @@ func (api *CommonAPI) SetUserMembershipInOrg(ctx context.Context, orgName string
 	}
 
 	return nil
+}
 
+func (api *CommonAPI) GetOrgInvitations(ctx context.Context, orgName string) ([]*github.Invitation, error) {
+	req, err := api.Client.NewRequest("GET", fmt.Sprintf("/orgs/%s/invitations", orgName), nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	var invitations []*github.Invitation
+
+	_, err = api.Client.Do(ctx, req, &invitations)
+	if err != nil {
+		return nil, fmt.Errorf("error getting org invitations: %v", err)
+	}
+
+	return invitations, nil
 }
 
 func (api *CommonAPI) CancelOrgInvitation(ctx context.Context, orgName string, userName string) error {
-	endpoint := fmt.Sprintf("/orgs/%s/invitations/%s", orgName, userName)
+	invitations, err := api.GetOrgInvitations(ctx, orgName)
+	if err != nil {
+		return fmt.Errorf("error getting org invitations: %v", err)
+	}
+
+	// Find the invitation ID for the user
+	var invitationID int64
+	for _, inv := range invitations {
+		if *inv.Login == userName {
+			invitationID = *inv.ID
+			break
+		}
+	}
+
+	if invitationID == 0 {
+		return fmt.Errorf("no pending invitation found for user %s", userName)
+	}
+
+	// Cancel the invitation using the ID
+	return api.CancelOrgInvitationByID(ctx, orgName, invitationID)
+}
+
+func (api *CommonAPI) CancelOrgInvitationByID(ctx context.Context, orgName string, invitationID int64) error {
+	endpoint := fmt.Sprintf("/orgs/%s/invitations/%d", orgName, invitationID)
 	req, err := api.Client.NewRequest("DELETE", endpoint, nil)
 	if err != nil {
 		return fmt.Errorf("error creating request: %v", err)

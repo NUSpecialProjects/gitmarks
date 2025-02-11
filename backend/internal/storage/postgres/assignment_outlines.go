@@ -58,6 +58,26 @@ func (db *DB) GetAssignmentByToken(ctx context.Context, token string) (models.As
 	return assignmentOutline, nil
 }
 
+func (db *DB) GetPermanentAssignmentTokenByAssignmentID(ctx context.Context, assignmentID int64) (models.AssignmentToken, error) {
+	var tokenData models.AssignmentToken
+	err := db.connPool.QueryRow(ctx, `
+		SELECT assignment_outline_id, token, created_at, expires_at
+		FROM assignment_outline_tokens
+		WHERE assignment_outline_id = $1 AND expires_at IS NULL
+	`, assignmentID).Scan(
+		&tokenData.AssignmentID,
+		&tokenData.Token,
+		&tokenData.CreatedAt,
+		&tokenData.ExpiresAt,
+	)
+
+	if err != nil {
+		return models.AssignmentToken{}, errs.NewDBError(err)
+	}
+
+	return tokenData, nil
+}
+
 func (db *DB) GetAssignmentsInClassroom(ctx context.Context, classroomID int64) ([]models.AssignmentOutline, error) {
 	rows, err := db.connPool.Query(ctx, "SELECT * FROM assignment_outlines WHERE classroom_id = $1", classroomID)
 	if err != nil {

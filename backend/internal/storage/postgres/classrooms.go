@@ -229,7 +229,7 @@ func (db *DB) GetUserInClassroom(ctx context.Context, classroomID int64, userID 
 	FROM users u
 	JOIN classroom_membership cm ON u.id = cm.user_id
 	JOIN classrooms c ON c.id = cm.classroom_id
-	WHERE cm.classroom_id = $1 AND u.id = $2 AND cm.status != $3`, classroomID, userID, models.UserStatusRemoved).Scan(
+	WHERE cm.classroom_id = $1 AND u.id = $2`, classroomID, userID).Scan(
 		&userData.ID,
 		&userData.FirstName,
 		&userData.LastName,
@@ -309,6 +309,27 @@ func (db *DB) GetClassroomToken(ctx context.Context, token string) (models.Class
 		FROM classroom_tokens
 		WHERE token = $1
 	`, token).Scan(
+		&tokenData.ClassroomID,
+		&tokenData.ClassroomRole,
+		&tokenData.Token,
+		&tokenData.CreatedAt,
+		&tokenData.ExpiresAt,
+	)
+
+	if err != nil {
+		return models.ClassroomToken{}, errs.NewDBError(err)
+	}
+
+	return tokenData, nil
+}
+
+func (db *DB) GetPermanentClassroomTokenByClassroomIDAndRole(ctx context.Context, classroomID int64, classroomRole models.ClassroomRole) (models.ClassroomToken, error) {
+	var tokenData models.ClassroomToken
+	err := db.connPool.QueryRow(ctx, `
+		SELECT classroom_id, classroom_role, token, created_at, expires_at
+		FROM classroom_tokens
+		WHERE classroom_id = $1 AND classroom_role = $2 AND expires_at IS NULL
+	`, classroomID, classroomRole).Scan(
 		&tokenData.ClassroomID,
 		&tokenData.ClassroomRole,
 		&tokenData.Token,
