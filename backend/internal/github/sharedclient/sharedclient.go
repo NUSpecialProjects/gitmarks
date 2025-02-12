@@ -7,7 +7,6 @@ import (
 	"time"
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
-	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	"github.com/google/go-github/github"
 )
 
@@ -290,12 +289,67 @@ func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *t
 		RepoName: repoName,
 		OwnerName: orgName,
 		DestinationBranch: branchName,
-		Content: utils.ActionWithDeadline(deadline),
+		Content: actionWithDeadline(deadline),
 		CommitMessage: "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
 
 }
+
+
+func actionWithDeadline(deadline *time.Time) string {
+	// yyyy, mm, dd, hh, mm, ss
+	  var scriptString = `name: deadline-enforcement
+  on:
+	pull_request:
+	  types: [opened, reopened, edited, synchronize]
+  
+  jobs:
+	deadline-enforcement:
+	  runs-on: ubuntu-latest
+	  steps:
+		- name: Execute python deadline check
+		  run: |
+			  python -c "
+			  from datetime import datetime, timezone
+			  import sys
+			  
+			  def check_date():
+				  target_date = datetime(%d, %d, %d, %d, %d, %d, tzinfo=timezone.utc)
+				  current_date = datetime.now(timezone.utc)
+				  if current_date > target_date:
+					  sys.exit(1)
+				  else:
+					  sys.exit(0)
+  
+			  if __name__ == '__main__':
+				  check_date()
+			  "
+  `
+  
+	  return fmt.Sprintf(scriptString, deadline.Year(), deadline.Month(), deadline.Day(), deadline.Hour(), deadline.Minute(), deadline.Second())
+  }
+  
+  
+  func targetBranchProtectionAction() string {
+	  var actionString = `name: check-pr-target-branch
+  
+  on:
+	pull_request:
+	  types: [opened, reopened, edited, synchronize]
+  
+  jobs:
+	check-pr-target-branch:
+	  runs-on: ubuntu-latest
+	  steps:
+		- name: Check PR destination branch
+		  run: |
+			if [[ "${{ github.event.pull_request.base.ref }}" == "feedback" ]]; then
+			  echo "Error: Pull requests targeting the '' branch are not allowed"
+			  exit 1
+			fi`
+			return actionString
+  }
 
 
 func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName, branchName string) error {
@@ -305,7 +359,7 @@ func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName
 		RepoName: repoName,
 		OwnerName: orgName,
 		DestinationBranch: branchName,
-		Content: utils.TargetBranchProtectionAction(),
+		Content: targetBranchProtectionAction(),
 		CommitMessage: "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
@@ -606,9 +660,6 @@ func (api *CommonAPI) EnableWorkflow(ctx context.Context, ownerName, repoName, w
 	}
 
 	_, err = api.Client.Do(ctx, req, nil)
-	if err != nil {
-		fmt.Println("OOOOOFFFFFF")
-	}
 	
 	return err
 }
@@ -629,9 +680,6 @@ func (api *CommonAPI) EnableActions(ctx context.Context, ownerName, repoName str
 	}
 
 	_, err = api.Client.Do(ctx, req, nil)
-	if err != nil {
-		fmt.Println("OOOOOFFFFFFTAAAAAAAAA HERE")
-	}
 	
 	return err
 }
