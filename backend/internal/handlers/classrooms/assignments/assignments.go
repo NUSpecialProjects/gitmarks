@@ -318,12 +318,6 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		}
 
 		// Remove student team's access to forked repo
-		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, *studentWorkRepo.Name)
-		if err != nil {
-			return errs.GithubAPIError(err)
-		}
-
-		// Remove student team's access to forked repo
 		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, studentWorkRepo.GetName())
 		if err != nil {
 			return errs.GithubAPIError(err)

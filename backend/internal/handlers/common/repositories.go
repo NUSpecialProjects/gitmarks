@@ -34,6 +34,28 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 		return errs.InternalServerError()
 	}
 
+	// Retrieve assignment deadline from DB
+	template, err := store.GetAssignmentByRepoName(ctx, *repository.Name)
+	if err != nil {
+		//@KHO-239
+		return err
+	}
+
+	if template.MainDueDate != nil {
+		// There is a deadline
+		err = appClient.CreateDeadlineEnforcement(ctx, template.MainDueDate, *repository.Organization, *repository.Name, MainRepoBranch)
+		if err != nil {
+			//@KHO-239
+			return err
+		}
+	}
+
+	// Create PR Enforcement Action
+	err = appClient.CreatePREnforcement(ctx, *repository.Organization, *repository.Name, MainRepoBranch)
+	if err != nil {
+		return err
+	}
+
 	// Is the base repo initialized according to the database?
 	branchesExist := baseRepo.Initialized
 	if !branchesExist {
