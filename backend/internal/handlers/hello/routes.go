@@ -8,7 +8,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Create HelloGroup fiber route group
+// Routes initializes the "hello" and "hello_protected" route groups in the Fiber application.
+// It sets up middleware for protected routes and registers endpoints.
+//
+// Parameters:
+//   - app: The Fiber application instance to which the routes will be added.
+//   - params: A Params struct containing configuration such as the data store and JWT secret.
 func Routes(app *fiber.App, params types.Params) {
 	service := newService(params.Store)
 
@@ -18,10 +23,10 @@ func Routes(app *fiber.App, params types.Params) {
 	// Register Middleware
 	protected.Use(middleware.Protected(params.UserCfg.JWTSecret))
 
-	//Unprotected Routes
+	// Unprotected Routes
 	unprotected := app.Group("/hello")
 
-	//Endpoints
+	// Endpoints
 	protected.Get("/world", service.HelloWorld)
 	unprotected.Get("/world", service.HelloWorld)
 }

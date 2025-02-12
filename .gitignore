@@ -23,7 +23,8 @@ go.work
 go.work.sum
 
 # env file
-*.env
+.env
+*.env_other*
 
 # Logs
 logs

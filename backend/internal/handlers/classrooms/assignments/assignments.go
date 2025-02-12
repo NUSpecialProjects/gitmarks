@@ -179,6 +179,7 @@ func (s *AssignmentService) generateAssignmentToken() fiber.Handler {
 
 // Uses an assignment token to accept an assignment.
 func (s *AssignmentService) useAssignmentToken() fiber.Handler {
+	//@KHO-239
 	return func(c *fiber.Ctx) error {
 		token := c.Params("token")
 		if token == "" {
@@ -288,6 +289,12 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			initialDelay *= 2
 		}
 
+		//KHO-239
+		err = client.CreateBranchRuleset(c.Context(), classroom.OrgName, forkName)
+		if err != nil {
+			return errs.CriticalGithubError()
+		}
+
 		// Remove student team's access to forked repo
 		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, *studentWorkRepo.Name)
 		if err != nil {
@@ -305,6 +312,9 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		if err != nil {
 			return err
 		}
+		
+
+		// TODO Here: Enable Github Actions on student repo.
 
 		// Instead of getting the repository immediately, construct the expected URL
 		return c.Status(http.StatusOK).JSON(fiber.Map{
