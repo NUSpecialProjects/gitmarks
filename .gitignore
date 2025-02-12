@@ -58,3 +58,8 @@ terraform/.terraform/
 *.tfstate.backup
 */terraform.tfstate*
 */terraform.tfvars
+
+
+# Alex's .env files
+alex.env
+

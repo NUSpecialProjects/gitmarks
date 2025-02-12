@@ -100,7 +100,7 @@ export const getFirstCommit = async (
 ): Promise<Date> => {
   const response = await fetch(
     `${base_url}/classrooms/classroom/${classroomID}/assignments/assignment/${assignmentID}/works/work/${studentWorkID}/first-commit`,
-    {
+    { 
       method: "GET",
       credentials: "include",
       headers: {
