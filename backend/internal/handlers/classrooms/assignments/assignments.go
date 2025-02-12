@@ -1,6 +1,7 @@
 package assignments
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -8,10 +9,13 @@ import (
 	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
+	"github.com/CamPlume1/khoury-classroom/internal/github"
+	"github.com/CamPlume1/khoury-classroom/internal/handlers/common"
 	"github.com/CamPlume1/khoury-classroom/internal/middleware"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	"github.com/gofiber/fiber/v2"
+	gh "github.com/google/go-github/github"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -105,7 +109,11 @@ func (s *AssignmentService) createAssignment() fiber.Handler {
 		}
 
 		// Create base repository and store locally
-		baseRepoName := generateSlugCase(classroom.OrgName, classroom.Name, assignmentData.Name)
+		baseRepoName, err := generateUniqueRepoName(c.Context(), s.appClient, classroom.OrgName, classroom.Name, assignmentData.Name)
+		if err != nil {
+			return err
+		}
+
 		baseRepo, err := s.appClient.CreateRepoFromTemplate(c.Context(), classroom.OrgName, template.TemplateRepoName, baseRepoName)
 		if err != nil {
 			return err
@@ -186,6 +194,12 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.BadRequest(errors.New("token is required"))
 		}
 
+		// Get client and user
+		client, githubUser, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
+		if err != nil {
+			return errs.AuthenticationError()
+		}
+
 		// Get assignment using the token
 		assignment, err := s.store.GetAssignmentByToken(c.Context(), token)
 		if err != nil {
@@ -198,16 +212,10 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		// Retrieve user client and session
-		client, err := middleware.GetClient(c, s.store, s.userCfg)
+		// Initialize the base repository if it is not initialized already
+		err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
 		if err != nil {
-			return errs.AuthenticationError()
-		}
-
-		// Get user
-		user, err := client.GetCurrentUser(c.Context())
-		if err != nil {
-			return errs.GithubAPIError(err)
+			return errs.InternalServerError()
 		}
 
 		// Get classroom
@@ -219,44 +227,43 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		// Check if user has at least student role
 		_, err = s.RequireAtLeastRole(c, classroom.ID, models.Student)
 		if err != nil {
-			return err
+			// Add them to the classroom as a student
+			_, _, err = common.InviteUserToClassroom(c.Context(), s.store, s.appClient, client, classroom.ID, models.Student, &user)
+			if err != nil {
+				return errs.InternalServerError()
+			}
+
+			// Ensure they have student role now and have successfully joined the classroom
+			_, err = s.RequireAtLeastRole(c, classroom.ID, models.Student)
+			if err != nil {
+				return err
+			}
 		}
 
-		// Check if fork already exists
-		forkName := generateSlugCase(classroom.Name, assignment.Name, user.Login)
-		studentWorkRepo, _ := client.GetRepository(c.Context(), classroom.OrgName, forkName)
-		if studentWorkRepo != nil {
-			// Ensure student team is removed
-			err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, forkName)
+		// Check if the user has already accepted the assignment (student work exists already)
+		studentWork, err := s.store.GetWorkByGitHubUserID(c.Context(), int(classroom.ID), int(assignment.ID), githubUser.ID)
+		if err == nil { // student work exists
+			// We can assume the student has access to see this repository since it is their own work
+			studentWorkRepo, err := client.GetRepository(c.Context(), classroom.OrgName, studentWork.RepoName)
 			if err != nil {
 				return errs.GithubAPIError(err)
 			}
 
-			// Get the student work
-			studentWork, err := s.store.GetWorkByRepoName(c.Context(), *studentWorkRepo.Name)
-			if err != nil {
-				// Recover from the case where the student work does not exist, but the repo does exist
-				studentWork, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
-				if err != nil {
-					return errs.InternalServerError()
-				}
-			} else if studentWork.WorkState == models.WorkStateNotAccepted {
-				// Recover from the case where the workstate is out of sync with the github state (repo exists but student work is not accepted)
-				updatedStudentWork := studentWork
-				updatedStudentWork.WorkState = models.WorkStateAccepted
-				_, err = s.store.UpdateStudentWork(c.Context(), updatedStudentWork)
-				if err != nil {
-					return errs.InternalServerError()
-				}
+			if studentWork.WorkState != models.WorkStateNotAccepted { // This is a bit redundant, but it's good to be explicit
+				return c.Status(http.StatusOK).JSON(fiber.Map{
+					"message":  "Assignment already accepted",
+					"repo_url": studentWorkRepo.HTMLURL,
+				})
 			}
-
-			return c.Status(http.StatusOK).JSON(fiber.Map{
-				"message":  "Assignment already accepted",
-				"repo_url": studentWorkRepo.HTMLURL,
-			})
 		}
 
-		// Otherwise generate fork
+		// Generate fork name, appending a numeric suffix if necessary
+		forkName, err := generateUniqueRepoName(c.Context(), client, classroom.OrgName, baseRepo.BaseRepoName, githubUser.Login)
+		if err != nil {
+			return err
+		}
+
+		// Generate fork
 		err = client.ForkRepository(c.Context(),
 			baseRepo.BaseRepoOwner,
 			baseRepo.BaseRepoName,
@@ -273,12 +280,21 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		initialDelay := 1 * time.Second
 		maxDelay := 30 * time.Second
 
+		var studentWorkRepo *gh.Repository
 		for {
-			studentWorkRepo, _ = client.GetRepository(c.Context(), classroom.OrgName, forkName)
-			if studentWorkRepo != nil {
-				if client.CheckForkIsReady(c.Context(), studentWorkRepo) {
-					break
+			repo, err := client.GetRepository(c.Context(), classroom.OrgName, forkName)
+			if err != nil {
+				if initialDelay > maxDelay {
+					return errs.GithubAPIError(errors.New("fork unsuccessful, please try again later"))
 				}
+				time.Sleep(initialDelay)
+				initialDelay *= 2
+				continue
+			}
+
+			studentWorkRepo = repo
+			if client.CheckForkIsReady(c.Context(), studentWorkRepo) {
+				break
 			}
 
 			if initialDelay > maxDelay {
@@ -289,41 +305,40 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			initialDelay *= 2
 		}
 
-		//KHO-239
+		// Create feedback pull request
+		err = client.CreateFeedbackPR(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName())
+		if err != nil {
+			return errs.CriticalGithubError()
+		}
+
+		// KHO-239
 		err = client.CreateBranchRuleset(c.Context(), classroom.OrgName, forkName)
 		if err != nil {
 			return errs.CriticalGithubError()
 		}
 
 		// Remove student team's access to forked repo
-		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, *studentWorkRepo.Name)
-		if err != nil {
-			return errs.GithubAPIError(err)
-		}
-
-		// Create initial feedback pull request
-		err = client.CreateFeedbackPR(c.Context(), classroom.OrgName, *studentWorkRepo.Name)
+		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, studentWorkRepo.GetName())
 		if err != nil {
 			return errs.GithubAPIError(err)
 		}
 
 		// Insert into DB
-		_, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
+		_, err = s.store.CreateStudentWork(c.Context(), assignment.ID, githubUser.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
 		if err != nil {
 			return err
 		}
-		
 
 		// TODO Here: Enable Github Actions on student repo.
 
-		// Instead of getting the repository immediately, construct the expected URL
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":  "Assignment Accepted!",
-			"repo_url": studentWorkRepo.HTMLURL,
+			"repo_url": studentWorkRepo.GetHTMLURL(),
 		})
 	}
 }
 
+// Checks if an assignment with a given name exists in a classroom.
 func (s *AssignmentService) checkAssignmentName() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Fetch assignment name and classrooID from request
@@ -348,13 +363,41 @@ func (s *AssignmentService) checkAssignmentName() fiber.Handler {
 	}
 }
 
-// KHO-209
-// TODO: Choose naming pattern once we have a full assignment flow. Stub for now
-// TODO: ensure duplicates are impossible, just append an incrementing -x to name in that case
+// Generates a unique repository name by appending a numeric suffix if necessary.
+func generateUniqueRepoName(ctx context.Context, client github.GitHubBaseClient, orgName string, parts ...string) (string, error) {
+	// Check if fork name already exists
+	suffixStr := ""
+	maxAttempts := 10
+	for i := 0; i < maxAttempts; i++ {
+		allParts := append(parts, suffixStr)
+		forkName := generateSlugCase(allParts...)
+		studentWorkRepo, _ := client.GetRepository(ctx, orgName, forkName) // don't check error because we are checking if repo exists
+		if studentWorkRepo == nil {
+			return forkName, nil
+		}
+		suffixStr = strconv.Itoa(i + 1)
+	}
+	return "", errs.GithubAPIError(errors.New("failed to generate unique fork name"))
+}
+
 func generateSlugCase(parts ...string) string {
 	var processedParts []string
 	for _, part := range parts {
-		processedParts = append(processedParts, strings.ReplaceAll(strings.ToLower(part), " ", "-"))
+		// Replace spaces with hyphens and remove characters that GitHub doesn't allow in repo names
+		processed := strings.Map(func(r rune) rune {
+			switch {
+			case r == ' ':
+				return '-'
+			case r == '/' || r == '\\' || r == ':' || r == '*' || r == '?' || r == '"' || r == '<' || r == '>' || r == '|':
+				return -1
+			default:
+				return r
+			}
+		}, part)
+
+		if processed != "" {
+			processedParts = append(processedParts, processed)
+		}
 	}
 
 	return strings.Join(processedParts, "-")

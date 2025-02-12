@@ -12,6 +12,7 @@ import {
 } from "@/api/metrics";
 import { getStudentWorks } from "@/api/student_works";
 import { ChartData } from 'chart.js';
+import { getOrganizationTemplates } from "@/api/organizations";
 
 /**
  * Provides the list of assignments for a classroom.
@@ -117,6 +118,26 @@ export const useAssignmentTemplate = (classroomId: number | undefined, assignmen
       return await getAssignmentTemplate(classroomId, assignmentId);
     },
     enabled: !!classroomId && !!assignmentId
+  });
+};
+
+/**
+ * Provides template repositories for an organization
+ * 
+ * @param orgName - The name of the organization to fetch templates for
+ * @returns The template repositories and loading state
+ */
+export const useTemplateRepos = (orgName: string | undefined) => {
+  return useQuery({
+    queryKey: ['templateRepos', orgName],
+    queryFn: async () => {
+      if (!orgName) return [];
+      // TODO: KHO-211 Implement dynamic pagination in template dropdown
+      const response = await getOrganizationTemplates(orgName, "100", "1");
+      return response.templates;
+    },
+    enabled: !!orgName,
+    initialData: [] as ITemplateRepo[]
   });
 };
 

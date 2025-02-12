@@ -66,6 +66,11 @@ func (api *CommonAPI) getBranchHead(ctx context.Context, owner, repo, branchName
 	return &branchRef, nil
 }
 
+func (api *CommonAPI) GetBranches(ctx context.Context, owner, repo string) ([]*github.Branch, error) {
+	branches, _, err := api.Client.Repositories.ListBranches(ctx, owner, repo, nil)
+	return branches, err
+}
+
 func (api *CommonAPI) CreateBranch(ctx context.Context, owner, repo, baseBranch, newBranchName string) (*github.Reference, error) {
 	endpoint := fmt.Sprintf("/repos/%s/%s/git/refs", owner, repo)
 
