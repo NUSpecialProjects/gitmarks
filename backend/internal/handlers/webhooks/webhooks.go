@@ -51,7 +51,7 @@ func (s *WebHookService) PRThread(c *fiber.Ctx) error {
 }
 
 func (s *WebHookService) PushEvent(c *fiber.Ctx) error {
-	// Unmarshal the JSON payload into the PushEvent struct
+	// Extract the 'payload' form value
 	pushEvent := github.PushEvent{}
 	if err := c.BodyParser(&pushEvent); err != nil {
 		return err
@@ -81,6 +81,7 @@ func (s *WebHookService) baseRepoInitialization(c *fiber.Ctx, pushEvent github.P
 		return errs.BadRequest(errors.New("invalid repository data"))
 	}
 
+	// Initialize the repository with branches, empty commit, and deadline enforcement
 	err := common.InitializePushEventRepo(c.Context(), s.appClient, s.store, pushEvent.Repo)
 	if err != nil {
 		return err
