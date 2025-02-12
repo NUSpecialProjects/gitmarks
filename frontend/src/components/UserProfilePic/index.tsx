@@ -1,28 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import "./styles.css";
-import { fetchCurrentUser } from "@/api/users";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+
+
 
 const UserProfilePic: React.FC = () => {
-  const [user, setUser] = useState<IGitHubUser | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      await fetchCurrentUser()
-        .then((user: IGitHubUser | null) => {
-          setUser(user);
-        })
-        .catch((error: unknown) => {
-          console.error("Error fetching user data:", error);
-        });
-    };
-
-    void fetchUser();
-  }, []);
+  const { data: user } = useCurrentUser();
 
   return (
     <div className="User">
       {user ? (
-        <img src={user.avatar_url} alt={user.login} className="User__avatar" />
+        <img src={user.github_user.avatar_url} alt={user.github_user.login} className="User__avatar" />
       ) : (
         <div className="User__avatar"> </div>
       )}

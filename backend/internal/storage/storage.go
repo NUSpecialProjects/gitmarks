@@ -61,6 +61,7 @@ type Classroom interface {
 	GetUserClassroomsInOrg(ctx context.Context, orgID int64, userID int64) ([]models.ClassroomUser, error)
 	CreateClassroomToken(ctx context.Context, tokenData models.ClassroomToken) (models.ClassroomToken, error)
 	GetClassroomToken(ctx context.Context, token string) (models.ClassroomToken, error)
+	GetPermanentClassroomTokenByClassroomIDAndRole(ctx context.Context, classroomID int64, classroomRole models.ClassroomRole) (models.ClassroomToken, error)
 	GetNumberOfStudentsInClassroom(ctx context.Context, classroomID int64) (int, error)
 }
 
@@ -83,6 +84,7 @@ type AssignmentOutline interface {
 	GetAssignmentByToken(ctx context.Context, token string) (models.AssignmentOutline, error)
 	CreateAssignmentToken(ctx context.Context, tokenData models.AssignmentToken) (models.AssignmentToken, error)
 	GetAssignmentByRepoName(ctx context.Context, repoName string) (*models.AssignmentOutline, error)
+	GetPermanentAssignmentTokenByAssignmentID(ctx context.Context, assignmentID int64) (models.AssignmentToken, error)
 }
 
 type AssignmentTemplate interface {

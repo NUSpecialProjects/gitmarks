@@ -1,5 +1,4 @@
-import { useEffect, useContext, useState } from "react";
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
+import { useEffect, useState } from "react";
 import { getOrganizationTemplates } from "@/api/organizations";
 import { useNavigate } from "react-router-dom";
 
@@ -9,7 +8,7 @@ import StarterCodeDetails from "@/components/MultiStepForm/CreateAssignment/Star
 import { createAssignment, assignmentNameExists } from "@/api/assignments";
 
 import "./styles.css";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import { ClassroomRole } from "@/types/enums";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 
@@ -17,8 +16,8 @@ const CreateAssignment: React.FC = () => {
   const navigate = useNavigate();
 
   // Determine active classroom and organization
-  const { selectedClassroom } = useContext(SelectedClassroomContext);
-  useClassroomUser(selectedClassroom?.id, ClassroomRole.PROFESSOR, "/access-denied");
+  const { selectedClassroom } = useCurrentClassroom();
+  useClassroomUser(ClassroomRole.PROFESSOR, "/app/access-denied");
   const orgName = selectedClassroom?.org_name;
 
   // Fetch template repositories
