@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import { getOrganizationTemplates } from "@/api/organizations";
 import { useNavigate } from "react-router-dom";
 
 import MultiStepForm from "@/components/MultiStepForm";
@@ -11,6 +9,7 @@ import "./styles.css";
 import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import { ClassroomRole } from "@/types/enums";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
+import { useTemplateRepos } from "@/hooks/useAssignment";
 
 const CreateAssignment: React.FC = () => {
   const navigate = useNavigate();
@@ -20,33 +19,8 @@ const CreateAssignment: React.FC = () => {
   useClassroomUser(ClassroomRole.PROFESSOR, "/app/access-denied");
   const orgName = selectedClassroom?.org_name;
 
-  // Fetch template repositories
-  const [templateRepos, setTemplateRepos] = useState<ITemplateRepo[]>([]);
-  const [loadingTemplates, setLoadingTemplates] = useState(true);
-
-  useEffect(() => {
-    const fetchTemplates = async (orgName: string | undefined) => {
-      if (orgName) {
-        setLoadingTemplates(true);
-
-        // TODO: KHO-211 Implement dynamic pagination in template dropdown
-        // Currently, only the first 100 templates are fetched,
-        // which are not necessarily all templates.
-        getOrganizationTemplates(orgName, "100", "1")
-          .then((response) => {
-            setTemplateRepos(response.templates);
-          })
-          .catch((_: unknown) => {
-            // do nothing
-          })
-          .finally(() => {
-            setLoadingTemplates(false);
-          });
-      }
-    };
-
-    fetchTemplates(orgName);
-  }, [orgName]);
+  // Use React Query hook for templates
+  const { data: templateRepos, isLoading: loadingTemplates } = useTemplateRepos(orgName);
 
   // Initial form state
   const initialData: IAssignmentFormData = {
@@ -68,6 +42,15 @@ const CreateAssignment: React.FC = () => {
         if (!data.assignmentName) {
           throw new Error("Please provide the assignment name.");
         }
+
+        // Validate assignment name for illegal characters
+        const illegalChars = /[/\\:*?"<>|]/;
+        if (illegalChars.test(data.assignmentName)) {
+          throw new Error("Assignment name cannot contain any of these characters: / \\ : * ? \" < > |");
+        }
+
+        // Remove leading and trailing whitespace
+        data.assignmentName = data.assignmentName.trim();
 
         // Check if the assignment name is unique
         const nameExists = await assignmentNameExists(
