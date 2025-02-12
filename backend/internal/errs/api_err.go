@@ -94,6 +94,10 @@ func StudentNotInStudentTeamError() APIError {
 	return NewAPIError(http.StatusBadRequest, fmt.Errorf("student is not in the student team"))
 }
 
+func StudentRemovedFromClassroomError() APIError {
+	return NewAPIError(http.StatusForbidden, fmt.Errorf("student has been removed from the classroom"))
+}
+
 func InconsistentOrgMembershipError() APIError {
 	return NewAPIError(http.StatusBadRequest, fmt.Errorf("user status is inconsistent with org membership, were they removed from the GitHub organization?"))
 }
@@ -106,8 +110,15 @@ func AssignmentNotAcceptedError() APIError {
 	return NewAPIError(http.StatusBadRequest, fmt.Errorf("student has not accepted this assignment yet"))
 }
 
+
+
+func CriticalGithubError() APIError {
+	return NewAPIError(http.StatusInternalServerError, fmt.Errorf("critical Out of State Error: Github Integration"))
+}
+
 func MissingDefaultBranchError() APIError {
 	return NewAPIError(http.StatusBadRequest, fmt.Errorf("repository is missing a default branch"))
+
 }
 
 /* Post Requests Only */

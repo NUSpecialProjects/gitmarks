@@ -1,36 +1,34 @@
-import React, { useContext, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useClassroomToken } from "@/api/classrooms";
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import TokenApplyPage from "../Generic";
-import EmptyDataBanner from "@/components/EmptyDataBanner";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
 import { ClassroomRole } from "@/types/enums";
+import { useCurrentClassroom } from "@/hooks/useClassroomUser";
 
 const ClassroomTokenApply: React.FC = () => {
   const navigate = useNavigate();
-  const { selectedClassroom, setSelectedClassroom } = useContext(SelectedClassroomContext);
-  const { classroomUser, loading: loadingCurrentClassroomUser } = useClassroomUser(selectedClassroom?.id, ClassroomRole.TA, "/app/classroom/landing");
+  const { setSelectedClassroom } = useCurrentClassroom();
 
-  useEffect(() => {
-    if (!loadingCurrentClassroomUser && classroomUser && selectedClassroom) {
-      navigate("/app/dashboard", { replace: true });
+  const handleSuccess = (data: IClassroomJoinResponse) => {
+    if (data) {
+      setSelectedClassroom(data.classroom);
+      if (data.classroom_user.classroom_role === ClassroomRole.STUDENT) {
+        navigate("/app/classroom/landing", { replace: true });
+      } else {
+        navigate("/app/dashboard", { replace: true });
+      }
     }
-  }, [loadingCurrentClassroomUser, classroomUser, selectedClassroom, navigate]);
-
+  }
+  
   return (
-    <EmptyDataBanner>
     <TokenApplyPage<IClassroomJoinResponse>
       useTokenFunction={async (token: string) => {
         return await useClassroomToken(token);
       }}
-      successCallback={(data: IClassroomJoinResponse) => {
-        setSelectedClassroom(data.classroom);
-      }}
-      loadingMessage="Joining classroom..."
+      successCallback={handleSuccess}
+      loadingMessage={"Joining classroom..."}
       successMessage={(response: IClassroomJoinResponse) => response.message}
-      />
-    </EmptyDataBanner>
+    />
   );
 };
 

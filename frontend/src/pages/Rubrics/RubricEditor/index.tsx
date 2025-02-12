@@ -1,17 +1,15 @@
-import { useContext, useEffect, useState } from "react";
-
+import { useEffect, useState } from "react";
 import "./styles.css";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import RubricItem from "@/components/RubricItem";
 import { ItemFeedbackType } from "@/components/RubricItem";
 import { createRubric, updateRubric } from "@/api/rubrics";
-import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { setAssignmentRubric } from "@/api/assignments";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { ClassroomRole } from "@/types/enums";
-import { useClassroomUser } from "@/hooks/useClassroomUser";
+import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 
 interface IEditableItem {
@@ -31,8 +29,8 @@ const RubricEditor: React.FC = () => {
     const location = useLocation()
     const navigate = useNavigate();
 
-    const { selectedClassroom } = useContext(SelectedClassroomContext)
-    useClassroomUser(selectedClassroom?.id, ClassroomRole.PROFESSOR, "/access-denied");
+    const { selectedClassroom } = useCurrentClassroom();
+    useClassroomUser(ClassroomRole.PROFESSOR, "/app/access-denied");
 
     // potential data for the assignment
     const [assignmentData, setAssignmentData] = useState<IAssignmentOutline>()

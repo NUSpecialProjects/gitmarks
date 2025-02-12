@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 
 import { SelectedClassroomContext } from "./selectedClassroom";
 import { getPaginatedStudentWork } from "@/api/student_works";
-import { gradeWork } from "@/api/grader";
+import { getFileTree, gradeWork } from "@/api/grader";
 import { getAssignmentRubric } from "@/api/assignments";
+
 
 interface IGraderContext {
   assignmentID: string | undefined;
@@ -15,6 +16,10 @@ interface IGraderContext {
   stagedFeedback: IGraderFeedbackMap;
   rubric: IFullRubric | null;
   selectedRubricItems: number[];
+  fileTree: IGitTreeNode[] | null;
+  loadingStudentWork: boolean;
+  loadingGitTree: boolean;
+  dataRetrievalError: boolean;
   setSelectedFile: React.Dispatch<React.SetStateAction<IFileTreeNode | null>>;
   addFeedback: (feedback: IGraderFeedback[]) => void;
   editFeedback: (feedbackID: number, feedback: IGraderFeedback) => void;
@@ -34,6 +39,10 @@ export const GraderContext: React.Context<IGraderContext> =
     stagedFeedback: {},
     rubric: null,
     selectedRubricItems: [],
+    fileTree: [],
+    loadingStudentWork: true,
+    loadingGitTree: true,
+    dataRetrievalError: false,
     setSelectedFile: () => {},
     addFeedback: () => 0,
     editFeedback: () => {},
@@ -59,6 +68,10 @@ export const GraderProvider: React.FC<{
   const [selectedRubricItems, setSelectedRubricItems] = useState<number[]>([]);
   const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
   const [rubric, setRubric] = useState<IFullRubric | null>(null);
+  const [fileTree, setFileTree] = useState<IGitTreeNode[] | null>(null)
+  const [dataRetrievalError, setDataRetrievalError] = useState(false)
+  const [loadingStudentWork, setLoadingStudentWork] = useState(true)
+  const [loadingGitTree, setLoadingGitTree] = useState(true)
 
   const navigate = useNavigate();
 
@@ -85,7 +98,7 @@ export const GraderProvider: React.FC<{
     if (!selectedClassroom || !assignmentID || !studentWorkID) return;
 
     getPaginatedStudentWork(
-      selectedClassroom.id,
+      selectedClassroom.id, 
       Number(assignmentID),
       Number(studentWorkID)
     )
@@ -93,10 +106,37 @@ export const GraderProvider: React.FC<{
         setStudentWork(resp.student_work);
         setFeedback(resp.feedback);
         setStagedFeedback({});
+        setLoadingStudentWork(false)
+
       })
       .catch((_: unknown) => {
+        setDataRetrievalError(true)
+        setLoadingStudentWork(false)
         navigate("/404", { replace: true });
       });
+
+  }, [studentWorkID]);
+
+  // retrieve file tree
+  useEffect(() => {
+    setFileTree(null)
+
+    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
+
+    getFileTree(
+      selectedClassroom.id,
+      Number(assignmentID),
+      Number(studentWorkID)
+    ) 
+      .then((resp) => {
+        setFileTree(resp)
+        setLoadingGitTree(false)
+      })
+      .catch((_: unknown) => {
+        setDataRetrievalError(true)
+        setLoadingGitTree(false)
+      })
+
   }, [studentWorkID]);
 
   const getNextFeedbackID = () => {
@@ -181,6 +221,10 @@ export const GraderProvider: React.FC<{
         stagedFeedback,
         rubric,
         selectedRubricItems,
+        fileTree,
+        loadingGitTree,
+        loadingStudentWork,
+        dataRetrievalError,
         setSelectedFile,
         addFeedback,
         editFeedback,

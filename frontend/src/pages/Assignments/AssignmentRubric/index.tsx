@@ -6,6 +6,7 @@ import { getRubric, getRubricsInClassroom } from "@/api/rubrics";
 import Button from "@/components/Button";
 import { Table, TableCell, TableRow } from "@/components/Table";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { getAssignmentRubric } from "@/api/assignments";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 
@@ -87,7 +88,7 @@ const AssignmentRubric: React.FC = () => {
       )}
 
       {loading && !errorState && (
-        <div> Loading... </div>
+        <LoadingSpinner />
       )}
 
       {assignment && !errorState && !loading && (
