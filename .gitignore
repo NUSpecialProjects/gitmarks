@@ -61,4 +61,4 @@ terraform/.terraform/
 */terraform.tfvars
 
 #Alex env files 
-alex.env
+backend/alex.env
