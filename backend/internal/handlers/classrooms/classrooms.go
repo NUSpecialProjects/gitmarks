@@ -449,9 +449,8 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		// if the user's staus is removed, they are trying to rejoin the class. more them
+		// if the user was removed, move them to requested without adding them to the classroom
 		if classroomUser.Status == models.UserStatusRemoved {
-			// if the user was removed, move them to requested without adding them to the classroom
 			classroomUser, err = s.store.ModifyUserStatus(c.Context(), classroomToken.ClassroomID, models.UserStatusRequested, *user.ID)
 			if err != nil {
 				return errs.InternalServerError()
