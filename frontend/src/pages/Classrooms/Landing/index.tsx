@@ -23,6 +23,9 @@ const Landing = () => {
     case ClassroomUserStatus.ORG_INVITED:
       titlePrefix = 'Invited to join';
       break;
+    case ClassroomUserStatus.REMOVED:
+      titlePrefix = "You have been removed from"
+      break;
     default:
       titlePrefix = 'Status unknown';
       break;
