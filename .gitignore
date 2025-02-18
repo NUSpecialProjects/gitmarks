@@ -61,5 +61,5 @@ terraform/.terraform/
 
 
 # Alex's .env files
-alex.env
+.env.alex
 
