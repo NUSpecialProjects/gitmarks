@@ -420,12 +420,14 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 
         message, classroom, classroomUser, err := s.inviteUserToClassroom(
             c.Context(), classroomToken.ClassroomID, classroomToken.ClassroomRole, &user, client)
-        fmt.Println(classroomUser)
+        if err != nil {
+            return err
+        }
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"message":   message,
-			"classroom_user":      classroomUser,
-			"classroom": classroom,
+			"message":          message,
+            "classroom_user":   classroomUser,
+			"classroom":        classroom,
 		})
 	}
 }
