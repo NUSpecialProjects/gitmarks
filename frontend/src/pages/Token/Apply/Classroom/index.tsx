@@ -10,9 +10,7 @@ const ClassroomTokenApply: React.FC = () => {
   const { setSelectedClassroom } = useCurrentClassroom();
 
   const handleSuccess = (data: IClassroomJoinResponse) => {
-    console.log("data??", data)
     if (data) {
-      console.log(data.classroom_user.classroom_role)
       setSelectedClassroom(data.classroom);
       if (data.classroom_user.classroom_role === ClassroomRole.STUDENT) {
         navigate("/app/classroom/landing", { replace: true });
