@@ -25,10 +25,6 @@ jobs:
       - name: Install dependencies
         run: go mod download
         working-directory: backend
-
-      - name: Clean dependencies
-        run: go mod tidy
-        working-directory: backend
       
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
