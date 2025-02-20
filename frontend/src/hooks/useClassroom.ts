@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getClassroomNames, postClassroomToken } from "@/api/classrooms";
 import { checkClassroomExists } from "@/api/classrooms";
 import { ClassroomRole } from "@/types/enums";
+import { ErrorToast } from "@/components/Toast";
 
 /**
  * Provides the list of predefined classroom names.
