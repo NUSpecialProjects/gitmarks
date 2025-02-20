@@ -44,9 +44,9 @@ const CreateAssignment: React.FC = () => {
         }
 
         // Validate assignment name for illegal characters
-        const illegalChars = /[/\\:*?"<>|]/;
+        const illegalChars = /[/\\:*?"<>|!~]/;
         if (illegalChars.test(data.assignmentName)) {
-          throw new Error("Assignment name cannot contain any of these characters: / \\ : * ? \" < > |");
+          throw new Error("Assignment name cannot contain any of these characters: / \\ : * ? \" < > | ! ~");
         }
 
         // Remove leading and trailing whitespace
