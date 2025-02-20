@@ -119,7 +119,7 @@ const ClassroomCreation: React.FC = () => {
                   : isNamesError ? "Failed to fetch classroom names."
                   : classroomExistsError ? classroomExistsError.message
                   : classroomExists ? "Classroom name already exists."
-                  : !containsInvalidChars ? "Classroom name cannot contain any of these characters: / \\ : * ? \" < > | ! ~"
+                  : !containsInvalidChars && name ? "Classroom name cannot contain any special characters."
                   : ""}
               </p>
             )}

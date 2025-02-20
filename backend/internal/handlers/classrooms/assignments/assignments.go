@@ -383,24 +383,38 @@ func generateUniqueRepoName(ctx context.Context, client github.GitHubBaseClient,
 func generateSlugCase(parts ...string) string {
 	var processedParts []string
 	for _, part := range parts {
-		// Replace spaces with hyphens and remove characters that GitHub doesn't allow in repo names
+		// Replace spaces with hyphens and keep only alphanumeric characters
 		processed := strings.Map(func(r rune) rune {
 			switch {
-			case r == ' ':
-				return '-'
-			case r == '/' || r == '\\' || r == ':' || r == '*' || r == '?' || r == '"' || r == '<' || r == '>' || r == '|' || r == '!' || r == '~' || r == '#':
-				return -1
-			default:
+			case r >= 'a' && r <= 'z':
 				return r
+			case r >= 'A' && r <= 'Z':
+				return r
+			case r >= '0' && r <= '9':
+				return r
+			case r == ' ' || r == '-':
+				return '-'
+			default:
+				return -1
 			}
 		}, part)
+
+		// Remove consecutive hyphens
+		for strings.Contains(processed, "--") {
+			processed = strings.ReplaceAll(processed, "--", "-")
+		}
+
+		// Trim hyphens from start and end
+		processed = strings.Trim(processed, "-")
 
 		if processed != "" {
 			processedParts = append(processedParts, processed)
 		}
 	}
 
-	return strings.Join(processedParts, "-")
+	result := strings.Join(processedParts, "-")
+
+	return result
 }
 
 // Updates an existing assignment.
