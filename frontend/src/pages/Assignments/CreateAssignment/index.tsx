@@ -10,6 +10,7 @@ import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser"
 import { ClassroomRole } from "@/types/enums";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import { useTemplateRepos } from "@/hooks/useAssignment";
+import validateRepoName from "@/utils/repo-name-validation";
 
 const CreateAssignment: React.FC = () => {
   const navigate = useNavigate();
@@ -44,8 +45,7 @@ const CreateAssignment: React.FC = () => {
         }
 
         // Validate assignment name for illegal characters
-        const illegalChars = /[/\\:*?"<>|!~]/;
-        if (illegalChars.test(data.assignmentName)) {
+        if (!validateRepoName(data.assignmentName)) {
           throw new Error("Assignment name cannot contain any of these characters: / \\ : * ? \" < > | ! ~");
         }
 
