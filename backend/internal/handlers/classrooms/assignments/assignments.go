@@ -388,7 +388,7 @@ func generateSlugCase(parts ...string) string {
 			switch {
 			case r == ' ':
 				return '-'
-			case r == '/' || r == '\\' || r == ':' || r == '*' || r == '?' || r == '"' || r == '<' || r == '>' || r == '|' || r == '!' || r == '~':
+			case r == '/' || r == '\\' || r == ':' || r == '*' || r == '?' || r == '"' || r == '<' || r == '>' || r == '|' || r == '!' || r == '~' || r == '#':
 				return -1
 			default:
 				return r
