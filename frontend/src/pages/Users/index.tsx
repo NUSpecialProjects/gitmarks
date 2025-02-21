@@ -1,5 +1,5 @@
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import { Table, TableCell, TableRow } from "@/components/Table";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
@@ -10,6 +10,7 @@ import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { useClassroomUser, useClassroomUsersList, useCurrentClassroom, useInviteClassroomUser, useRevokeClassroomInvite, useRemoveClassroomUser } from "@/hooks/useClassroomUser";
 import { useClassroomInviteLink } from "@/hooks/useClassroom";
+import { ErrorToast } from "@/components/Toast";
 
 interface GenericRolePageProps {
   role_label: string;
@@ -33,8 +34,6 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   const handleInviteUser = (userId: number) => inviteUser(userId, role_type, setLoadingUserIds);
   const handleRevokeInvite = (userId: number) => revokeInvite(userId, setLoadingUserIds);
   const handleRemoveUser = (userId: number) => removeUser(userId, setLoadingUserIds);
-
-  const error = inviteError || revokeError || removeError;
 
   const showActionsColumn = currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR
 
@@ -84,24 +83,6 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
               <p>Warning: This will make them an admin of the organization.</p>}
           </div>
           <CopyLink link={inviteLink} name="invite-link"></CopyLink>
-        </div>
-      )}
-
-      {classroomUsersError && (
-        <div className="error">
-          Failed to load users. Please try again.
-        </div>
-      )}
-
-      {classroomTokenError && (
-        <div className="error">
-          Failed to generate invite link. Please try again.
-        </div>
-      )}
-
-      {error && (
-        <div className="error">
-          {error}
         </div>
       )}
 

@@ -44,7 +44,6 @@ export const useClassroomValidation = (name: string) => {
  */
 export const useClassroomInviteLink = (classroomId: number | undefined, role: ClassroomRole, enabled: boolean = true) => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
-
   return useQuery({
     queryKey: ['classroomToken', classroomId, role],
     queryFn: async () => {
@@ -52,6 +51,7 @@ export const useClassroomInviteLink = (classroomId: number | undefined, role: Cl
       const data = await postClassroomToken(classroomId, role);
       return `${base_url}/token/classroom/join?token=${data.token}`;
     },
-    enabled: !!classroomId && enabled
+    enabled: !!classroomId && enabled,
+    retry: false
   });
 };

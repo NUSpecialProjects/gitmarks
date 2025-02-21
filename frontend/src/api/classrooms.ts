@@ -96,7 +96,7 @@ export async function postClassroomToken(
   );
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error generating invite link: ${response.statusText}`);
   }
 
   const resp: IClassroomToken = await response.json();
