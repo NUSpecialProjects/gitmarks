@@ -7,7 +7,7 @@ import {
   Outlet,
   useNavigate,
 } from "react-router-dom";
-import { QueryClient } from '@tanstack/react-query'
+import { DefaultError, QueryCache, QueryClient } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
@@ -19,6 +19,7 @@ import "./global.css";
 import { AuthProvider } from "./contexts/auth";
 import { ToastContainer } from "react-toastify";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { ErrorToast } from "./components/Toast";
 
 /**
  * PrivateRoute is a wrapper that redirects to the login page if the user is not logged in
@@ -37,11 +38,17 @@ const PrivateRoute = () => {
 };
 
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onSuccess: () => {}, // this gets called on every query success 
+    onError: (error: DefaultError) => { // this gets called on every query error
+      ErrorToast(error.message || 'An unexpected error occurred');
+    }
+  }),
   defaultOptions: {
     queries: {
       staleTime: 5 * 1000, // 5 seconds
       gcTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnMount: 'always',
+      refetchOnMount: true,
       retry: 3,
     },
   },
@@ -53,13 +60,13 @@ const persister = createSyncStoragePersister({
 
 export default function App(): React.JSX.Element {
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{ persister }}
-    >
-      <Router>
-        <ToastContainer/>
-        <ErrorBoundary>
+    <Router>
+      <ToastContainer/>
+      <ErrorBoundary>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister }}
+        >
           <AuthProvider>
             <SelectedClassroomProvider>
               <Routes>
@@ -118,9 +125,9 @@ export default function App(): React.JSX.Element {
               </Routes>
             </SelectedClassroomProvider>
           </AuthProvider>
-        </ErrorBoundary>
-      </Router>
-    </PersistQueryClientProvider>
+        </PersistQueryClientProvider>
+      </ErrorBoundary>
+    </Router>
   );
 }
 

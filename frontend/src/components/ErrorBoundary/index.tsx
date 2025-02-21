@@ -9,6 +9,7 @@ interface State {
   hasError: boolean;
 }
 
+// Any thrown errors within the boundary will be caught and displayed as an error toast
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -23,14 +24,20 @@ class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+  componentDidCatch(error: Error, _: ErrorInfo) {
     ErrorToast(error.message || 'An unexpected error occurred');
-    // Reset the error state after showing the toast
-    this.setState({ hasError: false });
   }
 
   render() {
+    if (this.state.hasError) {
+      return ( //TODO: this should be a nice looking error page
+        <div>
+          <h2>Something went wrong</h2>
+          <p>We are very sad</p>
+        </div>
+      );
+    }
+
     return this.props.children;
   }
 }
