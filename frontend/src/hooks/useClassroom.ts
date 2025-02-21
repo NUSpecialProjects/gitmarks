@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getClassroomNames, postClassroomToken } from "@/api/classrooms";
 import { checkClassroomExists } from "@/api/classrooms";
 import { ClassroomRole } from "@/types/enums";
-import { ErrorToast } from "@/components/Toast";
 
 /**
  * Provides the list of predefined classroom names.
@@ -31,6 +30,7 @@ export const useClassroomValidation = (name: string) => {
     enabled: !!name && name !== "Custom",
     staleTime: 1000,
     gcTime: 0,
+    retry: false
   });
 };
 
@@ -51,7 +51,6 @@ export const useClassroomInviteLink = (classroomId: number | undefined, role: Cl
       const data = await postClassroomToken(classroomId, role);
       return `${base_url}/token/classroom/join?token=${data.token}`;
     },
-    enabled: !!classroomId && enabled,
-    retry: false
+    enabled: !!classroomId && enabled
   });
 };
