@@ -1,4 +1,4 @@
-import { Bounce, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "./styles.css";
 
 
@@ -11,8 +11,7 @@ export function ErrorToast(text: string): ErrorToastDismisser {
     pauseOnHover: true,
     draggable: true,
     progress: undefined,
-    theme: "colored",
-    transition: Bounce,
+    theme: "light"
   });
 
   return {
