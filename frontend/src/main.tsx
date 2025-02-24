@@ -18,8 +18,9 @@ import { SelectedClassroomProvider } from "./contexts/selectedClassroom";
 import "./global.css";  
 import { AuthProvider } from "./contexts/auth";
 import { ToastContainer } from "react-toastify";
-import ErrorBoundary from "./components/ErrorBoundary";
 import { ErrorToast } from "./components/Toast";
+import Button from "./components/Button";
+import { ErrorBoundary } from "react-error-boundary";
 
 /**
  * PrivateRoute is a wrapper that redirects to the login page if the user is not logged in
@@ -41,7 +42,9 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onSuccess: () => {}, // this gets called on every query success 
     onError: (error: DefaultError) => { // this gets called on every query error
-      ErrorToast(error.message || 'An unexpected error occurred');
+      if (error.message !== "Unauthorized") {
+        ErrorToast(error.message || 'An unexpected error occurred');
+      }
     }
   }),
   defaultOptions: {
@@ -58,11 +61,37 @@ const persister = createSyncStoragePersister({
   storage: window.localStorage,
 });
 
+const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => {
+  return (
+    <div>
+      <h2>Something went wrong</h2>
+      <p>We are very sad</p>
+      <p>{error.message}</p>
+      <Button onClick={resetErrorBoundary}>Reset</Button>
+    </div>
+  );
+};
+
+/**
+ * Error handling explaination:
+ * Critical errors should be caught by the ErrorBoundary (by default, 
+ * React only handles errors thrown during render or during component lifecycle methods (e.g. effects and did-mount/did-update). 
+ * Errors thrown in event handlers, or after async code has run, will not be caught.)
+ * 
+ * However, showBoundary() can be used to catch critical errors
+ * 
+ * Non critical errors can be handled gracefully and displayed as a toast using ErrorToast()
+ * UseQuery calls will inherently show a toast if the query fails, based on the onError option in the query client
+ * However, custom queries like any POST or PUT requests need to be handled manually (ex: generic user page)
+ * 
+ * TODO: don't show unauthorized errors as a toast
+ */
+
 export default function App(): React.JSX.Element {
   return (
     <Router>
       <ToastContainer/>
-      <ErrorBoundary>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
         <PersistQueryClientProvider
           client={queryClient}
           persistOptions={{ persister }}
