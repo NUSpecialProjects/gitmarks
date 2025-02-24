@@ -131,15 +131,22 @@ export const useAssignmentMetrics = (classroomId: number | undefined, assignment
   const { data: acceptanceData } = useQuery({
     queryKey: ['acceptanceMetrics', classroomId, assignmentId],
     queryFn: async () => {
-      if (!classroomId || !assignmentId) return null;
-      const metrics = await getAssignmentAcceptanceMetrics(classroomId, Number(assignmentId));
-      return {
-        labels: ["Not Accepted", "Accepted", "Started", "Submitted", "In Grading"],
-        datasets: [{
-          backgroundColor: ["#f83b5c", "#50c878", "#fece5a", "#7895cb", "#219386"],
-          data: [metrics.not_accepted, metrics.accepted, metrics.started, metrics.submitted, metrics.in_grading]
-        }]
-      } as ChartData<'bar', number[], unknown>;
+      if (!classroomId || !assignmentId) return { data: null, error: new Error('Missing classroom or assignment ID') };
+      try {
+        const metrics = await getAssignmentAcceptanceMetrics(classroomId, Number(assignmentId));
+        return {
+          data: {
+            labels: ["Not Accepted", "Accepted", "Started", "Submitted", "In Grading"],
+            datasets: [{
+              backgroundColor: ["#f83b5c", "#50c878", "#fece5a", "#7895cb", "#219386"],
+              data: [metrics.not_accepted, metrics.accepted, metrics.started, metrics.submitted, metrics.in_grading]
+            }]
+          } as ChartData<'bar', number[], unknown>,
+          error: null
+        };
+      } catch (error) {
+        return { data: null, error: new Error(`Failed to fetch acceptance metrics`) };
+      }
     },
     enabled: !!classroomId && !!assignmentId
   });
@@ -147,27 +154,35 @@ export const useAssignmentMetrics = (classroomId: number | undefined, assignment
   const { data: gradedData } = useQuery({
     queryKey: ['gradedMetrics', classroomId, assignmentId],
     queryFn: async () => {
-      if (!classroomId || !assignmentId) return null;
-      const metrics = await getAssignmentGradedMetrics(classroomId, Number(assignmentId));
-      return {
-        labels: ["Graded", "Ungraded"],
-        datasets: [{
-          backgroundColor: ["#219386", "#e5e7eb"],
-          data: [metrics.graded, metrics.ungraded]
-        }]
-      } as ChartData<'doughnut', number[], unknown>;
+      if (!classroomId || !assignmentId) return { data: null, error: new Error('Missing classroom or assignment ID') };
+      try {
+        const metrics = await getAssignmentGradedMetrics(classroomId, Number(assignmentId));
+        return {
+          data: {
+            labels: ["Graded", "Ungraded"],
+            datasets: [{
+              backgroundColor: ["#219386", "#e5e7eb"],
+              data: [metrics.graded, metrics.ungraded]
+            }]
+          } as ChartData<'doughnut', number[], unknown>,
+          error: null
+        };
+      } catch (error) {
+        return { data: null, error: new Error('Failed to fetch graded metrics') };
+      }
     },
     enabled: !!classroomId && !!assignmentId
   });
 
   return {
-    acceptanceMetrics: acceptanceData || {
+    acceptanceMetrics: acceptanceData?.data || {
       labels: [],
       datasets: [{ backgroundColor: [], data: [] }]
     } as ChartData<'bar', number[], unknown>,
-    gradedMetrics: gradedData || {
+    gradedMetrics: gradedData?.data || {
       labels: [],
       datasets: [{ backgroundColor: [], data: [] }]
-    } as ChartData<'doughnut', number[], unknown>
+    } as ChartData<'doughnut', number[], unknown>,
+    error: acceptanceData?.error || gradedData?.error
   };
-}; 
+};
