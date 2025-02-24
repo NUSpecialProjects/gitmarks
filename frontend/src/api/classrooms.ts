@@ -153,7 +153,7 @@ export async function denyRequestedUser(
   userId: number
 ): Promise<void> {
   const response = await fetch(
-    `${base_url}/classrooms/claroom/${classroomId}/deny/user/${userId}`,
+    `${base_url}/classrooms/classroom/${classroomId}/deny/user/${userId}`,
     {
       method: "PUT",
       credentials: "include",
@@ -174,7 +174,7 @@ export async function revokeOrganizationInvite(
 ): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, 3000));
   const response = await fetch(
-    `${base_url}/classrooms/claroom/${classroomId}/revoke/user/${userId}`,
+    `${base_url}/classrooms/classroom/${classroomId}/revoke/user/${userId}`,
     {
       method: "PUT",
       credentials: "include",
@@ -195,7 +195,7 @@ export async function removeUserFromClassroom(
 ): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, 3000));
   const response = await fetch(
-    `${base_url}/classrooms/claroom/${classroomId}/students/${userId}`,
+    `${base_url}/classrooms/classroom/${classroomId}/students/${userId}`,
     {
       method: "DELETE",
       credentials: "include",
