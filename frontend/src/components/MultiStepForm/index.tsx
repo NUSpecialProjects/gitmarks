@@ -25,12 +25,7 @@ const MultiStepForm = <T,>({
 
   // Show an error toast
   const showErrorToast = useCallback((message: string) => {
-    // If the toast already exists, dismiss it
-    setTimeout(() => {
-      errorToasts.find(toast => toast.message === message)?.dismiss();
-    }, 100);
-    
-    // Then create the new toast
+
     const errorToast = ErrorToast(message);
     setErrorToasts([{ message, dismiss: errorToast.dismiss }]);
   }, [dismissAllErrors, errorToasts]);

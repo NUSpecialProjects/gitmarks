@@ -68,7 +68,7 @@ const CreateAssignment: React.FC = () => {
       onNext: async (data: IAssignmentFormData): Promise<void> => {
         // Check the user provided an assignment name
         if (!data.assignmentName) {
-          throw new Error("Please provide the assignment name.");
+          throw new Error("Please provide an assignment name.");
         }
 
         // Check if the assignment name is unique
