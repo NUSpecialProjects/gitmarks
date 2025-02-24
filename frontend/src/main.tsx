@@ -18,7 +18,6 @@ import { SelectedClassroomProvider } from "./contexts/selectedClassroom";
 import "./global.css";  
 import { AuthProvider } from "./contexts/auth";
 import { ToastContainer } from "react-toastify";
-import { ErrorToast } from "./components/Toast";
 import Button from "./components/Button";
 import { ErrorBoundary } from "react-error-boundary";
 
@@ -41,18 +40,14 @@ const PrivateRoute = () => {
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onSuccess: () => {}, // this gets called on every query success 
-    onError: (error: DefaultError) => { // this gets called on every query error
-      if (error.message !== "Unauthorized") {
-        ErrorToast(error.message || 'An unexpected error occurred');
-      }
-    }
+    onError: (_: DefaultError) => {} // this gets called on every query error
   }),
   defaultOptions: {
     queries: {
       staleTime: 5 * 1000, // 5 seconds
       gcTime: 5 * 60 * 1000, // 5 minutes
       refetchOnMount: true,
-      retry: 3,
+      retry: 1,
     },
   },
 });
@@ -81,10 +76,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetError
  * However, showBoundary() can be used to catch critical errors
  * 
  * Non critical errors can be handled gracefully and displayed as a toast using ErrorToast()
- * UseQuery calls will inherently show a toast if the query fails, based on the onError option in the query client
- * However, custom queries like any POST or PUT requests need to be handled manually (ex: generic user page)
  * 
- * TODO: don't show unauthorized errors as a toast
  */
 
 export default function App(): React.JSX.Element {
