@@ -1,5 +1,5 @@
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import { Table, TableCell, TableRow } from "@/components/Table";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
@@ -10,7 +10,7 @@ import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { useClassroomUser, useClassroomUsersList, useCurrentClassroom, useInviteClassroomUser, useRevokeClassroomInvite, useRemoveClassroomUser } from "@/hooks/useClassroomUser";
 import { useClassroomInviteLink } from "@/hooks/useClassroom";
-import { ErrorToast } from "@/components/Toast";
+import { useActionToast } from "@/components/Toast";
 
 interface GenericRolePageProps {
   role_label: string;
@@ -25,15 +25,49 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   const { classroomUser: currentClassroomUser } = useClassroomUser(ClassroomRole.TA, "/app/access-denied");
   const [loadingUserIds, setLoadingUserIds] = useState<Set<number>>(new Set());
 
-  const { classroomUsers: users, error: classroomUsersError } = useClassroomUsersList(selectedClassroom?.id);
-  const { data: inviteLink = "", error: classroomTokenError } = useClassroomInviteLink(selectedClassroom?.id, role_type, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
-  const { inviteUser, error: inviteError } = useInviteClassroomUser(selectedClassroom?.id);
-  const { revokeInvite, error: revokeError } = useRevokeClassroomInvite(selectedClassroom?.id);
-  const { removeUser, error: removeError } = useRemoveClassroomUser(selectedClassroom?.id, currentClassroomUser?.id);
+  const { classroomUsers: users } = useClassroomUsersList(selectedClassroom?.id);
+  const { data: inviteLink = "" } = useClassroomInviteLink(selectedClassroom?.id, role_type, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
+  const { inviteUser } = useInviteClassroomUser(selectedClassroom?.id);
+  const { revokeInvite } = useRevokeClassroomInvite(selectedClassroom?.id);
+  const { removeUser } = useRemoveClassroomUser(selectedClassroom?.id, currentClassroomUser?.id);
 
-  const handleInviteUser = (userId: number) => inviteUser(userId, role_type, setLoadingUserIds);
-  const handleRevokeInvite = (userId: number) => revokeInvite(userId, setLoadingUserIds);
-  const handleRemoveUser = (userId: number) => removeUser(userId, setLoadingUserIds);
+  const { executeWithToast } = useActionToast();
+
+  // const handleInviteUser = (userId: number) => inviteUser(userId, role_type, setLoadingUserIds);
+  const handleInviteUser = (userId: number) => {
+    executeWithToast(
+      async () => {
+        await inviteUser(userId, role_type, setLoadingUserIds);
+      }, {
+        pending: `Inviting ${role_label.toLowerCase()}...`,
+        success: `Successfully invited ${role_label.toLowerCase()}`,
+        error: `Failed to invite ${role_label.toLowerCase()}. Please try again.`
+      }
+    );
+  };
+  
+  const handleRevokeInvite = (userId: number) => {
+    executeWithToast(
+      async () => await revokeInvite(userId, setLoadingUserIds),
+      {
+        pending: `Revoking ${role_label.toLowerCase()} invitation...`,
+        success: `Successfully revoked ${role_label.toLowerCase()} invitation`,
+        error: `Failed to revoke ${role_label.toLowerCase()} invitation. Please try again.`
+      }
+    );
+  };
+
+  const handleRemoveUser = (userId: number) => {
+    executeWithToast(
+      async () => await removeUser(userId, setLoadingUserIds),
+      {
+        pending: `Removing ${role_label.toLowerCase()}...`,
+        success: `Successfully removed ${role_label.toLowerCase()}`,
+        error: `Failed to remove ${role_label.toLowerCase()}. Please try again.`
+      }
+    );
+  };
+
 
   const showActionsColumn = currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR
 
