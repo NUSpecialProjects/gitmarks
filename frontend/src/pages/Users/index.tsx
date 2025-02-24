@@ -1,5 +1,5 @@
 import { ClassroomRole, ClassroomUserStatus } from "@/types/enums";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import { Table, TableCell, TableRow } from "@/components/Table";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
@@ -10,7 +10,7 @@ import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { useClassroomUser, useClassroomUsersList, useCurrentClassroom, useInviteClassroomUser, useRevokeClassroomInvite, useRemoveClassroomUser } from "@/hooks/useClassroomUser";
 import { useClassroomInviteLink } from "@/hooks/useClassroom";
-import { useActionToast } from "@/components/Toast";
+import { ErrorToast, useActionToast } from "@/components/Toast";
 
 interface GenericRolePageProps {
   role_label: string;
@@ -25,15 +25,14 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   const { classroomUser: currentClassroomUser } = useClassroomUser(ClassroomRole.TA, "/app/access-denied");
   const [loadingUserIds, setLoadingUserIds] = useState<Set<number>>(new Set());
 
-  const { classroomUsers: users } = useClassroomUsersList(selectedClassroom?.id);
-  const { data: inviteLink = "" } = useClassroomInviteLink(selectedClassroom?.id, role_type, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
+  const { classroomUsers: users, error: usersError } = useClassroomUsersList(selectedClassroom?.id);
+  const { data: inviteLink = "", error: inviteLinkError } = useClassroomInviteLink(selectedClassroom?.id, role_type, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
   const { inviteUser } = useInviteClassroomUser(selectedClassroom?.id);
   const { revokeInvite } = useRevokeClassroomInvite(selectedClassroom?.id);
   const { removeUser } = useRemoveClassroomUser(selectedClassroom?.id, currentClassroomUser?.id);
 
   const { executeWithToast } = useActionToast();
 
-  // const handleInviteUser = (userId: number) => inviteUser(userId, role_type, setLoadingUserIds);
   const handleInviteUser = (userId: number) => {
     executeWithToast(
       async () => {
@@ -67,6 +66,12 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
       }
     );
   };
+
+  useEffect(() => {
+    if (usersError || inviteLinkError) {
+      ErrorToast(usersError?.message || inviteLinkError?.message || 'An unexpected error occurred');
+    }
+  }, [usersError, inviteLinkError]);
 
 
   const showActionsColumn = currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR
