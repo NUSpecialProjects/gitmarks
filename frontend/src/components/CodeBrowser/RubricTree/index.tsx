@@ -8,7 +8,7 @@ import { GraderContext } from "@/contexts/grader";
 import "./styles.css";
 
 const RubricTree: React.FC = () => {
-  const { studentWork, rubric, stagedFeedback, postFeedback } =
+  const { studentWork, rubric, stagedFeedback, postFeedback, isSubmittingGrade } =
     useContext(GraderContext);
 
   return (
@@ -37,7 +37,12 @@ const RubricTree: React.FC = () => {
               0
             )}
         </div>
-        <Button onClick={postFeedback}>Submit Grade</Button>
+        <Button 
+          onClick={postFeedback} 
+          disabled={isSubmittingGrade || Object.keys(stagedFeedback).length === 0}
+        >
+          {isSubmittingGrade ? "Submitting..." : "Submit Grade"}
+        </Button>
       </div>
     </ResizablePanel>
   );
