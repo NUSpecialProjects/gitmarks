@@ -117,8 +117,6 @@ const Dashboard: React.FC = () => {
         breadcrumbItems={[selectedClassroom!.name]}
       />
 
-      <Button onClick={() => { throw new Error("Test error") }}>Test</Button>
-
       <div className="Dashboard__sectionWrapper">
         <MetricPanel>
           <div className="Dashboard__classroomDetailsWrapper">
