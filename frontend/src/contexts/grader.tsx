@@ -89,14 +89,18 @@ export const GraderProvider: React.FC<{
     );
   }, [studentWorkID]);
 
-  // fetch requested student assignment
+  // Reset state when studentWorkID changes
   useEffect(() => {
-    // reset states
     setSelectedFile(null);
-    setStudentWork(null);
-
+    setFileTree(null);
+    setLoadingGitTree(true);
+    setLoadingStudentWork(true);
+    setDataRetrievalError(false);
+    
+    // Then fetch data as normal
     if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-
+    
+    // Fetch student work
     getPaginatedStudentWork(
       selectedClassroom.id, 
       Number(assignmentID),
@@ -106,38 +110,31 @@ export const GraderProvider: React.FC<{
         setStudentWork(resp.student_work);
         setFeedback(resp.feedback);
         setStagedFeedback({});
-        setLoadingStudentWork(false)
-
+        setLoadingStudentWork(false);
       })
       .catch((_: unknown) => {
-        setDataRetrievalError(true)
-        setLoadingStudentWork(false)
+        setDataRetrievalError(true);
+        setLoadingStudentWork(false);
+        //TODO: show error toast here
         navigate("/404", { replace: true });
       });
-
-  }, [studentWorkID]);
-
-  // retrieve file tree
-  useEffect(() => {
-    setFileTree(null)
-
-    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-
+      
+    // Fetch file tree
     getFileTree(
       selectedClassroom.id,
       Number(assignmentID),
       Number(studentWorkID)
     ) 
       .then((resp) => {
-        setFileTree(resp)
-        setLoadingGitTree(false)
+        setFileTree(resp);
+        setLoadingGitTree(false);
       })
       .catch((_: unknown) => {
-        setDataRetrievalError(true)
-        setLoadingGitTree(false)
-      })
-
-  }, [studentWorkID]);
+        setDataRetrievalError(true);
+        setLoadingGitTree(false);
+        //TODO: show error toast here
+      });
+  }, [studentWorkID, assignmentID, selectedClassroom]);
 
   const getNextFeedbackID = () => {
     const tmp = nextFeedbackID.current;

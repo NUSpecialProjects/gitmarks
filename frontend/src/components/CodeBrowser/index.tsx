@@ -1,15 +1,7 @@
-import { useState, useEffect, useContext } from "react";
-import Prism from "prismjs";
+import { useContext } from "react";
 import SimpleBar from "simplebar-react";
-
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import {
-  ext2lang,
-  extractExtension,
-  ext2langLoader,
-  dependencies,
-} from "@/utils/prism-lang-loader";
-import { getFileBlob } from "@/api/grader";
+import { useFileContents } from "@/hooks/useFileContents";
 import CodeLine from "./CodeLine";
 
 import "@/assets/prism-vs-dark.css";
@@ -29,104 +21,19 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
   ...props
 }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
-
-  const [fileContents, setFileContents] = useState<React.ReactNode>();
-  const [cachedFileContents, setCachedFileContents] = useState<
-    Record<string, React.ReactNode>
-  >({});
-
-  // get file contents
-  useEffect(() => {
-    if (!selectedClassroom || !assignmentID || !studentWorkID || !file) return;
-
-    // Check if the content is already cached
-    if (file.sha in cachedFileContents) {
-      setFileContents(cachedFileContents[file.sha]);
-      return;
-    }
-
-    (async () => {
-      if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-      let wrapped: React.ReactNode;
-      try {
-        const blob = await getFileBlob(
-          selectedClassroom.id,
-          Number(assignmentID),
-          Number(studentWorkID),
-          file.sha
-        );
-
-        const highlighted = await highlightCode(blob);
-        wrapped = await wrapCode(highlighted);
-      } catch {
-        wrapped = <></>;
-      } finally {
-        setFileContents(wrapped);
-        setCachedFileContents((prev) => ({
-          ...prev,
-          [file.sha]: wrapped,
-        }));
-      }
-    })();
-  }, [assignmentID, studentWorkID, file]);
-
-  // when a new file is selected, import any necessary
-  // prismjs language syntax files and trigger a rehighlight
-  const highlightCode = async (code: string) => {
-    if (!file) return "";
-
-    const lang = ext2lang[extractExtension(file.name)];
-    try {
-      const deps: string | string[] = dependencies[lang];
-      if (deps) {
-        if (typeof deps === "string") {
-          await ext2langLoader[deps]();
-        }
-        if (Array.isArray(deps)) {
-          for (const dep of deps) {
-            await ext2langLoader[dep]();
-          }
-        }
-      }
-      await ext2langLoader[lang]();
-    } catch {
-      // Prism does not support language or mapping does not exist
-      return code;
-    }
-    return Prism.highlight(code, Prism.languages[lang], lang);
-  };
-
-  const wrapCode = async (code: string) => {
-    if (!file) return <></>;
-
-    const lines = code.split("\n");
-
-    // MEMOIZATION :D
-    let memo = [];
-    if (file.diff) {
-      memo = Array(lines.length).fill(0);
-      for (const diff of file.diff) {
-        memo[diff.start - 1]++;
-        memo[diff.end - 1]--;
-      }
-    }
-
-    const wrappedLines: React.ReactNode[] = [];
-    for (let i = 0; i < lines.length; i++) {
-      if (file.diff && memo && i > 0) memo[i] += memo[i - 1];
-      wrappedLines.push(
-        <CodeLine
-          key={i}
-          path={file.path}
-          line={i + 1}
-          isDiff={(file.diff && memo && memo[i] > 0) ?? false}
-          code={lines[i]}
-        />
-      );
-    }
-
-    return <>{wrappedLines}</>;
-  };
+  
+  // Use our custom hook to fetch and process file contents
+  const { 
+    data: fileData, 
+    isLoading, 
+    isError, 
+    error 
+  } = useFileContents(
+    selectedClassroom?.id,
+    assignmentID ? Number(assignmentID) : undefined,
+    studentWorkID ? Number(studentWorkID) : undefined,
+    file
+  );
 
   return (
     <div
@@ -134,24 +41,46 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
       {...props}
     >
       <SimpleBar className="scrollable">
-        <pre>
-          <code
-            data-diff={JSON.stringify(file?.diff ?? "")}
-            className={
-              file
-                ? "language-" + ext2lang[extractExtension(file.name)]
-                : "language-undefined"
-            }
-          >
-            {file ? (
-              fileContents
-            ) : (
-              <div style={{ gridColumn: "span 2" }}>
-                Select a file to view its contents.
-              </div>
-            )}
-          </code>
-        </pre>
+        {!file ? (
+          <div className="CodeBrowser__message">
+            Select a file to view its contents.
+          </div>
+        ) : isLoading ? (
+          <div className="CodeBrowser__message">
+            <div className="CodeBrowser__loading">Loading file contents...</div>
+          </div>
+        ) : isError ? (
+          <div className="CodeBrowser__message">
+            <div className="CodeBrowser__error">
+              Error loading file: {error?.message || 'Unknown error'}
+            </div>
+          </div>
+        ) : !fileData ? (
+          <div className="CodeBrowser__message">
+            <div className="CodeBrowser__empty">No content available</div>
+          </div>
+        ) : (
+          <pre>
+            <code
+              data-diff={JSON.stringify(file?.diff ?? "")}
+              className={
+                file && fileData
+                  ? "language-" + fileData.language
+                  : "language-undefined"
+              }
+            >
+              {fileData.lines.map((line, i) => (
+                <CodeLine
+                  key={i}
+                  path={file.path}
+                  line={i + 1}
+                  isDiff={(file.diff && fileData.memo && fileData.memo[i] > 0) ?? false}
+                  code={line}
+                />
+              ))}
+            </code>
+          </pre>
+        )}
       </SimpleBar>
     </div>
   );

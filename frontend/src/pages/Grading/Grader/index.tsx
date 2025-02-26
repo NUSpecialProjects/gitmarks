@@ -1,7 +1,7 @@
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { GoZoomIn, GoZoomOut } from "react-icons/go";
 import { useContext, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 
 import FileTree from "@/components/CodeBrowser/FileTree";
 import Button from "@/components/Button";
@@ -34,6 +34,7 @@ const Grader: React.FC = () => {
     setSelectedFile,
   } = useContext(GraderContext);
   const [graderFontSize, setGraderFontSize] = useState(13);
+  const navigate = useNavigate();
 
   const zoomIn = () => {
     setGraderFontSize(Math.min(graderFontSize + 1, 24));
@@ -43,30 +44,35 @@ const Grader: React.FC = () => {
     setGraderFontSize(Math.max(graderFontSize - 1, 8));
   };
 
-  return (
+  const handlePrevious = () => {
+    if (studentWork?.previous_student_work_id) {
+      navigate(`/app/grading/assignment/${assignmentID}/student/${studentWork.previous_student_work_id}`);
+    }
+  };
+  
+  const handleNext = () => {
+    if (studentWork?.next_student_work_id) {
+      navigate(`/app/grading/assignment/${assignmentID}/student/${studentWork.next_student_work_id}`);
+    }
+  };
 
+  return (
     <>
       {dataRetrievalError && (
         <div className="Grader">
-
           <div className="Grader__head">
             <div className="Grader__title">
               <Link to="/app/grading">
                 <FaChevronLeft />
               </Link>
-
               <div> 
                 <h2>Grading</h2>
-
               </div>
             </div>
-
           </div>
           <div className="Grader_loading">
             <ErrorMessage message="Unable to retrieve students work"></ErrorMessage>
-
           </div>
-
         </div>
       )}
 
@@ -75,7 +81,6 @@ const Grader: React.FC = () => {
           <LoadingSpinner/>
         </div>
       )}
-
 
       {studentWork && !loadingGitTree && !loadingStudentWork && !dataRetrievalError && (
         <div className="Grader">
@@ -96,19 +101,19 @@ const Grader: React.FC = () => {
               </span>
               <div>
                 <div className="Grader__navButtons">
-                  {studentWork.previous_student_work_id && (
+                  {studentWork?.previous_student_work_id && (
                     <Button
                       variant="secondary"
-                      href={`/app/grading/assignment/${assignmentID}/student/${studentWork.previous_student_work_id}`}
+                      onClick={handlePrevious}
                     >
                       <FaChevronLeft />
                       Previous
                     </Button>
                   )}
-                  {studentWork.next_student_work_id && (
+                  {studentWork?.next_student_work_id && (
                     <Button
                       variant="secondary"
-                      href={`/app/grading/assignment/${assignmentID}/student/${studentWork.next_student_work_id}`}
+                      onClick={handleNext}
                     >
                       Next
                       <FaChevronRight />
@@ -150,12 +155,7 @@ const Grader: React.FC = () => {
           </div>
         </div>
       )}
-
-
     </>
-
-
-
   );
 };
 
