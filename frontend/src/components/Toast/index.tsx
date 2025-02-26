@@ -2,8 +2,8 @@ import { toast } from "react-toastify";
 import "./styles.css";
 
 
-export function ErrorToast(text: string): ErrorToastDismisser {
-  const toastId = toast.error(text, {
+export function ErrorToast(text: string, givenToastId?: string): ErrorToastDismisser {
+  const generatedToastId = toast.error(text, {
     position: "top-right",
     autoClose: 5000,
     hideProgressBar: false,
@@ -11,8 +11,11 @@ export function ErrorToast(text: string): ErrorToastDismisser {
     pauseOnHover: true,
     draggable: true,
     progress: undefined,
-    theme: "light"
+    theme: "light",
+    toastId: givenToastId
   });
+
+  const toastId = givenToastId || generatedToastId;
 
   return {
     dismiss: () => toast.dismiss(toastId)
@@ -23,20 +26,30 @@ export interface ErrorToastDismisser {
   dismiss: () => void;
 }
 
-export function SuccessToast(text: string) {
-  return toast.success(text, {
+export function SuccessToast(text: string, givenToastId?: string) {
+  const generatedToastId = toast.success(text, {
     position: "top-right",
     autoClose: 5000,
     hideProgressBar: false,
+    toastId: givenToastId
   });
+
+  const toastId = givenToastId || generatedToastId;
+
+  return toastId;
 }
 
-export function InfoToast(text: string) {
-  return toast.info(text, {
+export function InfoToast(text: string, givenToastId?: string) {
+  const generatedToastId = toast.info(text, {
     position: "top-right",
     autoClose: 5000,
     hideProgressBar: false,
+    toastId: givenToastId
   });
+
+  const toastId = givenToastId || generatedToastId;
+
+  return toastId;
 }
 
 type ToastCallback = () => Promise<void>;

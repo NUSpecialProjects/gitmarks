@@ -5,7 +5,7 @@ import { SelectedClassroomContext } from "./selectedClassroom";
 import { getPaginatedStudentWork } from "@/api/student_works";
 import { getFileTree, gradeWork } from "@/api/grader";
 import { getAssignmentRubric } from "@/api/assignments";
-import { useActionToast, ErrorToast } from "@/components/Toast";
+import { ErrorToast, useActionToast } from "@/components/Toast";
 
 
 interface IGraderContext {
@@ -92,7 +92,7 @@ export const GraderProvider: React.FC<{
         setRubric(resp);
       })
       .catch((_: unknown) => {
-        ErrorToast("Failed to load assignment rubric. Please try refreshing the page.");
+        ErrorToast("Failed to load assignment rubric. Please try refreshing the page.", "rubric-error");
       });
   }, [studentWorkID]);
 
@@ -118,7 +118,7 @@ export const GraderProvider: React.FC<{
       .catch((_: unknown) => {
         setDataRetrievalError(true);
         setLoadingStudentWork(false);
-        ErrorToast("Failed to load student assignment.");
+        ErrorToast("Failed to load student work. Redirecting to 404 page.", "student-work-error");
         navigate("/404", { replace: true });
       });
   }, [studentWorkID]);
@@ -141,7 +141,7 @@ export const GraderProvider: React.FC<{
       .catch((_: unknown) => {
         setDataRetrievalError(true);
         setLoadingGitTree(false);
-        ErrorToast("Failed to load file tree. Some features may not work correctly.");
+        ErrorToast("Failed to load file tree. Some features may not work correctly.", "file-tree-error");
       });
   }, [studentWorkID]);
 

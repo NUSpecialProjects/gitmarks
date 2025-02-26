@@ -4,6 +4,7 @@ import Button from "../Button";
 import './styles.css';
 import LoadingSpinner from "../LoadingSpinner";
 import { ErrorToast } from "../Toast";
+import { toast } from "react-toastify";
 
 const MultiStepForm = <T,>({
   steps,
@@ -13,22 +14,17 @@ const MultiStepForm = <T,>({
   // Default form state
   const [formData, setFormData] = useState<T>(initialData);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [errorToasts, setErrorToasts] = useState<{ message: string, dismiss: () => void }[]>([]);
 
-  // Dismiss all error toasts
-  const dismissAllErrors = useCallback(() => {
-    errorToasts.forEach(toast => {
-      toast.dismiss();
-    });
-    setErrorToasts([]);
-  }, [errorToasts]);
+  const errorToastId = "multi-step-form-error";
+
+  const dismissErrorToast = useCallback(() => {
+    toast.dismiss(errorToastId);
+  }, [errorToastId]);
 
   // Show an error toast
   const showErrorToast = useCallback((message: string) => {
-
-    const errorToast = ErrorToast(message);
-    setErrorToasts([{ message, dismiss: errorToast.dismiss }]);
-  }, [dismissAllErrors, errorToasts]);
+    ErrorToast(message, errorToastId);
+  }, [errorToastId]);
 
   // Step navigation
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -79,9 +75,9 @@ const MultiStepForm = <T,>({
         ...prevData,
         ...newData,
       }));
-      dismissAllErrors();
+      dismissErrorToast();
     },
-    [dismissAllErrors]
+    [dismissErrorToast]
   );
 
   // Handle next button click, preventing progression on error
@@ -91,7 +87,7 @@ const MultiStepForm = <T,>({
 
     try {
       await currentStep.onNext(formData);
-      dismissAllErrors();
+      dismissErrorToast();
 
       if (!isLastStep) {
         setCurrentStepIndex((prev) => Math.min(prev + 1, totalSteps - 1));
@@ -103,7 +99,7 @@ const MultiStepForm = <T,>({
     } finally {
       setIsLoading(false);
     }
-  }, [steps, currentStepIndex, formData, isLastStep, totalSteps, dismissAllErrors, showErrorToast]);
+  }, [steps, currentStepIndex, formData, isLastStep, totalSteps, dismissErrorToast, showErrorToast]);
 
   const CurrentStepComponent = steps[currentStepIndex].component;
   return (
