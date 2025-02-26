@@ -11,24 +11,31 @@ import "./styles.css";
 /****************
  * TREE COMPONENT
  ****************/
-export const FileTree: React.FC<IFileTree> = ({ selectFileCallback }) => {
-  const { fileTree } = useContext(GraderContext);
-
+export const FileTree: React.FC<IFileTree> = ({ selectFileCallback, className }) => {
+  const { fileTree, studentWorkID } = useContext(GraderContext);
 
   const [gitTree, setGitTree] = useState<IGitTreeNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>("");
   const [root, setRoot] = useState<IFileTreeNode | null>(null);
   const [treeDepth, setTreeDepth] = useState(0);
 
-
-  // fetch git tree from student assignment repo
+  // Update gitTree when fileTree changes
   useEffect(() => {
-    if (!fileTree) return;
-      setGitTree(fileTree);
-  }, []);
+    if (!fileTree) {
+      setGitTree([]);
+      return;
+    }
+    setGitTree(fileTree);
+  }, [fileTree]); // Add fileTree as a dependency
 
+  // Reset selected file when student work changes
   useEffect(() => {
-    if (gitTree.length == 0) {
+    setSelectedFile("");
+  }, [studentWorkID]);
+
+  // Build tree structure when gitTree changes
+  useEffect(() => {
+    if (gitTree.length === 0) {
       setRoot(null);
       setTreeDepth(0);
       setSelectedFile("");
@@ -40,7 +47,7 @@ export const FileTree: React.FC<IFileTree> = ({ selectFileCallback }) => {
   }, [gitTree]);
 
   return (
-    <ResizablePanel border="right" minWidth={150}>
+    <ResizablePanel border="right" minWidth={150} className={className}>
       <div className="FileTree__head">Files</div>
       <SimpleBar className="FileTree__body scrollable">
         <>

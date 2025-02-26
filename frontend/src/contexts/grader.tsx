@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-
 import { SelectedClassroomContext } from "./selectedClassroom";
-import { getPaginatedStudentWork } from "@/api/student_works";
-import { getFileTree, gradeWork } from "@/api/grader";
-import { getAssignmentRubric } from "@/api/assignments";
-
+import { gradeWork } from "@/api/grader";
+import { 
+  useFileTree, 
+  usePaginatedStudentWork, 
+  useAssignmentRubric 
+} from "@/hooks/useGrader";
 
 interface IGraderContext {
   assignmentID: string | undefined;
@@ -20,6 +20,7 @@ interface IGraderContext {
   loadingStudentWork: boolean;
   loadingGitTree: boolean;
   dataRetrievalError: boolean;
+  isSubmittingGrade: boolean;
   setSelectedFile: React.Dispatch<React.SetStateAction<IFileTreeNode | null>>;
   addFeedback: (feedback: IGraderFeedback[]) => void;
   editFeedback: (feedbackID: number, feedback: IGraderFeedback) => void;
@@ -43,6 +44,7 @@ export const GraderContext: React.Context<IGraderContext> =
     loadingStudentWork: true,
     loadingGitTree: true,
     dataRetrievalError: false,
+    isSubmittingGrade: false,
     setSelectedFile: () => {},
     addFeedback: () => 0,
     editFeedback: () => {},
@@ -59,83 +61,60 @@ export const GraderProvider: React.FC<{
 }> = ({ assignmentID, studentWorkID, children }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
 
+  // State variables
   const nextFeedbackID = useRef(0);
   const [feedback, setFeedback] = useState<IGraderFeedbackMap>({});
   const [stagedFeedback, setStagedFeedback] = useState<IGraderFeedbackMap>({});
-  const [studentWork, setStudentWork] = useState<IPaginatedStudentWork | null>(
-    null
-  );
   const [selectedRubricItems, setSelectedRubricItems] = useState<number[]>([]);
   const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
-  const [rubric, setRubric] = useState<IFullRubric | null>(null);
-  const [fileTree, setFileTree] = useState<IGitTreeNode[] | null>(null)
-  const [dataRetrievalError, setDataRetrievalError] = useState(false)
-  const [loadingStudentWork, setLoadingStudentWork] = useState(true)
-  const [loadingGitTree, setLoadingGitTree] = useState(true)
+  const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
+  
+  // Convert string IDs to numbers for the queries
+  const classroomId = selectedClassroom?.id;
+  const assignmentIdNum = assignmentID ? Number(assignmentID) : undefined;
+  const studentWorkIdNum = studentWorkID ? Number(studentWorkID) : undefined;
 
-  const navigate = useNavigate();
+  // Use the custom hooks for data fetching
+  const { 
+    data: fileTreeData, 
+    isLoading: loadingGitTree, 
+    isError: fileTreeError,
+    refetch: refetchFileTree
+  } = useFileTree(classroomId, assignmentIdNum, studentWorkIdNum);
 
-  // fetch rubric from requested assignment
+  const { 
+    data: studentWorkData, 
+    isLoading: loadingStudentWork, 
+    isError: studentWorkError,
+    refetch: refetchStudentWork
+  } = usePaginatedStudentWork(classroomId, assignmentIdNum, studentWorkIdNum);
+
+  const { 
+    data: rubricData, 
+    isLoading: loadingRubric, 
+    isError: rubricError 
+  } = useAssignmentRubric(classroomId, assignmentIdNum);
+
+  // Derived state
+  const studentWork = studentWorkData?.student_work || null;
+  const fileTree = fileTreeData || null;
+  const rubric = rubricData || null;
+  const dataRetrievalError = fileTreeError || studentWorkError || rubricError;
+
+  // Set feedback when student work data is loaded
   useEffect(() => {
-    // reset states
-    setRubric(null);
+    if (studentWorkData) {
+      setFeedback(studentWorkData.feedback || {});
+      setStagedFeedback({});
+    }
+  }, [studentWorkData]);
 
-    if (!selectedClassroom || !assignmentID) return;
-
-    getAssignmentRubric(selectedClassroom.id, Number(assignmentID)).then(
-      (resp) => {
-        setRubric(resp);
-      }
-    );
-  }, [studentWorkID]);
-
-  // Reset state when studentWorkID changes
+  // Reset selected file when student work changes
   useEffect(() => {
     setSelectedFile(null);
-    setFileTree(null);
-    setLoadingGitTree(true);
-    setLoadingStudentWork(true);
-    setDataRetrievalError(false);
-    
-    // Then fetch data as normal
-    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-    
-    // Fetch student work
-    getPaginatedStudentWork(
-      selectedClassroom.id, 
-      Number(assignmentID),
-      Number(studentWorkID)
-    )
-      .then((resp) => {
-        setStudentWork(resp.student_work);
-        setFeedback(resp.feedback);
-        setStagedFeedback({});
-        setLoadingStudentWork(false);
-      })
-      .catch((_: unknown) => {
-        setDataRetrievalError(true);
-        setLoadingStudentWork(false);
-        //TODO: show error toast here
-        navigate("/404", { replace: true });
-      });
-      
-    // Fetch file tree
-    getFileTree(
-      selectedClassroom.id,
-      Number(assignmentID),
-      Number(studentWorkID)
-    ) 
-      .then((resp) => {
-        setFileTree(resp);
-        setLoadingGitTree(false);
-      })
-      .catch((_: unknown) => {
-        setDataRetrievalError(true);
-        setLoadingGitTree(false);
-        //TODO: show error toast here
-      });
-  }, [studentWorkID, assignmentID, selectedClassroom]);
+  }, [studentWorkID]);
 
+  // Feedback management functions
   const getNextFeedbackID = () => {
     const tmp = nextFeedbackID.current;
     nextFeedbackID.current = nextFeedbackID.current + 1;
@@ -157,39 +136,47 @@ export const GraderProvider: React.FC<{
     }));
   };
 
-  const editFeedback = (_feedbackID: number, _feedback: IGraderFeedback) => {};
+  const editFeedback = (feedbackID: number, feedback: IGraderFeedback) => {
+    setStagedFeedback((prevFeedback) => ({
+      ...prevFeedback,
+      [feedbackID]: {
+        ...feedback,
+        action: "EDIT",
+      },
+    }));
+  };
 
-  const removeFeedback = (_feedbackID: number) => {};
+  const removeFeedback = (feedbackID: number) => {
+    setStagedFeedback((prevFeedback) => ({
+      ...prevFeedback,
+      [feedbackID]: {
+        ...prevFeedback[feedbackID],
+        action: "DELETE",
+      },
+    }));
+  };
 
-  const postFeedback = () => {
+  const postFeedback = async () => {
     if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-
-    gradeWork(
-      selectedClassroom.id,
-      Number(assignmentID),
-      Number(studentWorkID),
-      stagedFeedback
-    ).then(() => {
-      setStudentWork((prevStudentWork) => {
-        if (prevStudentWork) {
-          return {
-            ...prevStudentWork,
-            manual_feedback_score:
-              prevStudentWork.manual_feedback_score +
-              Object.values(stagedFeedback).reduce(
-                (s: number, fb: IGraderFeedback) => s + fb.points,
-                0
-              ),
-          };
-        }
-        return prevStudentWork;
-      });
-      setFeedback((prevFeedback) => ({
-        ...prevFeedback,
-        ...stagedFeedback,
-      }));
+    
+    setIsSubmittingGrade(true);
+    
+    try {
+      await gradeWork(
+        selectedClassroom.id,
+        Number(assignmentID),
+        Number(studentWorkID),
+        stagedFeedback
+      );
+      
+      // Instead of updating state directly, refetch the data
+      await refetchStudentWork();
+      
+      // Clear staged feedback after successful submission
       setStagedFeedback({});
-    });
+    } finally {
+      setIsSubmittingGrade(false);
+    }
   };
 
   const selectRubricItem = (riID: number) => {
@@ -201,8 +188,7 @@ export const GraderProvider: React.FC<{
     setSelectedRubricItems(deselected);
   };
 
-  // once feedback is updated, reset id to its length
-  // this is so when posting staged feedback, it will never overwrite existing feedback
+  // Reset feedback ID counter when feedback changes
   useEffect(() => {
     nextFeedbackID.current = feedback ? Object.keys(feedback).length : 0;
   }, [feedback]);
@@ -222,6 +208,7 @@ export const GraderProvider: React.FC<{
         loadingGitTree,
         loadingStudentWork,
         dataRetrievalError,
+        isSubmittingGrade,
         setSelectedFile,
         addFeedback,
         editFeedback,

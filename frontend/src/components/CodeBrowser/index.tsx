@@ -1,8 +1,9 @@
-import { useContext } from "react";
+import { useContext, useMemo, useEffect, useCallback } from "react";
 import SimpleBar from "simplebar-react";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import { useFileContents } from "@/hooks/useFileContents";
+import { useFileContents } from "@/hooks/useGrader";
 import CodeLine from "./CodeLine";
+import { useQueryClient } from "@tanstack/react-query";
 
 import "@/assets/prism-vs-dark.css";
 import "./styles.css";
@@ -21,17 +22,31 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
   ...props
 }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
+  const queryClient = useQueryClient();
+  
+  // Convert IDs to numbers
+  const classroomId = selectedClassroom?.id;
+  const assignmentIdNum = assignmentID ? Number(assignmentID) : undefined;
+  const studentWorkIdNum = studentWorkID ? Number(studentWorkID) : undefined;
+  
+  // Invalidate file contents cache when studentWorkID changes
+  useEffect(() => {
+    // Invalidate all file content queries when student work changes
+    queryClient.invalidateQueries({
+      queryKey: ['fileContents', classroomId, assignmentIdNum, studentWorkIdNum]
+    });
+  }, [studentWorkID, queryClient, classroomId, assignmentIdNum, studentWorkIdNum]);
   
   // Use our custom hook to fetch and process file contents
   const { 
     data: fileData, 
     isLoading, 
     isError, 
-    error 
+    error
   } = useFileContents(
-    selectedClassroom?.id,
-    assignmentID ? Number(assignmentID) : undefined,
-    studentWorkID ? Number(studentWorkID) : undefined,
+    classroomId,
+    assignmentIdNum,
+    studentWorkIdNum,
     file
   );
 
@@ -55,7 +70,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
               Error loading file: {error?.message || 'Unknown error'}
             </div>
           </div>
-        ) : !fileData ? (
+        ) : !fileData || !fileData.lines ? (
           <div className="CodeBrowser__message">
             <div className="CodeBrowser__empty">No content available</div>
           </div>
@@ -71,7 +86,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
             >
               {fileData.lines.map((line, i) => (
                 <CodeLine
-                  key={i}
+                  key={`${studentWorkID}-${file.path}-${i}`}
                   path={file.path}
                   line={i + 1}
                   isDiff={(file.diff && fileData.memo && fileData.memo[i] > 0) ?? false}
