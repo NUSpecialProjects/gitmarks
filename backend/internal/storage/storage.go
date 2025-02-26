@@ -106,3 +106,8 @@ type Rubric interface {
 	UpdateRubricItem(ctx context.Context, rubricItemData models.RubricItem) (models.RubricItem, error)
 	GetRubricsInClassroom(ctx context.Context, classroomID int64) ([]models.Rubric, error)
 }
+
+
+type Deadline interface {
+	GetDeadlineForRepo(ctx context.Context, repoName string) (*time.Time, error)
+}
