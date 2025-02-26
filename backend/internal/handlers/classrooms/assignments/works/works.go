@@ -291,6 +291,7 @@ func (s *WorkService) GetCommitsPerDay() fiber.Handler {
 
 		var opts github.CommitsListOptions
 		opts.Author = work.Contributors[0].GithubUsername
+        opts.SHA = "development"
 		commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
 		if err != nil {
 			return errs.GithubAPIError(err)
