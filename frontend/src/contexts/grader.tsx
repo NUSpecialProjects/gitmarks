@@ -5,7 +5,7 @@ import { SelectedClassroomContext } from "./selectedClassroom";
 import { getPaginatedStudentWork } from "@/api/student_works";
 import { getFileTree, gradeWork } from "@/api/grader";
 import { getAssignmentRubric } from "@/api/assignments";
-import { useActionToast } from "@/components/Toast";
+import { useActionToast, ErrorToast } from "@/components/Toast";
 
 
 interface IGraderContext {
@@ -87,11 +87,13 @@ export const GraderProvider: React.FC<{
 
     if (!selectedClassroom || !assignmentID) return;
 
-    getAssignmentRubric(selectedClassroom.id, Number(assignmentID)).then(
-      (resp) => {
+    getAssignmentRubric(selectedClassroom.id, Number(assignmentID))
+      .then((resp) => {
         setRubric(resp);
-      }
-    );
+      })
+      .catch((_: unknown) => {
+        ErrorToast("Failed to load assignment rubric. Please try refreshing the page.");
+      });
   }, [studentWorkID]);
 
   // fetch requested student assignment
@@ -111,20 +113,19 @@ export const GraderProvider: React.FC<{
         setStudentWork(resp.student_work);
         setFeedback(resp.feedback);
         setStagedFeedback({});
-        setLoadingStudentWork(false)
-
+        setLoadingStudentWork(false);
       })
       .catch((_: unknown) => {
-        setDataRetrievalError(true)
-        setLoadingStudentWork(false)
+        setDataRetrievalError(true);
+        setLoadingStudentWork(false);
+        ErrorToast("Failed to load student assignment.");
         navigate("/404", { replace: true });
       });
-
   }, [studentWorkID]);
 
   // retrieve file tree
   useEffect(() => {
-    setFileTree(null)
+    setFileTree(null);
 
     if (!selectedClassroom || !assignmentID || !studentWorkID) return;
 
@@ -134,14 +135,14 @@ export const GraderProvider: React.FC<{
       Number(studentWorkID)
     ) 
       .then((resp) => {
-        setFileTree(resp)
-        setLoadingGitTree(false)
+        setFileTree(resp);
+        setLoadingGitTree(false);
       })
       .catch((_: unknown) => {
-        setDataRetrievalError(true)
-        setLoadingGitTree(false)
-      })
-
+        setDataRetrievalError(true);
+        setLoadingGitTree(false);
+        ErrorToast("Failed to load file tree. Some features may not work correctly.");
+      });
   }, [studentWorkID]);
 
   const getNextFeedbackID = () => {
