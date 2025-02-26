@@ -6,12 +6,15 @@ import (
 	"github.com/CamPlume1/khoury-classroom/internal/storage"
 )
 
+
+//Service Declaration
 type OrganizationService struct {
 	store     storage.Storage
 	appClient github.GitHubAppClient
 	userCfg   *config.GitHubUserClient
 }
 
+//Service constructor
 func NewOrganizationService(
 	store storage.Storage,
 	appClient github.GitHubAppClient,

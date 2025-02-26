@@ -17,6 +17,7 @@ func (service *OrganizationService) GetOrgsAndClassrooms() fiber.Handler {
 	}
 }
 
+//Get all organizations a user is in
 func (service *OrganizationService) GetUserOrgs() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		client, err := middleware.GetClient(c, service.store, service.userCfg)
@@ -24,11 +25,11 @@ func (service *OrganizationService) GetUserOrgs() fiber.Handler {
 			return errs.GithubClientError(err)
 		}
 
+		// Retrieve orgs from user client
 		orgs, err := client.GetUserOrgs(c.Context())
 		if err != nil {
 			return errs.GithubAPIError(err)
 		}
-
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"orgs": orgs})
 	}
 }

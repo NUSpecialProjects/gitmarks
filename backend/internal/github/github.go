@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/google/go-github/github"
@@ -23,6 +24,8 @@ type GitHubAppClient interface { // All methods in the APP client
 
 	// Add a repository permission to a user
 	AssignPermissionToUser(ctx context.Context, ownerName string, repoName string, userName string, permission string) error
+
+	CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName string) error
 
 	// Create instance of template repository
 	CreateRepoFromTemplate(ctx context.Context, orgName, templateRepoName, newRepoName string) (*models.AssignmentBaseRepo, error)
@@ -91,6 +94,9 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Invite a user to an organization
 	InviteUserToOrganization(ctx context.Context, orgName string, userID int64) error
 
+	// Remove a user from an organization
+	RemoveUserFromOrganization(ctx context.Context, orgName string, userName string) error
+
 	// Set the membership of a user to an organization
 	SetUserMembershipInOrg(ctx context.Context, orgName string, userName string, role string) error
 
@@ -130,9 +136,23 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Remove repository from team
 	RemoveRepoFromTeam(ctx context.Context, org, teamSlug, owner, repo string) error
 
+	//Create push ruleset to protect .github folders
+	CreatePushRuleset(ctx context.Context, orgName, repoName string) error
+
+	//Create rulesets to protect corresponding branches
+	CreateBranchRuleset(ctx context.Context, orgName, repoName string) error
+
+	//Creates PR enforcements
+	CreatePREnforcement(ctx context.Context, orgName, repoName, branchName string) error
+
 	// Create empty commit (will create a diff that allows feedback PR to be created)
 	CreateEmptyCommit(ctx context.Context, owner, repo string) error
 
 	// Check if a fork has finished initializing
 	CheckForkIsReady(ctx context.Context, repo *github.Repository) bool
+
+	//Enable a given action
+	EnableWorkflow(ctx context.Context, repoOwner, forkName, workflowName string) error
+
+	EnableActions(ctx context.Context, ownerName, repoName string) error
 }
