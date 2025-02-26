@@ -51,7 +51,7 @@ const Assignment: React.FC = () => {
     if (linkError || templateError || metricsError) {
       const errorMessage = linkError?.message || templateError?.message || metricsError?.message;
       if (errorMessage) {
-        ErrorToast(errorMessage);
+        ErrorToast(errorMessage, "assignment-error");
       }
     }
   }, [linkError, templateError, metricsError]);

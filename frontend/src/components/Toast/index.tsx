@@ -2,8 +2,8 @@ import { toast } from "react-toastify";
 import "./styles.css";
 
 
-export function ErrorToast(text: string, givenToastId?: string): ErrorToastDismisser {
-  const generatedToastId = toast.error(text, {
+export function ErrorToast(text: string, toastId: string) {
+  return toast.error(text, {
     position: "top-right",
     autoClose: 5000,
     hideProgressBar: false,
@@ -12,50 +12,33 @@ export function ErrorToast(text: string, givenToastId?: string): ErrorToastDismi
     draggable: true,
     progress: undefined,
     theme: "light",
-    toastId: givenToastId
-  });
-
-  const toastId = givenToastId || generatedToastId;
-
-  return {
-    dismiss: () => toast.dismiss(toastId)
-  };
+    toastId: toastId
+  });  
 }
 
-export interface ErrorToastDismisser {
-  dismiss: () => void;
-}
-
-export function SuccessToast(text: string, givenToastId?: string) {
-  const generatedToastId = toast.success(text, {
+export function SuccessToast(text: string, toastId: string) {
+  return toast.success(text, {
     position: "top-right",
     autoClose: 5000,
     hideProgressBar: false,
-    toastId: givenToastId
+    toastId: toastId
   });
-
-  const toastId = givenToastId || generatedToastId;
-
-  return toastId;
 }
 
-export function InfoToast(text: string, givenToastId?: string) {
-  const generatedToastId = toast.info(text, {
+export function InfoToast(text: string, toastId: string) {
+  return toast.info(text, {
     position: "top-right",
     autoClose: 5000,
     hideProgressBar: false,
-    toastId: givenToastId
+    toastId: toastId
   });
-
-  const toastId = givenToastId || generatedToastId;
-
-  return toastId;
 }
 
 type ToastCallback = () => Promise<void>;
 
 export const useActionToast = () => {
   const executeWithToast = async (
+    toastId: string,
     actionCallback: ToastCallback,
     messages: {
       pending: string;
@@ -63,7 +46,9 @@ export const useActionToast = () => {
       error: string;
     }
   ) => {
-    const toastId = toast.loading(messages.pending);
+    toast.loading(messages.pending, {
+      toastId: toastId
+    });
     
     try {
       await actionCallback();

@@ -156,11 +156,11 @@ const RubricEditor: React.FC = () => {
                         if (assignmentData !== null && assignmentData !== undefined) {
                             setAssignmentRubric(updatedRubric.rubric.id!, selectedClassroom.id, assignmentData.id)
                         }
-                        SuccessToast("Rubric updated successfully");
+                        SuccessToast("Rubric updated successfully", "rubric-updated");
                         backButton()
                     })
                     .catch((_) => {
-                        ErrorToast("Failed to update rubric. Please try again.");
+                        ErrorToast("Failed to update rubric. Please try again.", "rubric-update-error");
                         setFailedToSave(true)
                     });
 
@@ -174,11 +174,11 @@ const RubricEditor: React.FC = () => {
                         if (assignmentData !== null && assignmentData !== undefined) {
                             setAssignmentRubric(createdRubric.rubric.id!, selectedClassroom.id, assignmentData.id)
                         }
-                        SuccessToast("Rubric created successfully");
+                        SuccessToast("Rubric created successfully", "rubric-created");
                         backButton()
                     })
                     .catch((_) => {
-                        ErrorToast("Failed to create rubric. Please try again.");
+                        ErrorToast("Failed to create rubric. Please try again.", "rubric-create-error");
                         setFailedToSave(true)
                     });
             }

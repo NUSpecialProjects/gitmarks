@@ -79,10 +79,16 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    if (classroomUsersError || assignmentsError) {
-      ErrorToast(assignmentsError ? "An error occurred while loading the assignments" : "An error occurred while loading the classroom users");
+    if (classroomUsersError) {
+      ErrorToast(classroomUsersError.message, "classroom-users-error");
     }
-  }, [classroomUsersError, assignmentsError]);
+  }, [classroomUsersError]);
+
+  useEffect(() => {
+    if (assignmentsError) {
+      ErrorToast(assignmentsError.message, "assignments-error");
+    }
+  }, [assignmentsError]);
 
   if (classroomUsersError || assignmentsError) {
     return (

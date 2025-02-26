@@ -100,6 +100,7 @@ const CreateAssignment: React.FC = () => {
         }
 
         return executeWithToast(
+          "create-assignment-toast",
           async () => {
             const assignment = await createAssignment(templateRepoId, data);
             navigate(`/app/assignments/${assignment.id}`);

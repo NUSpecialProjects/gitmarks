@@ -35,6 +35,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
 
   const handleInviteUser = (userId: number) => {
     executeWithToast(
+      `invite-${userId}`,
       async () => {
         await inviteUser(userId, role_type, setLoadingUserIds);
       }, {
@@ -47,6 +48,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   
   const handleRevokeInvite = (userId: number) => {
     executeWithToast(
+      `revoke-invite-${userId}`,
       async () => await revokeInvite(userId, setLoadingUserIds),
       {
         pending: `Revoking ${role_label.toLowerCase()} invitation...`,
@@ -58,6 +60,7 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
 
   const handleRemoveUser = (userId: number) => {
     executeWithToast(
+      `remove-user-${userId}`,
       async () => await removeUser(userId, setLoadingUserIds),
       {
         pending: `Removing ${role_label.toLowerCase()}...`,
@@ -68,10 +71,16 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   };
 
   useEffect(() => {
-    if (usersError || inviteLinkError) {
-      ErrorToast(usersError?.message || inviteLinkError?.message || 'An unexpected error occurred');
+    if (usersError) {
+      ErrorToast(usersError?.message || 'An unexpected error occurred', "users-error");
     }
-  }, [usersError, inviteLinkError]);
+  }, [usersError]);
+
+  useEffect(() => {
+    if (inviteLinkError) {
+      ErrorToast(inviteLinkError?.message || 'An unexpected error occurred', "invite-link-error");
+    }
+  }, [inviteLinkError]);
 
 
   const showActionsColumn = currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR
