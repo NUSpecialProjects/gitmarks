@@ -28,6 +28,7 @@ const Grader: React.FC = () => {
     selectedFile,
     loadingGitTree,
     loadingStudentWork,
+    loadingRubric,
     dataRetrievalError,
     setSelectedFile,
   } = useContext(GraderContext);
@@ -134,7 +135,9 @@ const Grader: React.FC = () => {
             loading={loadingGitTree || loadingStudentWork}
             error={dataRetrievalError ? "Unable to retrieve student's work" : undefined}
           />
-          <RubricTree />
+          <RubricTree
+            loading={loadingRubric}
+          />
         </div>
       </div>
     </div>

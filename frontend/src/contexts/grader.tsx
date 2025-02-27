@@ -19,6 +19,7 @@ interface IGraderContext {
   fileTree: IGitTreeNode[] | null;
   loadingStudentWork: boolean;
   loadingGitTree: boolean;
+  loadingRubric: boolean;
   dataRetrievalError: boolean;
   isSubmittingGrade: boolean;
   setSelectedFile: React.Dispatch<React.SetStateAction<IFileTreeNode | null>>;
@@ -43,6 +44,7 @@ export const GraderContext: React.Context<IGraderContext> =
     fileTree: [],
     loadingStudentWork: true,
     loadingGitTree: true,
+    loadingRubric: true,
     dataRetrievalError: false,
     isSubmittingGrade: false,
     setSelectedFile: () => {},
@@ -90,7 +92,7 @@ export const GraderProvider: React.FC<{
 
   const { 
     data: rubricData, 
-    isLoading: loadingRubric, //TODO: add loading state for rubric
+    isLoading: loadingRubric,
     isError: rubricError 
   } = useAssignmentRubric(classroomId, assignmentIdNum);
 
@@ -206,6 +208,7 @@ export const GraderProvider: React.FC<{
         fileTree,
         loadingGitTree,
         loadingStudentWork,
+        loadingRubric,
         dataRetrievalError,
         isSubmittingGrade,
         setSelectedFile,
