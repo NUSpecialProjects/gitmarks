@@ -1,4 +1,4 @@
-import { useContext, useMemo, useEffect, useCallback } from "react";
+import { useContext, useEffect } from "react";
 import SimpleBar from "simplebar-react";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { useFileContents } from "@/hooks/useGrader";
@@ -13,6 +13,7 @@ interface ICodeBrowser extends React.HTMLProps<HTMLDivElement> {
   studentWorkID: string | undefined;
   file: IFileTreeNode | null;
   loading: boolean;
+  error?: string;
 }
 
 const CodeBrowser: React.FC<ICodeBrowser> = ({
@@ -21,7 +22,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
   file,
   className,
   loading,
-  ...props
+  error
 }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const queryClient = useQueryClient();
@@ -44,7 +45,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
     data: fileData, 
     isLoading: isLoadingFile, 
     isError, 
-    error
+    error: fileError
   } = useFileContents(
     classroomId,
     assignmentIdNum,
@@ -53,56 +54,59 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
   );
 
   return (
-    <div
-      className={"CodeBrowser" + (className ? " " + className : "")}
-      {...props}
-    >
-      <SimpleBar className="scrollable">
-        {(loading) ? (
-          <div className="CodeBrowser__message">
-            <div className="CodeBrowser__loading">Loading student assignment...</div>
-          </div>
-        ) : !file ? (
-          <div className="CodeBrowser__message">
-            Select a file to view its contents.
-          </div>
-        ) : (isLoadingFile) ? (
-          <div className="CodeBrowser__message">
-            <div className="CodeBrowser__loading">Loading file contents...</div>
-          </div>
-        ) : isError ? (
-          <div className="CodeBrowser__message">
-            <div className="CodeBrowser__error">
-              Error loading file: {error?.message || 'Unknown error'}
+    <div className="CodeBrowser">
+      <div className={"CodeBrowser" + (className ? " " + className : "")}>
+        <SimpleBar className="scrollable">
+          {error ? (
+            <div className="CodeBrowser__message">
+              <div className="CodeBrowser__error">{error}</div>
             </div>
-          </div>
-        ) : !fileData || !fileData.lines ? (
-          <div className="CodeBrowser__message">
-            <div className="CodeBrowser__empty">No content available</div>
-          </div>
-        ) : (
-          <pre>
-            <code
-              data-diff={JSON.stringify(file?.diff ?? "")}
-              className={
-                file && fileData
-                  ? "language-" + fileData.language
-                  : "language-undefined"
-              }
-            >
-              {fileData.lines.map((line, i) => (
-                <CodeLine
-                  key={`${studentWorkID}-${file.path}-${i}`}
-                  path={file.path}
-                  line={i + 1}
-                  isDiff={(file.diff && fileData.memo && fileData.memo[i] > 0) ?? false}
-                  code={line}
-                />
-              ))}
-            </code>
-          </pre>
-        )}
-      </SimpleBar>
+          ) :loading ? (
+            <div className="CodeBrowser__message">
+              <div className="CodeBrowser__loading">Loading student assignment...</div>
+            </div>
+          ) : !file ? (
+            <div className="CodeBrowser__message">
+              Select a file to view its contents.
+            </div>
+          ) : (isLoadingFile) ? (
+            <div className="CodeBrowser__message">
+              <div className="CodeBrowser__loading">Loading file contents...</div>
+            </div>
+          ) : isError ? (
+            <div className="CodeBrowser__message">
+              <div className="CodeBrowser__error">
+                Error loading file: {fileError?.message || 'Unknown error'}
+              </div>
+            </div>
+          ) : !fileData || !fileData.lines ? (
+            <div className="CodeBrowser__message">
+              <div className="CodeBrowser__empty">No content available</div>
+            </div>
+          ) : (
+            <pre>
+              <code
+                data-diff={JSON.stringify(file?.diff ?? "")}
+                className={
+                  file && fileData
+                    ? "language-" + fileData.language
+                    : "language-undefined"
+                }
+              >
+                {fileData.lines.map((line, i) => (
+                  <CodeLine
+                    key={`${studentWorkID}-${file.path}-${i}`}
+                    path={file.path}
+                    line={i + 1}
+                    isDiff={(file.diff && fileData.memo && fileData.memo[i] > 0) ?? false}
+                    code={line}
+                  />
+                ))}
+              </code>
+            </pre>
+          )}
+        </SimpleBar>
+      </div>
     </div>
   );
 };
