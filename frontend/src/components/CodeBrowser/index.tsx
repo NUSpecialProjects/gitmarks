@@ -42,7 +42,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
   // Use our custom hook to fetch and process file contents
   const { 
     data: fileData, 
-    isLoading, 
+    isLoading: isLoadingFile, 
     isError, 
     error
   } = useFileContents(
@@ -66,7 +66,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
           <div className="CodeBrowser__message">
             Select a file to view its contents.
           </div>
-        ) : (isLoading) ? (
+        ) : (isLoadingFile) ? (
           <div className="CodeBrowser__message">
             <div className="CodeBrowser__loading">Loading file contents...</div>
           </div>
