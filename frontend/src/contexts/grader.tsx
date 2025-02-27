@@ -74,12 +74,11 @@ export const GraderProvider: React.FC<{
   const assignmentIdNum = assignmentID ? Number(assignmentID) : undefined;
   const studentWorkIdNum = studentWorkID ? Number(studentWorkID) : undefined;
 
-  // Use the custom hooks for data fetching
+  // Fetch the data for the grader
   const { 
     data: fileTreeData, 
     isLoading: loadingGitTree, 
-    isError: fileTreeError,
-    refetch: refetchFileTree
+    isError: fileTreeError
   } = useFileTree(classroomId, assignmentIdNum, studentWorkIdNum);
 
   const { 
@@ -91,7 +90,7 @@ export const GraderProvider: React.FC<{
 
   const { 
     data: rubricData, 
-    isLoading: loadingRubric, 
+    isLoading: loadingRubric, //TODO: add loading state for rubric
     isError: rubricError 
   } = useAssignmentRubric(classroomId, assignmentIdNum);
 
@@ -169,7 +168,7 @@ export const GraderProvider: React.FC<{
         stagedFeedback
       );
       
-      // Instead of updating state directly, refetch the data
+      // Refetch the student work data
       await refetchStudentWork();
       
       // Clear staged feedback after successful submission
