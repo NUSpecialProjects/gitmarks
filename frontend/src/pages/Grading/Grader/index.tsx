@@ -10,7 +10,6 @@ import { GraderContext, GraderProvider } from "@/contexts/grader";
 
 import "./styles.css";
 import RubricTree from "@/components/CodeBrowser/RubricTree";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/Error";
 
 const GraderWrapper: React.FC = () => {
@@ -95,24 +94,22 @@ const Grader: React.FC = () => {
               </span>
               <div>
                 <div className="Grader__navButtons">
-                  {studentWork?.previous_student_work_id && (
-                    <Button
-                      variant="secondary"
-                      onClick={handlePrevious}
-                    >
-                      <FaChevronLeft />
-                      Previous
-                    </Button>
-                  )}
-                  {studentWork?.next_student_work_id && (
-                    <Button
-                      variant="secondary"
-                      onClick={handleNext}
-                    >
-                      Next
-                      <FaChevronRight />
-                    </Button>
-                  )}
+                  <Button
+                    variant="secondary"
+                    onClick={handlePrevious}
+                    disabled = {studentWork?.previous_student_work_id === null}
+                  >
+                    <FaChevronLeft />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={handleNext}
+                    disabled = {studentWork?.next_student_work_id === null}
+                  >
+                    Next
+                    <FaChevronRight />
+                  </Button>
                 </div>
               </div>
             </div>
