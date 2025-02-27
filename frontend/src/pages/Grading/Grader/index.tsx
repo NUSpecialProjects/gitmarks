@@ -76,13 +76,7 @@ const Grader: React.FC = () => {
         </div>
       )}
 
-      {(loadingGitTree || loadingStudentWork) && (
-        <div className="Grader__loading">
-          <LoadingSpinner/>
-        </div>
-      )}
-
-      {studentWork && !loadingGitTree && !loadingStudentWork && !dataRetrievalError && (
+      {!dataRetrievalError && studentWork && (
         <div className="Grader">
           <div className="Grader__head">
             <div className="Grader__title">
@@ -123,10 +117,11 @@ const Grader: React.FC = () => {
               </div>
             </div>
           </div>
+          
           <div className="Grader__body">
             <div className="Grader__toolBar">
               <div className="Grader__toolBar__fileName">
-                {selectedFile ? selectedFile.path : "No file selected"}
+                {(loadingGitTree || loadingStudentWork) ? "Loading..." : selectedFile ? selectedFile.path : "No file selected"}
               </div>
               <div className="Grader__toolBar__zoomButtons">
                 <div className="Grader__toolBar__zoomButton" onClick={zoomIn}>
@@ -149,6 +144,7 @@ const Grader: React.FC = () => {
                 assignmentID={assignmentID}
                 studentWorkID={studentWorkID}
                 file={selectedFile}
+                loading={loadingGitTree || loadingStudentWork}
               />
               <RubricTree />
             </div>

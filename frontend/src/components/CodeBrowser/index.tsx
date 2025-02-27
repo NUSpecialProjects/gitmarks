@@ -12,6 +12,7 @@ interface ICodeBrowser extends React.HTMLProps<HTMLDivElement> {
   assignmentID: string | undefined;
   studentWorkID: string | undefined;
   file: IFileTreeNode | null;
+  loading: boolean;
 }
 
 const CodeBrowser: React.FC<ICodeBrowser> = ({
@@ -19,6 +20,7 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
   studentWorkID,
   file,
   className,
+  loading,
   ...props
 }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
@@ -56,11 +58,15 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
       {...props}
     >
       <SimpleBar className="scrollable">
-        {!file ? (
+        {(loading) ? (
+          <div className="CodeBrowser__message">
+            <div className="CodeBrowser__loading">Loading student assignment...</div>
+          </div>
+        ) : !file ? (
           <div className="CodeBrowser__message">
             Select a file to view its contents.
           </div>
-        ) : isLoading ? (
+        ) : (isLoading) ? (
           <div className="CodeBrowser__message">
             <div className="CodeBrowser__loading">Loading file contents...</div>
           </div>
