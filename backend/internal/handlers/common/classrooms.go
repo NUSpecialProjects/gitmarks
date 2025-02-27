@@ -46,30 +46,33 @@ func UpdateUserStatus(ctx context.Context, client github.GitHubBaseClient, store
 
 // Invites a user to a classroom and attempts to accept their invitation
 // This should be called on the target user's behalf
-func InviteUserToClassroom(ctx context.Context, store storage.Storage, appClient github.GitHubAppClient, userClient github.GitHubUserClient, classroomID int64, classroomRole models.ClassroomRole, invitee *models.User) (models.Classroom, models.ClassroomUser, error) {
+func InviteUserToClassroom(ctx context.Context, store storage.Storage, appClient github.GitHubAppClient, userClient github.GitHubUserClient, classroomID int64, classroomRole models.ClassroomRole, invitee *models.User) (string, models.Classroom, models.ClassroomUser, error) {
 	// Get the classroom from the DB
 	classroom, err := store.GetClassroomByID(ctx, classroomID)
 	if err != nil {
-		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+		return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 	}
 
 	classroomUser, err := store.GetUserInClassroom(ctx, classroomID, *invitee.ID)
 	if err != nil {
 		classroomUser, err = store.AddUserToClassroom(ctx, classroomID, string(classroomRole), models.UserStatusRequested, *invitee.ID)
 		if err != nil {
-			return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+			return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 		}
 	}
 
 	classroomUser, err = UpdateUserStatus(ctx, appClient, store, *invitee, classroom)
-
 	if err != nil {
-		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+		return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 	}
 
-	// don't do anything if the user has been removed from the classroom
+	// if the user has previously been removed, put them into the requested state and exit
 	if classroomUser.Status == models.UserStatusRemoved {
-		return models.Classroom{}, models.ClassroomUser{}, errs.StudentRemovedFromClassroomError()
+		classroomUser, err = store.ModifyUserStatus(ctx, classroomID, models.UserStatusRequested, *classroomUser.ID)
+		if err != nil {
+			return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+		}
+		return "Token applied successfully, user access has been requested", classroom, classroomUser, nil
 	}
 
 	// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
@@ -78,20 +81,20 @@ func InviteUserToClassroom(ctx context.Context, store storage.Storage, appClient
 		// Upgrade the user's role in the classroom
 		classroomUser, err = store.ModifyUserRole(ctx, classroomID, string(classroomRole), *classroomUser.ID)
 		if err != nil {
-			return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+			return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 		}
 	}
 
 	// Invite the user to the organization
 	classroomUser, err = InviteUserToOrganization(ctx, appClient, store, classroom, classroomRole, *invitee)
 	if err != nil {
-		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+		return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 	}
 
 	// Accept the pending invitation to the organization
 	err = AcceptOrgInvitation(ctx, userClient, store, classroom.OrgName, classroomID, *invitee)
 	if err != nil {
-		return models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
+		return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 	}
-	return classroom, classroomUser, nil
+	return "Token applied successfully", classroom, classroomUser, nil
 }
