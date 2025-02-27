@@ -10,7 +10,6 @@ import { GraderContext, GraderProvider } from "@/contexts/grader";
 
 import "./styles.css";
 import RubricTree from "@/components/CodeBrowser/RubricTree";
-import ErrorMessage from "@/components/Error";
 
 const GraderWrapper: React.FC = () => {
   const { assignmentID, studentWorkID } = useParams();
