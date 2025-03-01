@@ -228,7 +228,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		_, err = s.RequireAtLeastRole(c, classroom.ID, models.Student)
 		if err != nil {
 			// Add them to the classroom as a student
-			_, _, err = common.InviteUserToClassroom(c.Context(), s.store, s.appClient, client, classroom.ID, models.Student, &user)
+			_, _, _, err = common.InviteUserToClassroom(c.Context(), s.store, s.appClient, client, classroom.ID, models.Student, &user)
 			if err != nil {
 				return errs.InternalServerError()
 			}
