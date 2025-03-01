@@ -160,7 +160,6 @@ export const createAssignment = async (
   }
 
   const data = await result.json();
-  console.log(data);
   return data.created_assignment as IAssignmentOutline;
 };
 
