@@ -6,6 +6,7 @@ import {
   usePaginatedStudentWork, 
   useAssignmentRubric 
 } from "@/hooks/useGrader";
+import { createUniqueKey, useLocalCachedState } from "@/hooks/useLocalStorage";
 
 interface IGraderContext {
   assignmentID: string | undefined;
@@ -66,10 +67,16 @@ export const GraderProvider: React.FC<{
   // State variables
   const nextFeedbackID = useRef(0);
   const [feedback, setFeedback] = useState<IGraderFeedbackMap>({});
-  const [stagedFeedback, setStagedFeedback] = useState<IGraderFeedbackMap>({});
   const [selectedRubricItems, setSelectedRubricItems] = useState<number[]>([]);
-  const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
   const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
+  
+  // Persisted state with localStorage
+  const [stagedFeedback, setStagedFeedback] = useLocalCachedState<IGraderFeedbackMap>({
+    key: createUniqueKey('staged_feedback', assignmentID, studentWorkID),
+    defaultValue: {},
+  });
+
+  const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
   
   // Convert string IDs to numbers for the queries
   const classroomId = selectedClassroom?.id;
@@ -102,18 +109,22 @@ export const GraderProvider: React.FC<{
   const rubric = rubricData || null;
   const dataRetrievalError = fileTreeError || studentWorkError || rubricError;
 
+  // Reset the selected file when the studentWorkID changes
+  useEffect(() => {
+    setSelectedFile(null);
+  }, [studentWorkID]);
+
   // Set feedback when student work data is loaded
   useEffect(() => {
     if (studentWorkData) {
       setFeedback(studentWorkData.feedback || {});
-      setStagedFeedback({});
     }
   }, [studentWorkData]);
 
-  // Reset selected file when student work changes
+  // Reset feedback ID counter when feedback changes
   useEffect(() => {
-    setSelectedFile(null);
-  }, [studentWorkID]);
+    nextFeedbackID.current = feedback ? Object.keys(feedback).length : 0;
+  }, [feedback]);
 
   // Feedback management functions
   const getNextFeedbackID = () => {
@@ -188,11 +199,6 @@ export const GraderProvider: React.FC<{
     const deselected = selectedRubricItems.filter((ri) => ri !== riID);
     setSelectedRubricItems(deselected);
   };
-
-  // Reset feedback ID counter when feedback changes
-  useEffect(() => {
-    nextFeedbackID.current = feedback ? Object.keys(feedback).length : 0;
-  }, [feedback]);
 
   return (
     <GraderContext.Provider
