@@ -288,14 +288,20 @@ func (s *WorkService) GetCommitsPerDay() fiber.Handler {
 		if err != nil {
 			return err
 		}
+        
+        var opts2 github.ListOptions
+        branch, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &opts2)
+        fmt.Println(*branch[2].Name)
+        fmt.Println(*branch[1].Name)
+        fmt.Println(*branch[0].Name)
 
 		var opts github.CommitsListOptions
 		opts.Author = work.Contributors[0].GithubUsername
-        opts.SHA = "development"
 		commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
 		if err != nil {
 			return errs.GithubAPIError(err)
 		}
+        fmt.Println(commits)
 
 		commitDatesMap := make(map[time.Time]int)
 		for _, commit := range commits {

@@ -42,8 +42,21 @@ func (api *CommonAPI) ListRepositoriesByOrg(ctx context.Context, orgName string,
 
 func (api *CommonAPI) ListCommits(ctx context.Context, owner string, repo string, opts *github.CommitsListOptions) ([]*github.RepositoryCommit, error) {
 	commits, _, err := api.Client.Repositories.ListCommits(ctx, owner, repo, opts)
+    if err != nil {
+        return nil, fmt.Errorf("error listing commits: %v", err)
+    }
 
-	return commits, err
+	return commits, nil
+}
+
+
+func (api *CommonAPI) ListBranches(ctx context.Context, owner string, repo string, opts *github.ListOptions) ([]*github.Branch, error) {
+    branches, _ , err := api.Client.Repositories.ListBranches(ctx, owner, repo, opts) 
+    if err != nil {
+        return nil, fmt.Errorf("error listing branches: %v", err)
+    }
+
+   return branches, nil
 }
 
 func (api *CommonAPI) getBranchHead(ctx context.Context, owner, repo, branchName string) (*github.Reference, error) {
