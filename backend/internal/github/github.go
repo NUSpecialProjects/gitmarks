@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"time"
+
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/google/go-github/github"
 )
@@ -93,6 +94,9 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Invite a user to an organization
 	InviteUserToOrganization(ctx context.Context, orgName string, userID int64) error
 
+	// Remove a user from an organization
+	RemoveUserFromOrganization(ctx context.Context, orgName string, userName string) error
+
 	// Set the membership of a user to an organization
 	SetUserMembershipInOrg(ctx context.Context, orgName string, userName string, role string) error
 
@@ -132,12 +136,11 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Remove repository from team
 	RemoveRepoFromTeam(ctx context.Context, org, teamSlug, owner, repo string) error
 
-
 	//Create push ruleset to protect .github folders
 	CreatePushRuleset(ctx context.Context, orgName, repoName string) error
 
 	//Create rulesets to protect corresponding branches
-	CreateBranchRuleset(ctx context.Context,  orgName, repoName string) error
+	CreateBranchRuleset(ctx context.Context, orgName, repoName string) error
 
 	//Creates PR enforcements
 	CreatePREnforcement(ctx context.Context, orgName, repoName, branchName string) error
@@ -152,5 +155,4 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	EnableWorkflow(ctx context.Context, repoOwner, forkName, workflowName string) error
 
 	EnableActions(ctx context.Context, ownerName, repoName string) error
-
 }

@@ -99,7 +99,7 @@ const StudentSubmission: React.FC = () => {
             submission.student_work_id
           );
 
-          if (totalCommits !== null && totalCommits !== undefined) {
+          if (total !== null && total !== undefined) {
             setTotalCommits(total.toString());
           } else {
             setTotalCommits("N/A");
