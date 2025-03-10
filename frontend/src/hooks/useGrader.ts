@@ -87,39 +87,6 @@ export const useAssignmentRubric = (
   });
 };
 
-// // Hook for fetching file contents
-// export const useFileContents = (
-//   classroomId: number | undefined,
-//   assignmentId: number | undefined,
-//   studentWorkId: number | undefined,
-//   file: IFileTreeNode | null
-// ) => {
-//   return useQuery({
-//     queryKey: ['fileContents', classroomId, assignmentId, studentWorkId, file?.sha],
-//     queryFn: async () => {
-//       if (!classroomId || !assignmentId || !studentWorkId || !file) {
-//         throw new Error('Missing required parameters for file contents');
-//       }
-      
-//       const blob = await getFileBlob(
-//         classroomId,
-//         assignmentId,
-//         studentWorkId,
-//         file.sha
-//       );
-      
-//       return {
-//         content: blob,
-//         path: file.path,
-//         sha: file.sha,
-//         diff: file.diff
-//       };
-//     },
-//     enabled: !!classroomId && !!assignmentId && !!studentWorkId && !!file,
-//     staleTime: 5 * 60 * 1000, // 5 minutes
-//   });
-// };
-
 // Custom hook for fetching and processing file contents
 export const useFileContents = (
   classroomId: number | undefined,

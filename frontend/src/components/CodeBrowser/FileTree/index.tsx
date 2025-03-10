@@ -26,7 +26,7 @@ export const FileTree: React.FC<IFileTree> = ({ selectFileCallback, className })
       return;
     }
     setGitTree(fileTree);
-  }, [fileTree]); // Add fileTree as a dependency
+  }, [fileTree]);
 
   // Reset selected file when student work changes
   useEffect(() => {

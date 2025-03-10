@@ -34,13 +34,11 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
   
   // Invalidate file contents cache when studentWorkID changes
   useEffect(() => {
-    // Invalidate all file content queries when student work changes
     queryClient.invalidateQueries({
       queryKey: ['fileContents', classroomId, assignmentIdNum, studentWorkIdNum]
     });
   }, [studentWorkID, queryClient, classroomId, assignmentIdNum, studentWorkIdNum]);
   
-  // Use our custom hook to fetch and process file contents
   const { 
     data: fileData, 
     isLoading: isLoadingFile, 
