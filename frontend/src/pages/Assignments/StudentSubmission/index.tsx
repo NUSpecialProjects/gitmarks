@@ -73,6 +73,7 @@ const StudentSubmission: React.FC = () => {
             submission.student_work_id
           );
           if (commitDate !== null && commitDate !== undefined) {
+            console.log(commitDate)
             setFirstCommit(formatDate(commitDate));
           } else {
             setFirstCommit("N/A");
@@ -99,7 +100,7 @@ const StudentSubmission: React.FC = () => {
             submission.student_work_id
           );
 
-          if (totalCommits !== null && totalCommits !== undefined) {
+          if (total !== null && total !== undefined) {
             setTotalCommits(total.toString());
           } else {
             setTotalCommits("N/A");
