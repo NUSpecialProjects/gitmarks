@@ -339,7 +339,8 @@ func (s *WorkService) GetFirstCommitDate() fiber.Handler {
 		}
 
         fcd := work.FirstCommitDate
- 
+
+        // fallback if webhooks didn't save data 
         if fcd == nil {
             var opts github.CommitsListOptions
 		    opts.Author = work.Contributors[0].GithubUsername
