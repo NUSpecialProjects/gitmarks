@@ -10,7 +10,7 @@ services:
       db:
         condition: service_healthy
     env_file:
-      - backend/.env.alex
+      - backend/.env
     environment:
       - APP_ENVIRONMENT=LOCAL
     volumes:
