@@ -6,7 +6,7 @@ import {
   usePaginatedStudentWork, 
   useAssignmentRubric 
 } from "@/hooks/useGrader";
-import { ErrorToast, useActionToast } from "@/components/Toast";
+import { useActionToast } from "@/components/Toast";
 
 interface IGraderContext {
   assignmentID: string | undefined;
