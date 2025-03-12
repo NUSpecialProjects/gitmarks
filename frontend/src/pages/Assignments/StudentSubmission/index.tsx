@@ -166,7 +166,6 @@ const StudentSubmission: React.FC = () => {
       }
 
 
-      // Extract two lists: one for the dates and one for the commit values.
       const sortedDates = Array.from(sortedCommitsPerDay.keys());
       const sortedCounts = Array.from(sortedCommitsPerDay.values());
 
