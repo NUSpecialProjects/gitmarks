@@ -70,15 +70,9 @@ export const useStudentWorks = (classroomId: number | undefined, assignmentId: n
     queryKey: ['studentWorks', classroomId, assignmentId],
     queryFn: async () => {
       if (!classroomId || !assignmentId) return [];
-      try {
-        const works = await getStudentWorks(classroomId, assignmentId);
-        return works ?? [];
-      } catch (_) {
-        return [];
-      }
+      return await getStudentWorks(classroomId, assignmentId);
     },
     enabled: !!classroomId && !!assignmentId,
-    initialData: [] as IStudentWork[],
   });
 };
 

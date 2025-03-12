@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-
 import { SelectedClassroomContext } from "./selectedClassroom";
-import { getPaginatedStudentWork } from "@/api/student_works";
-import { getFileTree, gradeWork } from "@/api/grader";
-import { getAssignmentRubric } from "@/api/assignments";
+import { gradeWork } from "@/api/grader";
+import { 
+  useFileTree, 
+  usePaginatedStudentWork, 
+  useAssignmentRubric 
+} from "@/hooks/useGrader";
 import { ErrorToast, useActionToast } from "@/components/Toast";
-
 
 interface IGraderContext {
   assignmentID: string | undefined;
@@ -20,6 +20,7 @@ interface IGraderContext {
   fileTree: IGitTreeNode[] | null;
   loadingStudentWork: boolean;
   loadingGitTree: boolean;
+  loadingRubric: boolean;
   dataRetrievalError: boolean;
   isSubmittingGrade: boolean;
   setSelectedFile: React.Dispatch<React.SetStateAction<IFileTreeNode | null>>;
@@ -44,6 +45,7 @@ export const GraderContext: React.Context<IGraderContext> =
     fileTree: [],
     loadingStudentWork: true,
     loadingGitTree: true,
+    loadingRubric: true,
     dataRetrievalError: false,
     isSubmittingGrade: false,
     setSelectedFile: () => {},
@@ -63,88 +65,58 @@ export const GraderProvider: React.FC<{
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const { executeWithToast } = useActionToast();
 
+  // State variables
   const nextFeedbackID = useRef(0);
   const [feedback, setFeedback] = useState<IGraderFeedbackMap>({});
   const [stagedFeedback, setStagedFeedback] = useState<IGraderFeedbackMap>({});
-  const [studentWork, setStudentWork] = useState<IPaginatedStudentWork | null>(
-    null
-  );
   const [selectedRubricItems, setSelectedRubricItems] = useState<number[]>([]);
   const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
-  const [rubric, setRubric] = useState<IFullRubric | null>(null);
-  const [fileTree, setFileTree] = useState<IGitTreeNode[] | null>(null)
-  const [dataRetrievalError, setDataRetrievalError] = useState(false)
-  const [loadingStudentWork, setLoadingStudentWork] = useState(true)
-  const [loadingGitTree, setLoadingGitTree] = useState(true)
   const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
+  
+  // Convert string IDs to numbers for the queries
+  const classroomId = selectedClassroom?.id;
+  const assignmentIdNum = assignmentID ? Number(assignmentID) : undefined;
+  const studentWorkIdNum = studentWorkID ? Number(studentWorkID) : undefined;
 
-  const navigate = useNavigate();
+  // Fetch the data for the grader
+  const { 
+    data: fileTreeData, 
+    isLoading: loadingGitTree, 
+    isError: fileTreeError
+  } = useFileTree(classroomId, assignmentIdNum, studentWorkIdNum);
 
-  // fetch rubric from requested assignment
+  const { 
+    data: studentWorkData, 
+    isLoading: loadingStudentWork, 
+    isError: studentWorkError,
+  } = usePaginatedStudentWork(classroomId, assignmentIdNum, studentWorkIdNum);
+
+  const { 
+    data: rubricData, 
+    isLoading: loadingRubric,
+    isError: rubricError 
+  } = useAssignmentRubric(classroomId, assignmentIdNum);
+
+  // Derived state
+  const studentWork = studentWorkData?.student_work || null;
+  const fileTree = fileTreeData || null;
+  const rubric = rubricData || null;
+  const dataRetrievalError = fileTreeError || studentWorkError || rubricError;
+
+  // Set feedback when student work data is loaded
   useEffect(() => {
-    // reset states
-    setRubric(null);
+    if (studentWorkData) {
+      setFeedback(studentWorkData.feedback || {});
+      setStagedFeedback({});
+    }
+  }, [studentWorkData]);
 
-    if (!selectedClassroom || !assignmentID) return;
-
-    getAssignmentRubric(selectedClassroom.id, Number(assignmentID))
-      .then((resp) => {
-        setRubric(resp);
-      })
-      .catch((_: unknown) => {
-        ErrorToast("Failed to load assignment rubric. Please try refreshing the page.", "rubric-error");
-      });
-  }, [studentWorkID]);
-
-  // fetch requested student assignment
+  // Reset selected file when student work changes
   useEffect(() => {
-    // reset states
     setSelectedFile(null);
-    setStudentWork(null);
-
-    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-
-    getPaginatedStudentWork(
-      selectedClassroom.id, 
-      Number(assignmentID),
-      Number(studentWorkID)
-    )
-      .then((resp) => {
-        setStudentWork(resp.student_work);
-        setFeedback(resp.feedback);
-        setStagedFeedback({});
-        setLoadingStudentWork(false);
-      })
-      .catch((_: unknown) => {
-        setDataRetrievalError(true);
-        setLoadingStudentWork(false);
-        ErrorToast("Failed to load student work. Redirecting to 404 page.", "student-work-error");
-        navigate("/404", { replace: true });
-      });
   }, [studentWorkID]);
 
-  // retrieve file tree
-  useEffect(() => {
-    setFileTree(null);
-
-    if (!selectedClassroom || !assignmentID || !studentWorkID) return;
-
-    getFileTree(
-      selectedClassroom.id,
-      Number(assignmentID),
-      Number(studentWorkID)
-    ) 
-      .then((resp) => {
-        setFileTree(resp);
-        setLoadingGitTree(false);
-      })
-      .catch((_: unknown) => {
-        setDataRetrievalError(true);
-        setLoadingGitTree(false);
-        ErrorToast("Failed to load file tree. Some features may not work correctly.", "file-tree-error");
-      });
-  }, [studentWorkID]);
-
+  // Feedback management functions
   const getNextFeedbackID = () => {
     const tmp = nextFeedbackID.current;
     nextFeedbackID.current = nextFeedbackID.current + 1;
@@ -166,11 +138,27 @@ export const GraderProvider: React.FC<{
     }));
   };
 
-  const editFeedback = (_feedbackID: number, _feedback: IGraderFeedback) => {};
+  const editFeedback = (feedbackID: number, feedback: IGraderFeedback) => {
+    setStagedFeedback((prevFeedback) => ({
+      ...prevFeedback,
+      [feedbackID]: {
+        ...feedback,
+        action: "EDIT",
+      },
+    }));
+  };
 
-  const removeFeedback = (_feedbackID: number) => {};
+  const removeFeedback = (feedbackID: number) => {
+    setStagedFeedback((prevFeedback) => ({
+      ...prevFeedback,
+      [feedbackID]: {
+        ...prevFeedback[feedbackID],
+        action: "DELETE",
+      },
+    }));
+  };
 
-  const postFeedback = () => {
+  const postFeedback = async () => {
     if (!selectedClassroom || !assignmentID || !studentWorkID) return;
     
     setIsSubmittingGrade(true);
@@ -185,21 +173,6 @@ export const GraderProvider: React.FC<{
             Number(studentWorkID),
             stagedFeedback
           );
-          
-          setStudentWork((prevStudentWork) => {
-            if (prevStudentWork) {
-              return {
-                ...prevStudentWork,
-                manual_feedback_score:
-                  prevStudentWork.manual_feedback_score +
-                  Object.values(stagedFeedback).reduce(
-                    (s: number, fb: IGraderFeedback) => s + fb.points,
-                    0
-                  ),
-              };
-            }
-            return prevStudentWork;
-          });
           
           setFeedback((prevFeedback) => ({
             ...prevFeedback,
@@ -228,8 +201,7 @@ export const GraderProvider: React.FC<{
     setSelectedRubricItems(deselected);
   };
 
-  // once feedback is updated, reset id to its length
-  // this is so when posting staged feedback, it will never overwrite existing feedback
+  // Reset feedback ID counter when feedback changes
   useEffect(() => {
     nextFeedbackID.current = feedback ? Object.keys(feedback).length : 0;
   }, [feedback]);
@@ -248,6 +220,7 @@ export const GraderProvider: React.FC<{
         fileTree,
         loadingGitTree,
         loadingStudentWork,
+        loadingRubric,
         dataRetrievalError,
         isSubmittingGrade,
         setSelectedFile,
