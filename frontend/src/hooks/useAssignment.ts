@@ -144,7 +144,7 @@ export const useAssignmentMetrics = (classroomId: number | undefined, assignment
           } as ChartData<'bar', number[], unknown>,
           error: null
         };
-      } catch (error) {
+      } catch (_) {
         return { data: null, error: new Error(`Failed to fetch acceptance metrics`) };
       }
     },
@@ -167,7 +167,7 @@ export const useAssignmentMetrics = (classroomId: number | undefined, assignment
           } as ChartData<'doughnut', number[], unknown>,
           error: null
         };
-      } catch (error) {
+      } catch (_) {
         return { data: null, error: new Error('Failed to fetch graded metrics') };
       }
     },

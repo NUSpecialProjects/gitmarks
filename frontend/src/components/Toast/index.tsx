@@ -59,7 +59,7 @@ export const useActionToast = () => {
         autoClose: 5000,
         closeButton: true
       });
-    } catch (error) {
+    } catch (_) {
       toast.update(toastId, {
         render: messages.error,
         type: "error",
