@@ -40,7 +40,6 @@ const CodeBrowser: React.FC<ICodeBrowser> = ({
     });
   }, [studentWorkID, queryClient, classroomId, assignmentIdNum, studentWorkIdNum]);
   
-  // Use our custom hook to fetch and process file contents
   const { 
     data: fileData, 
     isLoading: isLoadingFile, 

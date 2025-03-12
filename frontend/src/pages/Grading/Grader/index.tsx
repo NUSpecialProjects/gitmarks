@@ -70,8 +70,8 @@ const Grader: React.FC = () => {
               </>
             ) : (
               <>
-                <h2></h2>
-                <span></span>
+                <h2>Loading Contributors</h2>
+                <span>Loading Assignment Name</span>
               </>
             )}
           </div>

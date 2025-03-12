@@ -118,6 +118,7 @@ export const GraderProvider: React.FC<{
   useEffect(() => {
     if (studentWorkData) {
       setFeedback(studentWorkData.feedback || {});
+      // setStagedFeedback({});
     }
   }, [studentWorkData]);
 
