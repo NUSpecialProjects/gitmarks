@@ -275,18 +275,18 @@ func (s *WorkService) GetCommitCount() fiber.Handler {
 			return err
 		}
 
-        totalCount := work.CommitAmount
+		totalCount := work.CommitAmount
 
-        // Zero either implies bad data or no commits, double check to be safe
-        if totalCount == 0 {
-            var opts github.CommitsListOptions
-		    opts.Author = work.Contributors[0].GithubUsername
-		    commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
-		    if err != nil {
-			    return errs.GithubAPIError(err)
-		    }
-            totalCount = len(commits)
-        }
+		// Zero either implies bad data or no commits, double check to be safe
+		if totalCount == 0 {
+			var opts github.CommitsListOptions
+			opts.Author = work.Contributors[0].GithubUsername
+			commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+			if err != nil {
+				return errs.GithubAPIError(err)
+			}
+			totalCount = len(commits)
+		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"work_id":      work.ID,
@@ -301,7 +301,7 @@ func (s *WorkService) GetCommitsPerDay() fiber.Handler {
 		if err != nil {
 			return err
 		}
-        
+
 		var opts github.CommitsListOptions
 		opts.Author = work.Contributors[0].GithubUsername
 		commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
@@ -332,25 +332,25 @@ func (s *WorkService) GetFirstCommitDate() fiber.Handler {
 			return err
 		}
 
-        fcd := work.FirstCommitDate
+		fcd := work.FirstCommitDate
 
-        if fcd == nil {
-            var opts github.CommitsListOptions
-		    opts.Author = work.Contributors[0].GithubUsername
-		    commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
-		    if err != nil {
-			    return errs.GithubAPIError(err)
-		    }
+		if fcd == nil {
+			var opts github.CommitsListOptions
+			opts.Author = work.Contributors[0].GithubUsername
+			commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+			if err != nil {
+				return errs.GithubAPIError(err)
+			}
 
-            if len(commits) > 0 {
-                fcd = commits[len(commits)-1].GetCommit().GetCommitter().Date
-            }
+			if len(commits) > 0 {
+				fcd = commits[len(commits)-1].GetCommit().GetCommitter().Date
+			}
 
-        }
+		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"work_id":         work.ID,
-			"first_commit_at": fcd, 
+			"first_commit_at": fcd,
 		})
 	}
 }

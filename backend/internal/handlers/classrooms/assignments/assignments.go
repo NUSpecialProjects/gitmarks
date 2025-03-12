@@ -511,21 +511,21 @@ func (s *AssignmentService) GetCommitCount() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
-        works, err := s.store.GetWorks(c.Context(), classroomID ,assignmentID)
-        if err != nil {
-            return errs.InternalServerError()
-        }
+		works, err := s.store.GetWorks(c.Context(), classroomID, assignmentID)
+		if err != nil {
+			return errs.InternalServerError()
+		}
 
-        totalCommits := 0
-        for _, work := range works {
-            var opts github.CommitsListOptions
-            opts.Author = work.Contributors[0].GithubUsername
-		    commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
-		    if err != nil {
-		        return errs.GithubAPIError(err)
-		    }
-            totalCommits += len(commits)
-        }
+		totalCommits := 0
+		for _, work := range works {
+			var opts github.CommitsListOptions
+			opts.Author = work.Contributors[0].GithubUsername
+			commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+			if err != nil {
+				return errs.GithubAPIError(err)
+			}
+			totalCommits += len(commits)
+		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"assignment_id": assignmentID,
