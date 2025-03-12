@@ -158,4 +158,7 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	EnableWorkflow(ctx context.Context, repoOwner, forkName, workflowName string) error
 
 	EnableActions(ctx context.Context, ownerName, repoName string) error
+
+	// Check if a file or directory exists in a repository
+	FileExists(owner string, repo string, path string) (bool, error)
 }

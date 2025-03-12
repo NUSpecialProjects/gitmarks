@@ -3,6 +3,7 @@ package assignments
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -142,11 +143,13 @@ func (s *AssignmentService) generateAssignmentToken() fiber.Handler {
 		body := models.AssignmentTokenRequestBody{}
 
 		if err := c.BodyParser(&body); err != nil {
+			fmt.Println("Error parsing request body:", err)
 			return errs.InvalidRequestBody(body)
 		}
 
 		assignmentID, err := strconv.ParseInt(c.Params("assignment_id"), 10, 64)
 		if err != nil {
+			fmt.Println("Error parsing assignment ID:", err)
 			return errs.BadRequest(err)
 		}
 
@@ -154,12 +157,14 @@ func (s *AssignmentService) generateAssignmentToken() fiber.Handler {
 		if body.Duration == nil {
 			assignmentToken, err := s.store.GetPermanentAssignmentTokenByAssignmentID(c.Context(), assignmentID)
 			if err == nil {
+				fmt.Println("Found permanent assignment token:", assignmentToken.Token)
 				return c.Status(http.StatusOK).JSON(fiber.Map{"token": assignmentToken.Token})
 			}
 		}
 
 		token, err := utils.GenerateToken(16)
 		if err != nil {
+			fmt.Println("Error generating token:", err)
 			return errs.InternalServerError()
 		}
 
@@ -178,6 +183,7 @@ func (s *AssignmentService) generateAssignmentToken() fiber.Handler {
 
 		assignmentToken, err := s.store.CreateAssignmentToken(c.Context(), tokenData)
 		if err != nil {
+			fmt.Println("Error creating assignment token:", err)
 			return errs.InternalServerError()
 		}
 
@@ -191,36 +197,42 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := c.Params("token")
 		if token == "" {
+			fmt.Println("Token is required")
 			return errs.BadRequest(errors.New("token is required"))
 		}
 
 		// Get client and user
 		client, githubUser, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
 		if err != nil {
+			fmt.Println("Error getting client and user:", err)
 			return errs.AuthenticationError()
 		}
 
 		// Get assignment using the token
 		assignment, err := s.store.GetAssignmentByToken(c.Context(), token)
 		if err != nil {
+			fmt.Println("Error getting assignment:", err)
 			return errs.BadRequest(errors.New("invalid token"))
 		}
 
 		// Get assignment base repository
 		baseRepo, err := s.store.GetBaseRepoByID(c.Context(), assignment.BaseRepoID)
 		if err != nil {
+			fmt.Println("Error getting base repo:", err)
 			return errs.InternalServerError()
 		}
 
 		// Initialize the base repository if it is not initialized already
 		err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
 		if err != nil {
+			fmt.Println("Error initializing repo:", err)
 			return errs.InternalServerError()
 		}
 
 		// Get classroom
 		classroom, err := s.store.GetClassroomByID(c.Context(), assignment.ClassroomID)
 		if err != nil {
+			fmt.Println("Error getting classroom:", err)
 			return errs.InternalServerError()
 		}
 
@@ -230,12 +242,14 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			// Add them to the classroom as a student
 			_, _, _, err = common.InviteUserToClassroom(c.Context(), s.store, s.appClient, client, classroom.ID, models.Student, &user)
 			if err != nil {
+				fmt.Println("Error inviting user to classroom:", err)
 				return errs.InternalServerError()
 			}
 
 			// Ensure they have student role now and have successfully joined the classroom
 			_, err = s.RequireAtLeastRole(c, classroom.ID, models.Student)
 			if err != nil {
+				fmt.Println("Error requiring at least student role:", err)
 				return err
 			}
 		}
@@ -246,10 +260,12 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			// We can assume the student has access to see this repository since it is their own work
 			studentWorkRepo, err := client.GetRepository(c.Context(), classroom.OrgName, studentWork.RepoName)
 			if err != nil {
+				fmt.Println("Error getting repository:", err)
 				return errs.GithubAPIError(err)
 			}
 
 			if studentWork.WorkState != models.WorkStateNotAccepted { // This is a bit redundant, but it's good to be explicit
+				fmt.Println("Assignment already accepted")
 				return c.Status(http.StatusOK).JSON(fiber.Map{
 					"message":  "Assignment already accepted",
 					"repo_url": studentWorkRepo.HTMLURL,
@@ -258,7 +274,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		}
 
 		// Generate fork name, appending a numeric suffix if necessary
-		forkName, err := generateUniqueRepoName(c.Context(), client, classroom.OrgName, baseRepo.BaseRepoName, githubUser.Login)
+		forkName, err := generateUniqueRepoName(c.Context(), s.appClient, classroom.OrgName, baseRepo.BaseRepoName, githubUser.Login)
 		if err != nil {
 			return err
 		}
@@ -270,6 +286,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			classroom.OrgName,
 			forkName)
 		if err != nil {
+			fmt.Println("Error forking repository:", err)
 			return errs.GithubAPIError(err)
 		}
 
@@ -285,6 +302,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			repo, err := client.GetRepository(c.Context(), classroom.OrgName, forkName)
 			if err != nil {
 				if initialDelay > maxDelay {
+					fmt.Println("Fork wait loop timed out")
 					return errs.GithubAPIError(errors.New("fork unsuccessful, please try again later"))
 				}
 				time.Sleep(initialDelay)
@@ -298,6 +316,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			}
 
 			if initialDelay > maxDelay {
+				fmt.Println("Fork wait loop timed out")
 				return errs.GithubAPIError(errors.New("fork unsuccessful, please try again later"))
 			}
 
@@ -308,24 +327,28 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		// Create feedback pull request
 		err = client.CreateFeedbackPR(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName())
 		if err != nil {
+			fmt.Println("Error creating feedback pull request:", err)
 			return errs.CriticalGithubError()
 		}
 
 		// KHO-239
 		err = client.CreateBranchRuleset(c.Context(), classroom.OrgName, forkName)
 		if err != nil {
+			fmt.Println("Error creating branch ruleset:", err)
 			return errs.CriticalGithubError()
 		}
 
 		// Remove student team's access to forked repo
 		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, studentWorkRepo.GetName())
 		if err != nil {
+			fmt.Println("Error removing repo from team:", err)
 			return errs.GithubAPIError(err)
 		}
 
 		// Insert into DB
 		_, err = s.store.CreateStudentWork(c.Context(), assignment.ID, githubUser.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
 		if err != nil {
+			fmt.Println("Error creating student work:", err)
 			return err
 		}
 

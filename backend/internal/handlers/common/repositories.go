@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/github"
@@ -31,6 +32,7 @@ func InitializeRepo(ctx context.Context, appClient github.GitHubAppClient, store
 func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClient, store storage.Storage, repository *gh.PushEventRepository) error {
 	baseRepo, err := store.GetBaseRepoByID(ctx, *repository.ID)
 	if err != nil {
+		fmt.Println("Error getting base repo:", err)
 		return errs.InternalServerError()
 	}
 
@@ -38,6 +40,7 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 	template, err := store.GetAssignmentByRepoName(ctx, *repository.Name)
 	if err != nil {
 		//@KHO-239
+		fmt.Println("Error getting assignment:", err)
 		return err
 	}
 
@@ -46,6 +49,7 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 		err = appClient.CreateDeadlineEnforcement(ctx, template.MainDueDate, *repository.Organization, *repository.Name, MainRepoBranch)
 		if err != nil {
 			//@KHO-239
+			fmt.Println("Error creating deadline enforcement:", err)
 			return err
 		}
 	}
@@ -53,6 +57,7 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 	// Create PR Enforcement Action
 	err = appClient.CreatePREnforcement(ctx, *repository.Organization, *repository.Name, MainRepoBranch)
 	if err != nil {
+		fmt.Println("Error creating PR enforcement:", err)
 		return err
 	}
 
@@ -62,6 +67,7 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 		// If not, check if the branches exist on GitHub
 		branchesExist, err = checkBranchesExist(ctx, appClient, *repository.Organization, *repository.Name)
 		if err != nil {
+			fmt.Println("Error checking branches exist:", err)
 			return errs.InternalServerError()
 		}
 	}
@@ -81,6 +87,7 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 				mainBranch,
 				branch)
 			if err != nil {
+				fmt.Println("Error creating branch:", err)
 				return errs.InternalServerError()
 			}
 		}
@@ -88,6 +95,7 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 		// Create empty commit (will create a diff that allows feedback PR to be created)
 		err = appClient.CreateEmptyCommit(ctx, *repository.Owner.Name, *repository.Name)
 		if err != nil {
+			fmt.Println("Error creating empty commit:", err)
 			return errs.InternalServerError()
 		}
 	}
@@ -95,17 +103,20 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 	// Update the base repo initialized field in the database
 	err = store.UpdateBaseRepoInitialized(ctx, *repository.ID, true)
 	if err != nil {
+		fmt.Println("Error updating base repo initialized:", err)
 		return errs.InternalServerError()
 	}
 
 	// Find the associated assignment and classroom
 	assignmentOutline, err := store.GetAssignmentByBaseRepoID(ctx, *repository.ID)
 	if err != nil {
+		fmt.Println("Error getting assignment outline:", err)
 		return errs.InternalServerError()
 	}
 
 	classroom, err := store.GetClassroomByID(ctx, assignmentOutline.ClassroomID)
 	if err != nil {
+		fmt.Println("Error getting classroom:", err)
 		return errs.InternalServerError()
 	}
 
@@ -113,6 +124,7 @@ func InitializePushEventRepo(ctx context.Context, appClient github.GitHubAppClie
 	err = appClient.UpdateTeamRepoPermissions(ctx, *repository.Owner.Name, *classroom.StudentTeamName,
 		*repository.Owner.Name, *repository.Name, "pull")
 	if err != nil {
+		fmt.Println("Error updating team repo permissions:", err)
 		return errs.InternalServerError()
 	}
 
