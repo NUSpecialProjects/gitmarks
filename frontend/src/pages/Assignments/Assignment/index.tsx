@@ -30,17 +30,17 @@ const Assignment: React.FC = () => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
   const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
-  const { data: studentWorks = [], isLoading: isLoadingWorks } = useStudentWorks(
+  const { data: studentWorks, isLoading: isLoadingWorks } = useStudentWorks(
     selectedClassroom?.id, 
-    assignment?.id
+    Number(assignmentID)
   );
   const { data: inviteLink = "", error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url);
   const { data: assignmentTemplate } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
   const { acceptanceMetrics, gradedMetrics } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
 
   const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
-  const totalCommits = isLoadingWorks ? 0 : studentWorks.reduce((total, work) => total + work.commit_amount, 0);
-  const firstCommitDate = isLoadingWorks ? null : studentWorks.reduce((earliest, work) => {
+  const totalCommits = isLoadingWorks ? 0 : studentWorks?.reduce((total, work) => total + work.commit_amount, 0);
+  const firstCommitDate = isLoadingWorks ? null : studentWorks?.reduce((earliest, work) => {
     if (!work.first_commit_date) return earliest;
     if (!earliest) return new Date(work.first_commit_date);
     return new Date(work.first_commit_date) < earliest ? new Date(work.first_commit_date) : earliest;
@@ -96,10 +96,10 @@ const Assignment: React.FC = () => {
             <h2>Metrics</h2>
             <MetricPanel>
               <Metric title="First Commit Date">
-                {formatDate(firstCommitDate)}
+                {firstCommitDate ? formatDate(firstCommitDate) : "N/A"}
               </Metric>
               <Metric title="Total Commits">
-                {totalCommits.toString()}
+                {totalCommits?.toString() ?? "N/A"}
               </Metric>
             </MetricPanel>
 
