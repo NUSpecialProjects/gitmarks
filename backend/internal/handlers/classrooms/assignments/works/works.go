@@ -302,12 +302,6 @@ func (s *WorkService) GetCommitsPerDay() fiber.Handler {
 			return err
 		}
         
-        //var opts2 github.ListOptions
-        //branch, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &opts2)
-        //fmt.Println(*branch[2].Name)
-        //fmt.Println(*branch[1].Name)
-        //fmt.Println(*branch[0].Name)
-
 		var opts github.CommitsListOptions
 		opts.Author = work.Contributors[0].GithubUsername
 		commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
@@ -340,7 +334,6 @@ func (s *WorkService) GetFirstCommitDate() fiber.Handler {
 
         fcd := work.FirstCommitDate
 
-        // fallback if webhooks didn't save data 
         if fcd == nil {
             var opts github.CommitsListOptions
 		    opts.Author = work.Contributors[0].GithubUsername

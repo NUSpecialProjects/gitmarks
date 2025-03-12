@@ -12,6 +12,7 @@ import (
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/CamPlume1/khoury-classroom/internal/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/go-github/github"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -500,15 +501,31 @@ func (s *AssignmentService) GetFirstCommitDate() fiber.Handler {
 
 func (s *AssignmentService) GetCommitCount() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		classroomID, err := strconv.Atoi(c.Params("classroom_id"))
+		if err != nil {
+			return errs.BadRequest(err)
+		}
+
 		assignmentID, err := strconv.Atoi(c.Params("assignment_id"))
 		if err != nil {
 			return errs.BadRequest(err)
 		}
 
-		totalCommits, err := s.store.GetTotalWorkCommits(c.Context(), assignmentID)
-		if err != nil {
-			return errs.InternalServerError()
-		}
+        works, err := s.store.GetWorks(c.Context(), classroomID ,assignmentID)
+        if err != nil {
+            return errs.InternalServerError()
+        }
+
+        totalCommits := 0
+        for _, work := range works {
+            var opts github.CommitsListOptions
+            opts.Author = work.Contributors[0].GithubUsername
+		    commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+		    if err != nil {
+		        return errs.GithubAPIError(err)
+		    }
+            totalCommits += len(commits)
+        }
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"assignment_id": assignmentID,

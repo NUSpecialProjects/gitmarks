@@ -10,6 +10,7 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import {
   getAssignmentIndirectNav,
   getAssignmentTemplate,
+  getAssignmentTotalCommits,
   postAssignmentToken,
 } from "@/api/assignments";
 import {
@@ -38,6 +39,7 @@ const Assignment: React.FC = () => {
   const [assignment, setAssignment] = useState<IAssignmentOutline>();
   const [assignmentTemplate, setAssignmentTemplate] = useState<IAssignmentTemplate>();
   const [studentWorks, setStudentAssignment] = useState<IStudentWork[]>([]);
+  const [assignmentCommits, setAssignmentCommits] = useState<number>();
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const { id: assignmentID } = useParams();
   const [inviteLink, setInviteLink] = useState<string>("");
@@ -68,6 +70,16 @@ const Assignment: React.FC = () => {
       },
     ],
   });
+
+  useEffect(() => {
+    if (!selectedClassroom || !assignmentID) return;
+    getAssignmentTotalCommits(selectedClassroom.id, Number(assignmentID)).then(
+      (commits) => {
+        setAssignmentCommits(commits)
+      }
+    )
+
+  }, [selectedClassroom])
 
   useEffect(() => {
     if (!selectedClassroom || !assignmentID) return;
@@ -179,12 +191,6 @@ const Assignment: React.FC = () => {
 
 
   const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
-  const firstCommitDate = studentWorks.reduce((earliest, work) => {
-    if (!work.first_commit_date) return earliest;
-    if (!earliest) return new Date(work.first_commit_date);
-    return new Date(work.first_commit_date) < earliest ? new Date(work.first_commit_date) : earliest;
-  }, null as Date | null);
-  const totalCommits = studentWorks.reduce((total, work) => total + work.commit_amount, 0);
 
   return (
     assignment && (
@@ -235,11 +241,8 @@ const Assignment: React.FC = () => {
           <div className="Assignment__metrics">
             <h2>Metrics</h2>
             <MetricPanel>
-              <Metric title="First Commit Date">
-                {formatDate(firstCommitDate)}
-              </Metric>
               <Metric title="Total Commits">
-                {totalCommits.toString()}
+                {assignmentCommits === undefined ? 0 : assignmentCommits!.toString()}
               </Metric>
             </MetricPanel>
 
