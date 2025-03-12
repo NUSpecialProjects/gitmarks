@@ -73,6 +73,7 @@ const StudentSubmission: React.FC = () => {
             submission.student_work_id
           );
           if (commitDate !== null && commitDate !== undefined) {
+            console.log(commitDate)
             setFirstCommit(formatDate(commitDate));
           } else {
             setFirstCommit("N/A");
@@ -119,55 +120,60 @@ const StudentSubmission: React.FC = () => {
   // useEffect for line chart 
   useEffect(() => {
     if (commitsPerDay) {
-      const sortedDates = Array.from(commitsPerDay.keys()).sort((a, b) => a.valueOf() - b.valueOf())
-      // end dates at today or due date, whichever is sooner
+      function addDays(date: Date, days: number): Date {
+        const newDate = new Date(date);
+        newDate.setDate(newDate.getDate() + days);
+        return newDate;
+      }
+
+
+      const dates = Array.from(commitsPerDay.keys());
       if (submission) {
         const today = new Date()
         today.setUTCHours(0)
         today.setUTCMinutes(0)
         today.setUTCSeconds(0)
-        if (sortedDates.length === 0) {
+
+        if (dates.length === 0) {
           setNoCommits(true)
-        } else if (sortedDates[sortedDates.length - 1].toDateString() !== (today.toDateString())) {
-          sortedDates.push(new Date())
+        } else if (dates[dates.length - 1].toDateString() !== (today.toDateString())) {
+          dates.push(new Date())
         }
       }
 
-      const sortedCounts: number[] = (sortedDates.map((date) => commitsPerDay.get(date) ?? 0))
-      const sortedDatesStrings = sortedDates.map((date) => `${date.getMonth()+1}/${date.getDate()}`)
-
-      //add in days with 0 commits
-      const sortedDatesStringsCopy = [...sortedDatesStrings]
-      let index = 0
-      for (let i = 0; i < sortedDatesStringsCopy.length - 1; i++) {
-
-        const month = Number(sortedDatesStringsCopy[i].split("/")[0])
-        const day = Number(sortedDatesStringsCopy[i].split("/")[1])
-        const followingDay = Number(sortedDatesStringsCopy[i + 1].split("/")[1])
 
 
-        const difference = day - followingDay
+      const minDate = new Date(Math.min(...dates.map(date => date.getTime())));
+      const maxDate = new Date(Math.max(...dates.map(date => date.getTime())));
 
-        const adjacent = (difference === -1)
-        const adjacentWrapped = ((difference === 30 || difference === 29 || difference === 27) && (followingDay === 1))
-
-        if (!adjacent && !adjacentWrapped) {
-          for (let j = 1; j < Math.abs(difference); j++) {
-            
-            const nextDay = (new Date(sortedDates[i].getUTCFullYear(), month-1, day))
-            nextDay.setDate(nextDay.getDate()+j)
-
-            sortedDatesStrings.splice(index + j, 0, `${nextDay.getUTCMonth()+1}/${nextDay.getDate()}`)
-            sortedCounts.splice(index + j, 0, 0)
-          }
-          index += (Math.abs(difference))
-
+      let currentDate = new Date(minDate);
+      while (currentDate <= maxDate) {
+        if (!commitsPerDay.has(currentDate)) {
+          commitsPerDay.set(currentDate, 0);
         }
+        currentDate = addDays(currentDate, 1);
       }
 
-      if (sortedDates.length > 0) {
+      
+
+      const sortedEntries = Array.from(commitsPerDay.entries()).sort(
+        (a, b) => a[0].getTime() - b[0].getTime()
+      );
+      const sortedCommitsPerDay = new Map(sortedEntries);
+
+      if (sortedEntries.keys.length > 0) {
         setLoadingAllCommits(false)
       }
+
+
+      const sortedDates = Array.from(sortedCommitsPerDay.keys());
+      const sortedCounts = Array.from(sortedCommitsPerDay.values());
+
+      const sortedDatesStrings = Array.from(sortedDates.map((a) => `${a.getUTCMonth()+1}/${a.getUTCDate()}`))
+      if (sortedDatesStrings.length > 0) {
+        setLoadingAllCommits(false)
+      }
+
 
       const lineData = {
         labels: sortedDatesStrings,
@@ -220,7 +226,9 @@ const StudentSubmission: React.FC = () => {
           }
         },
       }
+
       setLineOptions(lineOptions)
+
     }
 
   }, [commitsPerDay])
@@ -276,7 +284,7 @@ const StudentSubmission: React.FC = () => {
           )}
         </MetricPanel>
 
-        <div>{}</div>
+        <div>{ }</div>
       </div>
     </div>
   );

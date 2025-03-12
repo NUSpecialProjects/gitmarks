@@ -19,7 +19,7 @@ import Pill from "@/components/Pill";
 import "./styles.css";
 import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
-import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics } from "@/hooks/useAssignment";
+import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
 
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);
@@ -36,15 +36,11 @@ const Assignment: React.FC = () => {
   );
   const { data: inviteLink = "", error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url);
   const { data: assignmentTemplate } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
+  const { data: totalAssignmentCommits } = useAssignmentTotalCommits(selectedClassroom?.id, assignment?.id);
   const { acceptanceMetrics, gradedMetrics } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
 
   const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
-  const totalCommits = isLoadingWorks ? 0 : studentWorks.reduce((total, work) => total + work.commit_amount, 0);
-  const firstCommitDate = isLoadingWorks ? null : studentWorks.reduce((earliest, work) => {
-    if (!work.first_commit_date) return earliest;
-    if (!earliest) return new Date(work.first_commit_date);
-    return new Date(work.first_commit_date) < earliest ? new Date(work.first_commit_date) : earliest;
-  }, null as Date | null);
+
 
   return (
     assignment && (
@@ -95,11 +91,9 @@ const Assignment: React.FC = () => {
           <div className="Assignment__metrics">
             <h2>Metrics</h2>
             <MetricPanel>
-              <Metric title="First Commit Date">
-                {formatDate(firstCommitDate)}
-              </Metric>
               <Metric title="Total Commits">
-                {totalCommits.toString()}
+                {totalAssignmentCommits === undefined || totalAssignmentCommits === null ?
+                 0 : totalAssignmentCommits.toString()}
               </Metric>
             </MetricPanel>
 
