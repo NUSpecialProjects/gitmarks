@@ -177,3 +177,18 @@ input[type="checkbox"]:checked::before {
   color: var(--primary-text-white);
   background-color: var(--brand);
 }
+
+.loading-ellipsis::after {
+  content: "";
+  display: inline-block;
+  width: 3ch; /* Fixed width for the dots */
+  text-align: left;
+  animation: ellipsis 1.5s steps(1) infinite;
+}
+
+@keyframes ellipsis {
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+  100% { content: ""; }
+}

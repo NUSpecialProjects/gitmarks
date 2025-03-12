@@ -170,23 +170,6 @@ const CodeLine: React.FC<ICodeLine> = ({ path, line, isDiff, code }) => {
       </div>
       {(editing || feedbackExists || stagedFeedbackExists) && (
         <div className="CodeLine__comments">
-          {/************ Display any existing comments *************/}
-          {feedbackExists &&
-            Object.entries(feedback).map(
-              ([i, fb]: [string, IGraderFeedback]) =>
-                fb.path == path &&
-                fb.line == line && <CodeFeedback fb={fb} key={Number(i)} />
-            )}
-
-          {stagedFeedbackExists &&
-            Object.entries(stagedFeedback).map(
-              ([i, fb]) =>
-                fb.path == path &&
-                fb.line == line && (
-                  <CodeFeedback fb={fb} key={Number(i)} pending />
-                )
-            )}
-
           {/************ Display form to create new comment *************/}
           {editing && (
             <div className="CodeLine__comment">
@@ -239,6 +222,22 @@ const CodeLine: React.FC<ICodeLine> = ({ path, line, isDiff, code }) => {
               </form>
             </div>
           )}
+
+          {/************ Display any existing comments *************/}
+          {stagedFeedbackExists &&
+            Object.entries(stagedFeedback).reverse().map(
+              ([i, fb]) =>
+                fb.path == path &&
+                fb.line == line && (
+                  <CodeFeedback fb={fb} key={Number(i)} pending />
+                )
+            )}
+          {feedbackExists &&
+            Object.entries(feedback).reverse().map(
+              ([i, fb]) =>
+                fb.path == path &&
+                fb.line == line && <CodeFeedback fb={fb} key={Number(i)} />
+            )}
         </div>
       )}
     </>
