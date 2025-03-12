@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Hook to extract url parameter, then optionally navigate to a new path
+/**
+ * Provides a URL parameter.
+ * 
+ * @param paramName - The name of the parameter to extract.
+ * @param onParamPath - The path to navigate to after extracting the parameter.
+ * @returns The value of the parameter.
+ */
 const useUrlParameter = (paramName: string, onParamPath?: string) => {
   const [paramValue, setParamValue] = useState<string>("");
   const navigate = useNavigate();

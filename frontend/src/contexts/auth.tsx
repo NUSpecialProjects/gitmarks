@@ -1,72 +1,133 @@
-import { useState, createContext, useLayoutEffect, useContext } from "react";
+import { useState, useContext, useEffect, useCallback, createContext, ReactNode } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 import { logout as logoutApi } from "@/api/auth";
 import { SelectedClassroomContext } from "./selectedClassroom";
-import { fetchCurrentUser } from "@/api/users";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { NavigateFunction } from "react-router-dom";
 
-interface IAuthContext {
-  currentUser: IGitHubUser | null;
-  isLoggedIn: boolean;
-  login: () => void;
-  logout: () => void;
+/**
+ * The possible authentication states for a user.
+ */
+export enum AuthState {
+  LOGGING_IN = "LOGGING_IN",
+  LOGGED_IN = "LOGGED_IN",
+  LOGGED_OUT = "LOGGED_OUT",
 }
 
-export const AuthContext = createContext<IAuthContext>({
-  currentUser: null,
-  isLoggedIn: false,
-  login: () => {},
-  logout: () => {},
-});
+interface AuthContextType {
+  currentUser: IUserResponse | null;
+  authState: AuthState;
+  loading: boolean;
+  error: Error | null;
+  logout: () => void;
+  refetch: () => void;
+}
 
-const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [currentUser, setCurrentUser] = useState<IGitHubUser | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
+const AuthContext = createContext<AuthContextType | null>(null);
+
+/**
+ * Provides the authentication context.
+ * 
+ * @param children - The children to render.
+ * @returns The authentication context.
+ */
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [authState, setAuthState] = useState<AuthState>(AuthState.LOGGING_IN);
   const { setSelectedClassroom } = useContext(SelectedClassroomContext);
+  const { data: user, status, refetch, error } = useCurrentUser();
 
-  useLayoutEffect(() => {
-    fetchCurrentUser()
-      .then((user: IGitHubUser | null) => {
+  useEffect(() => {
+    switch (status) {
+      case 'pending':
+        setAuthState(AuthState.LOGGING_IN);
+        break;
+      case 'error':
+        setAuthState(AuthState.LOGGED_OUT);
+        break;
+      case 'success':
         if (user) {
-          setIsLoggedIn(true);
-          setCurrentUser(user);
+          setAuthState(AuthState.LOGGED_IN);
         } else {
-          setIsLoggedIn(false);
+          setAuthState(AuthState.LOGGED_OUT);
         }
-      })
-      .catch((_: unknown) => {
-        setIsLoggedIn(false);
-        setCurrentUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+        break;
+    }
+  }, [user, status]);
 
-  const login = () => {
-    setIsLoggedIn(true);
+  const logoutMutation = useMutation({
+    mutationFn: logoutApi,
+    onSuccess: () => {
+      setSelectedClassroom(null);
+      setAuthState(AuthState.LOGGED_OUT);
+    },
+    retry: false
+  });
+
+  const logout = useCallback(() => {
+    logoutMutation.mutate();
+  }, [logoutMutation]);
+
+  const value = {
+    currentUser: user || null,
+    authState,
+    loading: status === 'pending',
+    error,
+    logout,
+    refetch,
   };
-
-  const logout = () => {
-    logoutApi()
-      .then(() => {
-        setSelectedClassroom(null);
-        setIsLoggedIn(false);
-      })
-      .catch((_: Error) => {});
-  };
-
-  if (loading) {
-    return null;
-  }
 
   return (
-    <AuthContext.Provider value={{ currentUser, isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export default AuthProvider;
+/**
+ * Provides the authentication context.
+ * 
+ * @returns The authentication context.
+ */
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === null) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+/**
+ * Navigates to the redirect URL and clears it.
+ * 
+ * @param navigate - The navigation function.
+ */
+export const goToRedirectUrl = (navigate: NavigateFunction) => {
+  const redirectUrl = getRedirectUrl();
+  if (redirectUrl) {
+    clearRedirectUrl();
+    navigate(redirectUrl, { replace: true });
+  }
+}
+
+/**
+ * Sets the redirect URL to the current location.
+ */
+export const setRedirectUrl = () => {
+  const currentUrl = location.pathname + location.search + location.hash;
+  if (!currentUrl.startsWith('/oauth')) {
+    localStorage.setItem("redirectAfterLogin", currentUrl);
+  }
+}
+
+/**
+ * Gets the redirect URL from local storage.
+ * 
+ * @returns The redirect URL.
+ */
+export const getRedirectUrl = () => localStorage.getItem("redirectAfterLogin");
+
+/**
+ * Clears the redirect URL from local storage.
+ */
+const clearRedirectUrl = () => localStorage.removeItem("redirectAfterLogin");

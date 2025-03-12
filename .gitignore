@@ -23,7 +23,8 @@ go.work
 go.work.sum
 
 # env file
-*.env
+.env
+*.env_other*
 
 # Logs
 logs
@@ -59,7 +60,5 @@ terraform/.terraform/
 */terraform.tfstate*
 */terraform.tfvars
 
-
-# Alex's .env files
-.env.alex
-
+#Alex env files 
+backend/.env.alex

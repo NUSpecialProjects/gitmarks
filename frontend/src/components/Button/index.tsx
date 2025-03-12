@@ -3,6 +3,7 @@ import "./styles.css";
 interface IButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   href?: string;
   variant?: "primary" | "secondary" | "warning-primary" | "warning-secondary" | "disabled";
+  overrideVariant?: "primary" | "secondary" | "warning-primary" | "warning-secondary" | "disabled";
   size?: "default" | "small";
   newTab?: boolean;
   state?: object;
@@ -28,6 +29,7 @@ const Button: React.FC<IButtonProps> = ({
   children,
   href,
   variant = "primary",
+  overrideVariant,
   size = "default",
   newTab,
   state,
@@ -37,7 +39,7 @@ const Button: React.FC<IButtonProps> = ({
   return (
     <ButtonWrapper href={href} newTab={newTab} state={state} disabled={disabled}>
       <button
-        className={`Button Button--${variant} Button--${size} ${className ?? ""}`}
+        className={`Button Button--${overrideVariant ? overrideVariant : disabled ? "disabled" : variant} Button--${size} ${className ?? ""}`}
         {...props}
       >
         {children}

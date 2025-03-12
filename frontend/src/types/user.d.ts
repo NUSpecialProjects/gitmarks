@@ -8,6 +8,11 @@ interface IGitHubUser {
   email: string | null;
 }
 
+interface IUserResponse {
+  github_user: IGitHubUser;
+  user: IClassroomUser;
+}
+
 interface IGitHubUserResponse {
   user: IGitHubUser;
 }
@@ -33,12 +38,6 @@ interface IClassroomUser extends IUser {
 interface IClassroomUserResponse {
   message: string;
   user: IClassroomUser;
-}
-
-interface IClassroomInvitedUsersListResponse {
-  message: string;
-  invited_users: IClassroomUser[];
-  requested_users: IClassroomUser[];
 }
 
 

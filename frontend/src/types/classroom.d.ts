@@ -29,4 +29,5 @@ interface IClassroomToken {
 
 interface IClassroomJoinResponse extends ITokenUseResponse {
   classroom: IClassroom;
+  classroom_user: IClassroomUser;
 }

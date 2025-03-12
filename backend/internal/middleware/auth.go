@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -51,18 +52,18 @@ func Protected(secret string) fiber.Handler {
 		// Extract and validate JWT token
 		token := c.Cookies("jwt_cookie", "")
 		if token == "" {
-			return c.Status(401).JSON(fiber.Map{"error": "missing or invalid JWT token"})
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "missing or invalid JWT token"})
 		}
 
 		claims, err := ParseJWT(token, secret)
 		if err != nil {
-			return c.Status(401).JSON(fiber.Map{"error": "invalid JWT token"})
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "invalid JWT token"})
 		}
 
 		// Set userID in context
 		userID, err := strconv.ParseInt(claims.Subject, 10, 64)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to parse userID from token"})
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "failed to parse userID from token"})
 		}
 		c.Locals("userID", userID)
 

@@ -1,70 +1,30 @@
 import "./styles.css";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import ErrorMessage from "@/components/Error";
-import { getCallbackURL } from "@/api/auth";
-
-import { AuthContext } from "@/contexts/auth";
 import { FaGithub } from "react-icons/fa6";
-
 import Button from "@/components/Button";
-import ClipLoader from "react-spinners/ClipLoader";
-
-enum LoginStatus {
-  LOADING = "LOADING",
-  CALLBACK_ERRORED = "CALLBACK ERRORED",
-  LOGIN_ERRORED = "LOGIN ERRORED",
-  READY = "READY",
-}
+import { useEffect, useState } from "react";
+import { useCallbackURL } from "@/hooks/useCallbackURL";
 
 const Login: React.FC = () => {
-  const { isLoggedIn } = useContext(AuthContext);
-
   const location = useLocation();
-  const navigate = useNavigate();
-  const queryParams = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search]
-  );
+  const queryParams = new URLSearchParams(location.search);
   const errorFromQuery = queryParams.get("error");
-  const [status, setStatus] = useState(LoginStatus.LOADING);
-  const [error, setError] = useState<string | null>(errorFromQuery);
-  const [callbackURL, setCallbackURL] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchCallbackURL = async () => {
-    setStatus(LoginStatus.LOADING);
-    setError(null);
-    try {
-      const resp = await getCallbackURL();
-      if (!resp.url) {
-        throw new Error("Callback URL is empty");
-      }
-      setCallbackURL(resp.url);
-      setStatus(LoginStatus.READY);
-      setError(null);
-    } catch (_) {
-      setCallbackURL(null);
-      setStatus(LoginStatus.LOGIN_ERRORED);
-      setError("Error occurred while communicating with the server");
-    }
-  };
+  const { data: callbackData, error: callbackError, isLoading, refetch } = useCallbackURL();
 
-  useEffect(() => {
-    fetchCallbackURL();
-  }, []);
-
+  // Handle error from query params
   useEffect(() => {
     if (errorFromQuery) {
-      queryParams.delete("error");
       setError(errorFromQuery);
-      navigate({ search: queryParams.toString() }, { replace: true });
-      setStatus(LoginStatus.CALLBACK_ERRORED);
+      queryParams.delete("error");
+    } else {
+      setError(null);
     }
-  }, [errorFromQuery, navigate, queryParams]);
-
-  return isLoggedIn ? (
-    <Navigate to="/app/dashboard" replace={true} />
-  ) : (
+  }, [errorFromQuery, queryParams]);
+  
+  return (
     <div className="LandingPage">
       <div className="LogoBar">
         <svg
@@ -81,25 +41,36 @@ const Login: React.FC = () => {
       </div>
 
       <div>
-        {callbackURL && status !== LoginStatus.LOADING && (
-          <Button variant="secondary" href={callbackURL}>
-            <FaGithub className="LandingPage__icon" /> Log in with GitHub
-          </Button>
-        )}
-
-        {status === LoginStatus.LOADING && (
-          <ClipLoader size={50} color={"#123abc"} loading={true} />
-        )}
-
-        {error && (
-          <div className="LandingPage__error-container">
-            <Button variant="secondary" onClick={() => fetchCallbackURL()}>
-              Refresh
-            </Button>
-            <ErrorMessage message={error} />
-          </div>
-        )}
+        {(() => {
+          switch (true) {
+            case !isLoading && !!callbackData?.url:
+              return (
+                <Button variant="secondary" href={callbackData.url}>
+                  <FaGithub className="LandingPage__icon" /> Log in with GitHub
+                </Button>
+              );
+            case isLoading:
+              return (
+                <Button variant="disabled">
+                  Loading...
+                </Button>
+              );
+            case !!callbackError:
+              return (
+                <div className="LandingPage__error-container">
+                  <Button variant="secondary" onClick={() => refetch()}>
+                    Refresh
+                  </Button>
+                </div>
+              );
+            default:
+              return null;
+          }
+        })()}
       </div>
+      {error && (
+        <ErrorMessage message={error} />
+      )}
     </div>
   );
 };
