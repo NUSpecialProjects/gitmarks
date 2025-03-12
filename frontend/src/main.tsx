@@ -73,7 +73,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetError
  * React only handles errors thrown during render or during component lifecycle methods (e.g. effects and did-mount/did-update). 
  * Errors thrown in event handlers, or after async code has run, will not be caught.)
  * 
- * However, showBoundary() can be used to catch critical errors
+ * However, showBoundary() can be used to catch critical errors and throw them to the error boundary
  * 
  * Non critical errors can be handled gracefully and displayed as a toast using ErrorToast()
  * 
