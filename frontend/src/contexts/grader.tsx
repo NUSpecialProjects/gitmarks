@@ -6,6 +6,7 @@ import {
   usePaginatedStudentWork, 
   useAssignmentRubric 
 } from "@/hooks/useGrader";
+import { useActionToast } from "@/components/Toast";
 
 interface IGraderContext {
   assignmentID: string | undefined;
@@ -62,6 +63,7 @@ export const GraderProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ assignmentID, studentWorkID, children }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
+  const { executeWithToast } = useActionToast();
 
   // State variables
   const nextFeedbackID = useRef(0);
@@ -87,7 +89,6 @@ export const GraderProvider: React.FC<{
     data: studentWorkData, 
     isLoading: loadingStudentWork, 
     isError: studentWorkError,
-    refetch: refetchStudentWork
   } = usePaginatedStudentWork(classroomId, assignmentIdNum, studentWorkIdNum);
 
   const { 
@@ -162,22 +163,33 @@ export const GraderProvider: React.FC<{
     
     setIsSubmittingGrade(true);
     
-    try {
-      await gradeWork(
-        selectedClassroom.id,
-        Number(assignmentID),
-        Number(studentWorkID),
-        stagedFeedback
-      );
-      
-      // Refetch the student work data
-      await refetchStudentWork();
-      
-      // Clear staged feedback after successful submission
-      setStagedFeedback({});
-    } finally {
-      setIsSubmittingGrade(false);
-    }
+    executeWithToast(
+      "post-feedback-toast",
+      async () => {
+        try {
+          await gradeWork(
+            selectedClassroom.id,
+            Number(assignmentID),
+            Number(studentWorkID),
+            stagedFeedback
+          );
+          
+          setFeedback((prevFeedback) => ({
+            ...prevFeedback,
+            ...stagedFeedback,
+          }));
+          
+          setStagedFeedback({});
+        } finally {
+          setIsSubmittingGrade(false);
+        }
+      },
+      {
+        pending: "Submitting grade...",
+        success: "Grade submitted successfully!",
+        error: "Failed to submit grade. Please try again."
+      }
+    );
   };
 
   const selectRubricItem = (riID: number) => {
