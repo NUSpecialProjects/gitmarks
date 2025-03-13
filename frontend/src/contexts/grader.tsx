@@ -7,6 +7,7 @@ import {
   useAssignmentRubric 
 } from "@/hooks/useGrader";
 import { createUniqueKey, useLocalCachedState } from "@/hooks/useLocalStorage";
+import { useActionToast } from "@/components/Toast";
   
 // Combines two grader feedback maps, if the same ID exists in both, the value from map2 is used
 export function combineGraderFeedbackMaps(map1: IGraderFeedbackMap, map2: IGraderFeedbackMap): IGraderFeedbackMap {
@@ -71,6 +72,7 @@ export const GraderProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ assignmentID, studentWorkID, children }) => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
+  const { executeWithToast } = useActionToast();
 
   // State variables
   const [feedback, setFeedback] = useState<IGraderFeedbackMap>({});
@@ -101,7 +103,6 @@ export const GraderProvider: React.FC<{
     data: studentWorkData, 
     isLoading: loadingStudentWork, 
     isError: studentWorkError,
-    refetch: refetchStudentWork
   } = usePaginatedStudentWork(classroomId, assignmentIdNum, studentWorkIdNum);
 
   const { 
@@ -184,22 +185,33 @@ export const GraderProvider: React.FC<{
     
     setIsSubmittingGrade(true);
     
-    try {
-      await gradeWork(
-        selectedClassroom.id,
-        Number(assignmentID),
-        Number(studentWorkID),
-        stagedFeedback
-      );
-      
-      // Refetch the student work data
-      await refetchStudentWork();
-      
-      // Clear staged feedback after successful submission
-      setStagedFeedback({});
-    } finally {
-      setIsSubmittingGrade(false);
-    }
+    executeWithToast(
+      "post-feedback-toast",
+      async () => {
+        try {
+          await gradeWork(
+            selectedClassroom.id,
+            Number(assignmentID),
+            Number(studentWorkID),
+            stagedFeedback
+          );
+          
+          setFeedback((prevFeedback) => ({
+            ...prevFeedback,
+            ...stagedFeedback,
+          }));
+          
+          setStagedFeedback({});
+        } finally {
+          setIsSubmittingGrade(false);
+        }
+      },
+      {
+        pending: "Submitting grade...",
+        success: "Grade submitted successfully!",
+        error: "Failed to submit grade. Please try again."
+      }
+    );
   };
 
   const selectRubricItem = (riID: number) => {

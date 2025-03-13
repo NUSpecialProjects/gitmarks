@@ -12,7 +12,7 @@ interface IRubricTree {
 }
 
 const RubricTree: React.FC<IRubricTree> = ({ loading }) => {
-  const { studentWork, rubric, stagedFeedback, postFeedback } =
+  const { studentWork, rubric, stagedFeedback, postFeedback, isSubmittingGrade } =
     useContext(GraderContext);
 
   return (
@@ -44,7 +44,12 @@ const RubricTree: React.FC<IRubricTree> = ({ loading }) => {
               0
             )}
         </div>
-        <Button onClick={postFeedback}>Submit Grade</Button>
+        <Button 
+          onClick={postFeedback} 
+          disabled={isSubmittingGrade || Object.keys(stagedFeedback).length === 0}
+        >
+          {isSubmittingGrade ? "Submitting..." : "Submit Grade"}
+        </Button>
       </div>
     </ResizablePanel>
   );
