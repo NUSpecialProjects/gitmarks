@@ -11,6 +11,7 @@ import "./styles.css";
 import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import { ClassroomRole } from "@/types/enums";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
+import { useActionToast } from "@/components/Toast";
 
 const CreateAssignment: React.FC = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const CreateAssignment: React.FC = () => {
   const { selectedClassroom } = useCurrentClassroom();
   useClassroomUser(ClassroomRole.PROFESSOR, "/app/access-denied");
   const orgName = selectedClassroom?.org_name;
+  const { executeWithToast } = useActionToast();
 
   // Fetch template repositories
   const [templateRepos, setTemplateRepos] = useState<ITemplateRepo[]>([]);
@@ -66,7 +68,7 @@ const CreateAssignment: React.FC = () => {
       onNext: async (data: IAssignmentFormData): Promise<void> => {
         // Check the user provided an assignment name
         if (!data.assignmentName) {
-          throw new Error("Please provide the assignment name.");
+          throw new Error("Please provide an assignment name.");
         }
 
         // Check if the assignment name is unique
@@ -91,12 +93,24 @@ const CreateAssignment: React.FC = () => {
         />
       ),
       onNext: async (data: IAssignmentFormData): Promise<void> => {
-        if (!data.templateRepo?.template_repo_id) {
+        const templateRepoId = data.templateRepo?.template_repo_id;
+        // check if a template repo is selected
+        if (!templateRepoId) { // throw outside of executeWithToast
           throw new Error("Please select a template repository.");
         }
-        await createAssignment(data.templateRepo.template_repo_id, data);
 
-        navigate("/app/dashboard");
+        return executeWithToast(
+          "create-assignment-toast",
+          async () => {
+            const assignment = await createAssignment(templateRepoId, data);
+            navigate(`/app/assignments/${assignment.id}`);
+          },
+          {
+            pending: "Creating assignment...",
+            success: "Assignment created successfully",
+            error: "Failed to create assignment"
+          }
+        );
       },
     },
   ];

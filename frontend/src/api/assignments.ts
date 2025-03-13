@@ -125,7 +125,7 @@ export const getAssignmentTemplate = async (
 export const createAssignment = async (
   templateRepoID: number,
   assignment: IAssignmentFormData
-): Promise<IAssignmentFormData> => {
+): Promise<IAssignmentOutline> => {
   const result = await fetch(
     `${base_url}/classrooms/classroom/${assignment.classroomId}/assignments`,
     {
@@ -160,7 +160,7 @@ export const createAssignment = async (
   }
 
   const data = await result.json();
-  return data.assignment_outline as IAssignmentFormData;
+  return data.created_assignment as IAssignmentOutline;
 };
 
 export const assignmentNameExists = async (

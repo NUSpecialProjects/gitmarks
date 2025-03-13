@@ -13,6 +13,8 @@ import EmptyDataBanner from "@/components/EmptyDataBanner";
 import Metric from "@/components/Metrics";
 import { ClassroomRole, requireAtLeastClassroomRole } from "@/types/enums";
 import { useAssignmentsList } from "@/hooks/useAssignment";
+import { ErrorToast } from "@/components/Toast";
+import { useEffect } from "react";
 
 const Dashboard: React.FC = () => {
   const { selectedClassroom } = useCurrentClassroom();
@@ -76,13 +78,24 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (classroomUsersError) {
+      ErrorToast(classroomUsersError.message, "classroom-users-error");
+    }
+  }, [classroomUsersError]);
+
+  useEffect(() => {
+    if (assignmentsError) {
+      ErrorToast(assignmentsError.message, "assignments-error");
+    }
+  }, [assignmentsError]);
+
   if (classroomUsersError || assignmentsError) {
     return (
       <div className="Dashboard__error">
         <h2>Error Loading Dashboard</h2>
         <p>There was an error loading the dashboard data. Please try again later.</p>
         {classroomUsersError && <p>Error loading users: {classroomUsersError.message}</p>}
-        {assignmentsError && <p>Error loading assignments: {assignmentsError.message}</p>}
         <div className="Dashboard__horizontalButtons">
           <Button variant="primary" onClick={() => navigate("/app/classroom/select", { state: { orgID: selectedClassroom?.org_id } })}>
             Return to Classroom Selection
