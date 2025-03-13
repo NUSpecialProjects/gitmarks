@@ -11,6 +11,7 @@ import { FaRegTrashAlt } from "react-icons/fa";
 import { ClassroomRole } from "@/types/enums";
 import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
+import { ErrorToast, SuccessToast } from "@/components/Toast";
 
 interface IEditableItem {
     frontFacingIndex: number;
@@ -89,7 +90,7 @@ const RubricEditor: React.FC = () => {
 
             const rubricItems = (rubricItemData.map(item => item.rubricItem));
 
-            //validate items
+            // validate items
             let explantionIssue = false
             let pointIssue = false
             for (const item of rubricItems) {
@@ -155,9 +156,11 @@ const RubricEditor: React.FC = () => {
                         if (assignmentData !== null && assignmentData !== undefined) {
                             setAssignmentRubric(updatedRubric.rubric.id!, selectedClassroom.id, assignmentData.id)
                         }
+                        SuccessToast("Rubric updated successfully", "rubric-updated");
                         backButton()
                     })
                     .catch((_) => {
+                        ErrorToast("Failed to update rubric. Please try again.", "rubric-update-error");
                         setFailedToSave(true)
                     });
 
@@ -171,9 +174,11 @@ const RubricEditor: React.FC = () => {
                         if (assignmentData !== null && assignmentData !== undefined) {
                             setAssignmentRubric(createdRubric.rubric.id!, selectedClassroom.id, assignmentData.id)
                         }
+                        SuccessToast("Rubric created successfully", "rubric-created");
                         backButton()
                     })
                     .catch((_) => {
+                        ErrorToast("Failed to create rubric. Please try again.", "rubric-create-error");
                         setFailedToSave(true)
                     });
             }

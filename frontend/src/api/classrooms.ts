@@ -14,7 +14,7 @@ export async function getCurrentClassroomUser(
     }
   );
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error getting current classroom user: ${response.statusText}`);
   }
   const resp: { user: IClassroomUser } = await response.json();
   return resp.user;
@@ -34,7 +34,7 @@ export async function getClassroomUsers(
     }
   );
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error getting classroom users: ${response.statusText}`);
   }
   const resp: { users: IClassroomUser[] } = await response.json();
   return resp.users;
@@ -51,7 +51,7 @@ export async function getClassroomsInOrg(
     },
   });
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error getting classrooms: ${response.statusText}`);
   }
   const resp: IClassroomUsersListResponse = await response.json();
   return resp;
@@ -69,7 +69,7 @@ export async function postClassroom(
     body: JSON.stringify(classroom),
   });
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error creating classroom: ${response.statusText}`);
   }
   const resp: IClassroomResponse = await response.json();
   return resp.classroom;
@@ -96,7 +96,7 @@ export async function postClassroomToken(
   );
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error generating invite link: ${response.statusText}`);
   }
 
   const resp: IClassroomToken = await response.json();
@@ -118,7 +118,7 @@ export async function useClassroomToken(
   );
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error joining classroom: ${response.statusText}`);
   }
 
   const resp: IClassroomJoinResponse = await response.json();
@@ -142,7 +142,7 @@ export async function sendOrganizationInviteToUser(
   );
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error sending organization invite: ${response.statusText}`);
   }
 
   return await response.json();
@@ -164,7 +164,7 @@ export async function denyRequestedUser(
   );
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error denying student request: ${response.statusText}`);
   }
 }
 
@@ -172,6 +172,7 @@ export async function revokeOrganizationInvite(
   classroomId: number,
   userId: number
 ): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, 3000));
   const response = await fetch(
     `${base_url}/classrooms/classroom/${classroomId}/revoke/user/${userId}`,
     {
@@ -184,7 +185,7 @@ export async function revokeOrganizationInvite(
   );
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error revoking organization invite: ${response.statusText}`);
   }
 }
 
@@ -192,6 +193,7 @@ export async function removeUserFromClassroom(
   classroomId: number,
   userId: number
 ): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, 3000));
   const response = await fetch(
     `${base_url}/classrooms/classroom/${classroomId}/students/${userId}`,
     {
@@ -204,7 +206,7 @@ export async function removeUserFromClassroom(
   );
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error removing user from classroom: ${response.statusText}`);
   }
 }
 
@@ -217,7 +219,7 @@ export async function getClassroomNames(): Promise<string[]> {
     },
   });
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error getting classroom names: ${response.statusText}`);
   }
   const resp: { semester_names: string[] } = await response.json();
   return resp.semester_names;
@@ -233,7 +235,7 @@ export async function checkClassroomExists(classroomName: string): Promise<boole
     },
   });
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(`Error checking classroom exists: ${response.statusText}`);
   }
   const data = await response.json();
   return data.exists;
