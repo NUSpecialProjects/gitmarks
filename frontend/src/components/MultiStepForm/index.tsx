@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Button from "../Button";
 import './styles.css';
 import LoadingSpinner from "../LoadingSpinner";
+import { ErrorToast } from "../Toast";
+import { toast } from "react-toastify";
 
 const MultiStepForm = <T,>({
   steps,
@@ -11,8 +13,18 @@ const MultiStepForm = <T,>({
 }: IMultiStepFormProps<T>): ReactElement => {
   // Default form state
   const [formData, setFormData] = useState<T>(initialData);
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const errorToastId = "multi-step-form-error";
+
+  const dismissErrorToast = useCallback(() => {
+    toast.dismiss(errorToastId);
+  }, [errorToastId]);
+
+  // Show an error toast
+  const showErrorToast = useCallback((message: string) => {
+    ErrorToast(message, errorToastId);
+  }, [errorToastId]);
 
   // Step navigation
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -63,9 +75,9 @@ const MultiStepForm = <T,>({
         ...prevData,
         ...newData,
       }));
-      setError(null);
+      dismissErrorToast();
     },
-    []
+    [dismissErrorToast]
   );
 
   // Handle next button click, preventing progression on error
@@ -75,20 +87,19 @@ const MultiStepForm = <T,>({
 
     try {
       await currentStep.onNext(formData);
-      setError(null);
+      dismissErrorToast();
 
       if (!isLastStep) {
         setCurrentStepIndex((prev) => Math.min(prev + 1, totalSteps - 1));
       }
     } catch (e) {
-      const err: string = e instanceof Error
-        ? e.message
-        : "An error occurred. Please try again.";
-      setError(err);
+      console.error(e);
+      const message = e instanceof Error ? e.message : "An error occurred. Please try again.";
+      showErrorToast(message);
     } finally {
       setIsLoading(false);
     }
-  }, [steps, currentStepIndex, formData, isLastStep, totalSteps]);
+  }, [steps, currentStepIndex, formData, isLastStep, totalSteps, dismissErrorToast, showErrorToast]);
 
   const CurrentStepComponent = steps[currentStepIndex].component;
   return (
@@ -98,9 +109,6 @@ const MultiStepForm = <T,>({
         <div className="MultiStepForm__formStep">
           <CurrentStepComponent data={formData} onChange={handleDataChange} />
         </div>
-
-        {/* Display error message */}
-        {error && <p className="MultiStepForm__error">{error}</p>}
 
         {/* Render navigation buttons */}
         <div className="MultiStepForm__formNavigationButtonsWrapper">
