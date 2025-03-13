@@ -17,36 +17,28 @@ export function useLocalCachedState<T>({
   defaultValue,
   serialize = JSON.stringify,
   deserialize = JSON.parse,
-}: StorageConfig<T>): [T, (value: T | ((prev: T) => T)) => void] {
+}: StorageConfig<T>): [T, (value: T) => void] {
   // Initialize state from localStorage or default value
   const [inMemoryState, setInMemoryState] = useState<T>(getLocalStorageValue(key, defaultValue, deserialize));
 
   // Wrapper function to update both state and localStorage
-  const setValue = (newValue: T | ((prev: T) => T)) => {
-    setInMemoryState((prevValue) => {
-      const nextValue = newValue instanceof Function ? newValue(prevValue) : newValue;
-      
+  const setValue = (newValue: T) => {
+    try {
       if (key) {
-        try {
-          if (nextValue === null || nextValue === undefined) {
-            localStorage.removeItem(key);
-          } else {
-            localStorage.setItem(key, serialize(nextValue));
-          }
-        } catch (error) {
-          console.error(`Error saving to localStorage for key ${key}:`, error);
-        }
+        setInMemoryState(newValue);
+        localStorage.setItem(key, serialize(newValue));
+      } else {
+        throw new Error("Key is undefined");
       }
-      
-      return nextValue;
-    });
+    } catch (error) {
+      console.error(`Error saving to localStorage for key ${key}:`, error);
+    }
   };
 
   // Sync state when key changes
   useEffect(() => {
     const newValue = getLocalStorageValue(key, defaultValue, deserialize);
     if (newValue !== inMemoryState) {
-      console.log("setting in memory state: key = ", key);
       setInMemoryState(newValue);
     }
   }, [key]);

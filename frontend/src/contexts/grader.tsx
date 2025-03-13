@@ -7,6 +7,14 @@ import {
   useAssignmentRubric 
 } from "@/hooks/useGrader";
 import { createUniqueKey, useLocalCachedState } from "@/hooks/useLocalStorage";
+  
+// Combines two grader feedback maps, if the same ID exists in both, the value from map2 is used
+export function combineGraderFeedbackMaps(map1: IGraderFeedbackMap, map2: IGraderFeedbackMap): IGraderFeedbackMap {
+  return {
+    ...map1,
+    ...map2,
+  };
+}
 
 interface IGraderContext {
   assignmentID: string | undefined;
@@ -65,7 +73,6 @@ export const GraderProvider: React.FC<{
   const { selectedClassroom } = useContext(SelectedClassroomContext);
 
   // State variables
-  const nextFeedbackID = useRef(0);
   const [feedback, setFeedback] = useState<IGraderFeedbackMap>({});
   const [selectedRubricItems, setSelectedRubricItems] = useState<number[]>([]);
   const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
@@ -118,20 +125,23 @@ export const GraderProvider: React.FC<{
   useEffect(() => {
     if (studentWorkData) {
       setFeedback(studentWorkData.feedback || {});
-      // setStagedFeedback({});
     }
   }, [studentWorkData]);
 
-  // Reset feedback ID counter when feedback changes
-  useEffect(() => {
-    nextFeedbackID.current = feedback ? Object.keys(feedback).length : 0;
-  }, [feedback]);
-
-  // Feedback management functions
   const getNextFeedbackID = () => {
-    const tmp = nextFeedbackID.current;
-    nextFeedbackID.current = nextFeedbackID.current + 1;
-    return tmp;
+    const stagedKeys = Object.keys(stagedFeedback).map(Number);
+    const feedbackKeys = Object.keys(feedback).map(Number);
+    
+    // If both arrays are empty, start with ID 1
+    if (stagedKeys.length === 0 && feedbackKeys.length === 0) {
+      return 1;
+    }
+    
+    // Otherwise, find the max ID in either set and add 1
+    return Math.max(
+      ...(stagedKeys.length > 0 ? stagedKeys : [0]),
+      ...(feedbackKeys.length > 0 ? feedbackKeys : [0])
+    ) + 1;
   };
 
   const addFeedback = (feedback: IGraderFeedback[]) => {
@@ -143,30 +153,30 @@ export const GraderProvider: React.FC<{
       };
     }
 
-    setStagedFeedback((prevFeedback) => ({
-      ...prevFeedback,
-      ...newFeedback,
-    }));
+    setStagedFeedback(
+      combineGraderFeedbackMaps(stagedFeedback, newFeedback)
+    );
   };
 
   const editFeedback = (feedbackID: number, feedback: IGraderFeedback) => {
-    setStagedFeedback((prevFeedback) => ({
-      ...prevFeedback,
-      [feedbackID]: {
-        ...feedback,
+    setStagedFeedback(
+      combineGraderFeedbackMaps(stagedFeedback, {
+        [feedbackID]: {
+          ...feedback,
         action: "EDIT",
       },
     }));
   };
 
   const removeFeedback = (feedbackID: number) => {
-    setStagedFeedback((prevFeedback) => ({
-      ...prevFeedback,
-      [feedbackID]: {
-        ...prevFeedback[feedbackID],
-        action: "DELETE",
-      },
-    }));
+    setStagedFeedback(
+      combineGraderFeedbackMaps(stagedFeedback, {
+        [feedbackID]: {
+          ...stagedFeedback[feedbackID],
+          action: "DELETE",
+        },
+      })
+    );
   };
 
   const postFeedback = async () => {
