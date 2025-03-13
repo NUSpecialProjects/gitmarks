@@ -70,6 +70,9 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Create a new branch in a repository
 	CreateBranch(ctx context.Context, owner, repo, baseBranch, newBranchName string) (*github.Reference, error)
 
+	// Get the branches in a repository
+	GetBranches(ctx context.Context, owner, repo string) ([]*github.Branch, error)
+
 	// Get the details of a pull request
 	GetPullRequest(ctx context.Context, owner string, repo string, pullNumber int) (*github.PullRequest, error)
 
@@ -155,4 +158,7 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	EnableWorkflow(ctx context.Context, repoOwner, forkName, workflowName string) error
 
 	EnableActions(ctx context.Context, ownerName, repoName string) error
+
+	// Check if a file or directory exists in a repository
+	FileExists(owner string, repo string, path string) (bool, error)
 }
