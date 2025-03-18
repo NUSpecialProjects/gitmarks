@@ -60,5 +60,3 @@ terraform/.terraform/
 */terraform.tfstate*
 */terraform.tfvars
 
-#Alex env files 
-backend/.env.alex

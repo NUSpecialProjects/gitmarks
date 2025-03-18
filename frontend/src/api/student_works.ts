@@ -111,7 +111,7 @@ export const getFirstCommit = async (
   if (!response.ok) {
     throw new Error("Network response was not ok");
   }
-  const resp = ((await response.json()));
+  const resp = (await response.json());
   const date = resp.first_commit_at as Date
   return date;
 
@@ -137,6 +137,5 @@ export const getTotalCommits = async (
   }
   const resp = (await response.json());
   const count = resp.commit_count;
-  console.log(count)
   return count;
 }

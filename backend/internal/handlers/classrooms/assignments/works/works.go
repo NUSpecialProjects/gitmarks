@@ -280,6 +280,7 @@ func (s *WorkService) GetCommitCount() fiber.Handler {
 		// Zero either implies bad data or no commits, double check to be safe
 		if totalCount == 0 {
 			var opts github.CommitsListOptions
+            // Assumes a single contirbutor, KHO-144
 			opts.Author = work.Contributors[0].GithubUsername
 			commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
 			if err != nil {
@@ -303,6 +304,7 @@ func (s *WorkService) GetCommitsPerDay() fiber.Handler {
 		}
 
 		var opts github.CommitsListOptions
+        // Assumes a single contirbutor, KHO-144
 		opts.Author = work.Contributors[0].GithubUsername
 		commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
 		if err != nil {

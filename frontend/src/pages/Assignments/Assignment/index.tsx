@@ -30,7 +30,7 @@ const Assignment: React.FC = () => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
   const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
-  const { data: studentWorks = [] } = useStudentWorks(
+  const { data: studentWorks } = useStudentWorks(
     selectedClassroom?.id, 
     assignment?.id
   );
@@ -92,8 +92,7 @@ const Assignment: React.FC = () => {
             <h2>Metrics</h2>
             <MetricPanel>
               <Metric title="Total Commits">
-                {totalAssignmentCommits === undefined || totalAssignmentCommits === null ?
-                 0 : totalAssignmentCommits.toString()}
+                {totalAssignmentCommits ? totalAssignmentCommits.toString() : 0}
               </Metric>
             </MetricPanel>
 

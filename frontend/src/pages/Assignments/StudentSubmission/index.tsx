@@ -73,7 +73,6 @@ const StudentSubmission: React.FC = () => {
             submission.student_work_id
           );
           if (commitDate !== null && commitDate !== undefined) {
-            console.log(commitDate)
             setFirstCommit(formatDate(commitDate));
           } else {
             setFirstCommit("N/A");
@@ -117,63 +116,67 @@ const StudentSubmission: React.FC = () => {
     }
   }, [selectedClassroom, submission]);
 
+
+  // retrieves commit data, fills in any days without commits with 0 commits on the day
+  // returns a list of dates and a cooresponding list of counts 
+  const prepLineData = () => {
+    function addDays(date: Date, days: number): Date {
+      const newDate = new Date(date);
+      newDate.setDate(newDate.getDate() + days);
+      return newDate;
+    }
+
+
+    const dates = Array.from(commitsPerDay.keys());
+    if (submission) {
+      const today = new Date()
+      today.setUTCHours(0)
+      today.setUTCMinutes(0)
+      today.setUTCSeconds(0)
+
+      if (dates.length === 0) {
+        setNoCommits(true)
+      } else if (dates[dates.length - 1].toDateString() !== (today.toDateString())) {
+        dates.push(new Date())
+      }
+    }
+
+    const minDate = new Date(Math.min(...dates.map(date => date.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(date => date.getTime())));
+
+    let currentDate = new Date(minDate);
+    while (currentDate <= maxDate) {
+      if (!commitsPerDay.has(currentDate)) {
+        commitsPerDay.set(currentDate, 0);
+      }
+      currentDate = addDays(currentDate, 1);
+    }
+
+    const sortedEntries = Array.from(commitsPerDay.entries()).sort(
+      (a, b) => a[0].getTime() - b[0].getTime()
+    );
+    const sortedCommitsPerDay = new Map(sortedEntries);
+
+    if (sortedEntries.keys.length > 0) {
+      setLoadingAllCommits(false)
+    }
+
+    const sortedDates = Array.from(sortedCommitsPerDay.keys());
+    const sortedCounts = Array.from(sortedCommitsPerDay.values());
+
+    const sortedDatesStrings = Array.from(sortedDates.map((a) => `${a.getUTCMonth()+1}/${a.getUTCDate()}`))
+    if (sortedDatesStrings.length > 0) {
+      setLoadingAllCommits(false)
+    }
+
+    return {sortedDatesStrings, sortedCounts}
+  }
+
   // useEffect for line chart 
   useEffect(() => {
     if (commitsPerDay) {
-      function addDays(date: Date, days: number): Date {
-        const newDate = new Date(date);
-        newDate.setDate(newDate.getDate() + days);
-        return newDate;
-      }
-
-
-      const dates = Array.from(commitsPerDay.keys());
-      if (submission) {
-        const today = new Date()
-        today.setUTCHours(0)
-        today.setUTCMinutes(0)
-        today.setUTCSeconds(0)
-
-        if (dates.length === 0) {
-          setNoCommits(true)
-        } else if (dates[dates.length - 1].toDateString() !== (today.toDateString())) {
-          dates.push(new Date())
-        }
-      }
-
-
-
-      const minDate = new Date(Math.min(...dates.map(date => date.getTime())));
-      const maxDate = new Date(Math.max(...dates.map(date => date.getTime())));
-
-      let currentDate = new Date(minDate);
-      while (currentDate <= maxDate) {
-        if (!commitsPerDay.has(currentDate)) {
-          commitsPerDay.set(currentDate, 0);
-        }
-        currentDate = addDays(currentDate, 1);
-      }
-
       
-
-      const sortedEntries = Array.from(commitsPerDay.entries()).sort(
-        (a, b) => a[0].getTime() - b[0].getTime()
-      );
-      const sortedCommitsPerDay = new Map(sortedEntries);
-
-      if (sortedEntries.keys.length > 0) {
-        setLoadingAllCommits(false)
-      }
-
-
-      const sortedDates = Array.from(sortedCommitsPerDay.keys());
-      const sortedCounts = Array.from(sortedCommitsPerDay.values());
-
-      const sortedDatesStrings = Array.from(sortedDates.map((a) => `${a.getUTCMonth()+1}/${a.getUTCDate()}`))
-      if (sortedDatesStrings.length > 0) {
-        setLoadingAllCommits(false)
-      }
-
+      const {sortedDatesStrings, sortedCounts} = prepLineData()
 
       const lineData = {
         labels: sortedDatesStrings,
