@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { MdEdit, MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -20,6 +20,7 @@ import "./styles.css";
 import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
 import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
+import { ErrorToast } from "@/components/Toast";
 
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);
@@ -32,15 +33,26 @@ const Assignment: React.FC = () => {
   const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
   const { data: studentWorks } = useStudentWorks(
     selectedClassroom?.id, 
-    assignment?.id
+    Number(assignmentID)
   );
   const { data: inviteLink = "", error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url);
-  const { data: assignmentTemplate } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
+
   const { data: totalAssignmentCommits } = useAssignmentTotalCommits(selectedClassroom?.id, assignment?.id);
-  const { acceptanceMetrics, gradedMetrics } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
+  const { data: assignmentTemplate, error: templateError } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
+  const { acceptanceMetrics, gradedMetrics, error: metricsError } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
 
   const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
+  
+  
 
+  useEffect(() => {
+    if (linkError || templateError || metricsError) {
+      const errorMessage = linkError?.message || templateError?.message || metricsError?.message;
+      if (errorMessage) {
+        ErrorToast(errorMessage, "assignment-error");
+      }
+    }
+  }, [linkError, templateError, metricsError]);
 
   return (
     assignment && (
@@ -85,7 +97,6 @@ const Assignment: React.FC = () => {
           <div className="Assignment__link">
             <h2>Assignment Link</h2>
             <CopyLink link={inviteLink} name="invite-assignment" />
-            {linkError && <p className="error">Failed to generate assignment invite link</p>}
           </div>
 
           <div className="Assignment__metrics">

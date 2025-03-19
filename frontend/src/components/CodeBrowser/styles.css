@@ -40,3 +40,31 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+.CodeBrowser__message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+  font-size: 1rem;
+  color: #666;
+}
+
+.CodeBrowser__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.CodeBrowser__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e53e3e;
+}
+
+.CodeBrowser__empty {
+  color: #718096;
+}

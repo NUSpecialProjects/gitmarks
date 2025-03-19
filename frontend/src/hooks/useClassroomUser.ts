@@ -130,8 +130,10 @@ export function useInviteClassroomUser(classroomId: number | undefined) {
         }
       );
       setError(null);
-    } catch (_) {
+      return response;
+    } catch (error) {
       setError("Failed to invite user. Please try again.");
+      throw error; // throws the error so it can be handled at the component/page level
     } finally {
       setLoadingUserIds(prev => {
         return removeFromSet(prev, userId);
@@ -155,7 +157,7 @@ export function useRevokeClassroomInvite(classroomId: number | undefined) {
   const revokeInvite = async (userId: number, setLoadingUserIds: (cb: (prev: Set<number>) => Set<number>) => void) => {
     try {
       setLoadingUserIds(prev => new Set(prev).add(userId));
-      await revokeOrganizationInvite(classroomId!, userId);
+      const response = await revokeOrganizationInvite(classroomId!, userId);
       queryClient.setQueryData(
         ['classroomUsers', classroomId],
         (oldData: IClassroomUser[] = []) => {
@@ -163,8 +165,10 @@ export function useRevokeClassroomInvite(classroomId: number | undefined) {
         }
       );
       setError(null);
-    } catch (_) {
+      return response;
+    } catch (error) {
       setError("Failed to revoke invite. Please try again.");
+      throw error;
     } finally {
       setLoadingUserIds(prev => {
         return removeFromSet(prev, userId);
@@ -194,7 +198,7 @@ export function useRemoveClassroomUser(classroomId: number | undefined, currentU
 
     try {
       setLoadingUserIds(prev => new Set(prev).add(userId));
-      await removeUserFromClassroom(classroomId!, userId);
+      const response = await removeUserFromClassroom(classroomId!, userId);
       queryClient.setQueryData(
         ['classroomUsers', classroomId],
         (oldData: IClassroomUser[] = []) => {
@@ -202,8 +206,10 @@ export function useRemoveClassroomUser(classroomId: number | undefined, currentU
         }
       );
       setError(null);
-    } catch (_) {
+      return response;
+    } catch (error) {
       setError("Failed to remove user. Please try again.");
+      throw error;
     } finally {
       setLoadingUserIds(prev => {
         return removeFromSet(prev, userId);
