@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { MdEdit, MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
 import { useContext, useEffect } from "react";
@@ -22,6 +22,7 @@ import { removeUnderscores } from "@/utils/text";
 import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics } from "@/hooks/useAssignment";
 import { ErrorToast } from "@/components/Toast";
 
+
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);
 
@@ -29,6 +30,8 @@ const Assignment: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const { id: assignmentID } = useParams();
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
+
+  const navigate = useNavigate();
 
   const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
   const { data: studentWorks, isLoading: isLoadingWorks } = useStudentWorks(
@@ -55,6 +58,22 @@ const Assignment: React.FC = () => {
       }
     }
   }, [linkError, templateError, metricsError]);
+
+  // ensure that back button goes to dashboard, not assignment creation if that 
+  useEffect(() => {
+
+    const handlePopState = (event: PopStateEvent) => {
+      navigate("app/dashboard")
+    };
+  
+    window.addEventListener('popstate', handlePopState);
+  
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  
+}, []);
+
 
   return (
     assignment && (
