@@ -279,6 +279,7 @@ func (s *WorkService) GetCommitCount() fiber.Handler {
 
 		// Zero either implies bad data or no commits, double check to be safe
 		if totalCount == 0 {
+            fmt.Println("Needed to get from place")
 			var opts github.CommitsListOptions
             // Assumes a single contirbutor, KHO-144
 			opts.Author = work.Contributors[0].GithubUsername
@@ -287,7 +288,17 @@ func (s *WorkService) GetCommitCount() fiber.Handler {
 				return errs.GithubAPIError(err)
 			}
 			totalCount = len(commits)
+            
+            // If there were commits, update the student work
+            if totalCount != 0 {
+                work.StudentWork.CommitAmount = totalCount
+                _, err := s.store.UpdateStudentWork(c.Context(), work.StudentWork)
+                if err != nil {
+                    return errs.InternalServerError()
+                }
+            }
 		}
+
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"work_id":      work.ID,
@@ -337,6 +348,7 @@ func (s *WorkService) GetFirstCommitDate() fiber.Handler {
 		fcd := work.FirstCommitDate
 
 		if fcd == nil {
+            fmt.Println("Needed to get from place")
 			var opts github.CommitsListOptions
 			opts.Author = work.Contributors[0].GithubUsername
 			commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
@@ -345,7 +357,14 @@ func (s *WorkService) GetFirstCommitDate() fiber.Handler {
 			}
 
 			if len(commits) > 0 {
-				fcd = commits[len(commits)-1].GetCommit().GetCommitter().Date
+			    fcd = commits[len(commits)-1].GetCommit().GetCommitter().Date
+                  
+                work.StudentWork.FirstCommitDate = fcd
+                _, err := s.store.UpdateStudentWork(c.Context(), work.StudentWork)
+                if err != nil {
+                    return errs.InternalServerError()
+                }
+            
 			}
 
 		}
