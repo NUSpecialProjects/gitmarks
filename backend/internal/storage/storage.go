@@ -34,6 +34,7 @@ type Works interface {
 
 	UpdateStudentWork(ctx context.Context, UpdateStudentWork models.StudentWork) (models.StudentWork, error)
 	GetWorkByRepoName(ctx context.Context, repoName string) (models.StudentWork, error)
+	GetWorkByGitHubUserID(ctx context.Context, classroomID int, assignmentID int, gitHubUserID int64) (models.StudentWork, error)
 }
 
 type Test interface {
@@ -97,6 +98,7 @@ type AssignmentTemplate interface {
 type AssignmentBaseRepo interface {
 	CreateBaseRepo(ctx context.Context, baseRepoData models.AssignmentBaseRepo) error
 	GetBaseRepoByID(ctx context.Context, id int64) (models.AssignmentBaseRepo, error)
+	UpdateBaseRepoInitialized(ctx context.Context, id int64, initialized bool) error
 }
 
 type Rubric interface {

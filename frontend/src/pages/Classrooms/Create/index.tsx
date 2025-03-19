@@ -14,6 +14,7 @@ import Input from "@/components/Input";
 import GenericDropdown from "@/components/Dropdown";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import useDebounce from "@/hooks/useDebounce";
+import validateRepoName from "@/utils/repo-name-validation";
 
 const ClassroomCreation: React.FC = () => {
   const [name, debouncedName, setName] = useDebounce<string>("", 100);
@@ -23,8 +24,10 @@ const ClassroomCreation: React.FC = () => {
   const location = useLocation();
   const orgID = location.state?.orgID;
 
+  const containsInvalidChars = validateRepoName(name);
+
   const { data: predefinedClassroomNames = [], isError: isNamesError } = useClassroomNames();
-  const { data: classroomExists = false, isLoading: isClassroomExistsLoading } = useClassroomValidation(debouncedName);
+  const { data: classroomExists = false, isLoading: isClassroomExistsLoading, error: classroomExistsError } = useClassroomValidation(debouncedName);
   const allClassroomNames = [...predefinedClassroomNames, "Custom"];
   const { data: organization, isLoading: isOrgLoading, error: orgError } = useOrganizationDetails(orgID);
 
@@ -95,8 +98,10 @@ const ClassroomCreation: React.FC = () => {
                 />
                 {name && (
                   <div className="ClassroomCreation__validationIndicator">
-                    {isClassroomExistsLoading ? (
-                      <LoadingSpinner size={16} />
+                    {!containsInvalidChars ? (
+                      <span className="validation-icon invalid">✕</span>
+                    ) : isClassroomExistsLoading ? (
+                      <LoadingSpinner size={16} />  
                     ) : classroomExists ? (
                       <span className="validation-icon invalid">✕</span>
                     ) : (
@@ -107,12 +112,14 @@ const ClassroomCreation: React.FC = () => {
               </div>
             )}
 
-            {(createClassroomMutation.error || orgError || isNamesError || classroomExists) && (
+            {(createClassroomMutation.error || orgError || isNamesError || classroomExists || classroomExistsError || !containsInvalidChars) && (
               <p className="error">
                 {createClassroomMutation.error ? "Failed to create classroom."
                   : orgError ? "Failed to fetch organization details."
                   : isNamesError ? "Failed to fetch classroom names."
+                  : classroomExistsError ? classroomExistsError.message
                   : classroomExists ? "Classroom name already exists."
+                  : !containsInvalidChars && name ? "Classroom name cannot contain any special characters."
                   : ""}
               </p>
             )}
@@ -128,8 +135,8 @@ const ClassroomCreation: React.FC = () => {
             <div className="ClassroomCreation__buttonWrapper">
               <Button 
                 type="submit" 
-                disabled={createClassroomMutation.isPending || classroomExists || isClassroomExistsLoading}
-                overrideVariant={createClassroomMutation.isPending || classroomExists ? "disabled" : "primary"}
+                disabled={createClassroomMutation.isPending || classroomExists || isClassroomExistsLoading || !containsInvalidChars}
+                overrideVariant={createClassroomMutation.isPending || classroomExists || !containsInvalidChars ? "disabled" : "primary"}
               >
                 {createClassroomMutation.isPending ? "Creating..." : "Create Classroom"}
               </Button>
