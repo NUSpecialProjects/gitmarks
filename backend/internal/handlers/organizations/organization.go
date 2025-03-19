@@ -10,14 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func (service *OrganizationService) GetOrgsAndClassrooms() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		// Implement logic here
-		return c.SendStatus(fiber.StatusNotImplemented)
-	}
-}
-
-//Get all organizations a user is in
+// Get all organizations a user is in
 func (service *OrganizationService) GetUserOrgs() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		client, err := middleware.GetClient(c, service.store, service.userCfg)
@@ -219,4 +212,3 @@ func (service *OrganizationService) GetOrgTemplateRepos() fiber.Handler {
 		return c.Status(200).JSON(fiber.Map{"templates": templateRepos})
 	}
 }
-

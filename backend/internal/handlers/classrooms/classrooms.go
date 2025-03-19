@@ -25,14 +25,6 @@ func (s *ClassroomService) doesClassroomExist(ctx context.Context, name string) 
 	return err == nil, nil // If no error, classroom exists
 }
 
-// Returns the classrooms the authenticated user is part of.
-func (s *ClassroomService) getUserClassrooms() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		// Implement logic here
-		return c.SendStatus(fiber.StatusNotImplemented)
-	}
-}
-
 // Returns the details of a classroom.
 func (s *ClassroomService) getClassroom() fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -418,16 +410,16 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 			return errs.ExpiredTokenError()
 		}
 
-        message, classroom, classroomUser, err := s.inviteUserToClassroom(
-            c.Context(), classroomToken.ClassroomID, classroomToken.ClassroomRole, &user, client)
-        if err != nil {
-            return err
-        }
+		message, classroom, classroomUser, err := s.inviteUserToClassroom(
+			c.Context(), classroomToken.ClassroomID, classroomToken.ClassroomRole, &user, client)
+		if err != nil {
+			return err
+		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"message":          message,
-            "classroom_user":   classroomUser,
-			"classroom":        classroom,
+			"message":        message,
+			"classroom_user": classroomUser,
+			"classroom":      classroom,
 		})
 	}
 }
@@ -447,7 +439,7 @@ func (s *ClassroomService) inviteUserToClassroom(ctx context.Context, classroomI
 		if err != nil {
 			return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 		}
-    }	
+	}
 
 	classroomUser, err = s.updateUserStatus(ctx, s.appClient, *invitee, classroom)
 	if err != nil {
@@ -455,13 +447,13 @@ func (s *ClassroomService) inviteUserToClassroom(ctx context.Context, classroomI
 	}
 
 	// if the user has previously been removed, put them into the requested state and exit
-    if classroomUser.Status == models.UserStatusRemoved {
-        classroomUser, err = s.store.ModifyUserStatus(ctx, classroomID, models.UserStatusRequested, *classroomUser.ID)
-        if err != nil {
+	if classroomUser.Status == models.UserStatusRemoved {
+		classroomUser, err = s.store.ModifyUserStatus(ctx, classroomID, models.UserStatusRequested, *classroomUser.ID)
+		if err != nil {
 			return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 		}
 
-        return "Token applied successfully, user access has been requested", classroom, classroomUser, nil
+		return "Token applied successfully, user access has been requested", classroom, classroomUser, nil
 	}
 
 	// user is already in the classroom. If their role can be upgraded, do so. Don't downgrade them.
@@ -485,7 +477,7 @@ func (s *ClassroomService) inviteUserToClassroom(ctx context.Context, classroomI
 	if err != nil {
 		return "", models.Classroom{}, models.ClassroomUser{}, errs.InternalServerError()
 	}
-    return "Token applied successfully", classroom, classroomUser, nil
+	return "Token applied successfully", classroom, classroomUser, nil
 }
 
 // Returns the user's status in the classroom, nil if not in the classroom
