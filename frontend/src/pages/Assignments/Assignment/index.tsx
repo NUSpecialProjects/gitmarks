@@ -19,7 +19,7 @@ import Pill from "@/components/Pill";
 import "./styles.css";
 import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
-import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics } from "@/hooks/useAssignment";
+import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
 import { ErrorToast } from "@/components/Toast";
 
 ChartJS.register(...registerables);
@@ -31,21 +31,19 @@ const Assignment: React.FC = () => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
   const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
-  const { data: studentWorks, isLoading: isLoadingWorks } = useStudentWorks(
+  const { data: studentWorks } = useStudentWorks(
     selectedClassroom?.id, 
     Number(assignmentID)
   );
   const { data: inviteLink = "", error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url);
+
+  const { data: totalAssignmentCommits } = useAssignmentTotalCommits(selectedClassroom?.id, assignment?.id);
   const { data: assignmentTemplate, error: templateError } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
   const { acceptanceMetrics, gradedMetrics, error: metricsError } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
 
   const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
-  const totalCommits = isLoadingWorks ? 0 : studentWorks?.reduce((total, work) => total + work.commit_amount, 0);
-  const firstCommitDate = isLoadingWorks ? null : studentWorks?.reduce((earliest, work) => {
-    if (!work.first_commit_date) return earliest;
-    if (!earliest) return new Date(work.first_commit_date);
-    return new Date(work.first_commit_date) < earliest ? new Date(work.first_commit_date) : earliest;
-  }, null as Date | null);
+  
+  
 
   useEffect(() => {
     if (linkError || templateError || metricsError) {
@@ -104,11 +102,8 @@ const Assignment: React.FC = () => {
           <div className="Assignment__metrics">
             <h2>Metrics</h2>
             <MetricPanel>
-              <Metric title="First Commit Date">
-                {firstCommitDate ? formatDate(firstCommitDate) : "N/A"}
-              </Metric>
               <Metric title="Total Commits">
-                {totalCommits?.toString() ?? "N/A"}
+                {totalAssignmentCommits ? totalAssignmentCommits.toString() : 0}
               </Metric>
             </MetricPanel>
 
