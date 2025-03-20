@@ -58,32 +58,19 @@ const CodeLine: React.FC<ICodeLine> = ({ path, line, isDiff, code }) => {
     addFeedback,
   } = useContext(GraderContext);
   const [editing, setEditing] = useState(false);
-  const [feedbackExists, setFeedbackExists] = useState(false);
-  const [stagedFeedbackExists, setStagedFeedbackExists] = useState(false);
-
   const points = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setEditing(false);
   }, [path]);
 
-  useEffect(() => {
-    setFeedbackExists(
-      feedback &&
-        Object.values(feedback).some(
-          (fb) => fb.path === path && fb.line === line
-        )
-    );
-  }, [path, feedback]);
+  const feedbackExists = feedback && Object.values(feedback).some(
+    (fb) => fb.path === path && fb.line === line
+  );
 
-  useEffect(() => {
-    setStagedFeedbackExists(
-      stagedFeedback &&
-        Object.values(stagedFeedback).some(
-          (fb) => fb.path === path && fb.line === line
-        )
-    );
-  }, [path, stagedFeedback]);
+  const stagedFeedbackExists = stagedFeedback && Object.values(stagedFeedback).some(
+    (fb) => fb.path === path && fb.line === line
+  );
 
   const adjustPoints = (x: number) => {
     if (!points.current) return;
