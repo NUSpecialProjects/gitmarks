@@ -19,6 +19,7 @@ type Storage interface {
 	Rubric
 	AssignmentTemplate
 	AssignmentBaseRepo
+	Deadline
 }
 
 type FeedbackComment interface {
@@ -107,4 +108,9 @@ type Rubric interface {
 	UpdateRubric(ctx context.Context, rubricID int64, rubricData models.Rubric) (models.Rubric, error)
 	UpdateRubricItem(ctx context.Context, rubricItemData models.RubricItem) (models.RubricItem, error)
 	GetRubricsInClassroom(ctx context.Context, classroomID int64) ([]models.Rubric, error)
+}
+
+
+type Deadline interface {
+	GetDeadlineForRepo(ctx context.Context, repoName string) (*time.Time, error)
 }
