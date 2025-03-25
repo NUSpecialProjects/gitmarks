@@ -100,7 +100,7 @@ export const getFirstCommit = async (
 ): Promise<Date> => {
   const response = await fetch(
     `${base_url}/classrooms/classroom/${classroomID}/assignments/assignment/${assignmentID}/works/work/${studentWorkID}/first-commit`,
-    {
+    { 
       method: "GET",
       credentials: "include",
       headers: {
@@ -111,8 +111,10 @@ export const getFirstCommit = async (
   if (!response.ok) {
     throw new Error("Network response was not ok");
   }
-  const resp = ((await response.json()) as Date);
-  return resp;
+  const resp = (await response.json());
+  const date = resp.first_commit_at as Date
+  return date;
+
 }
 
 export const getTotalCommits = async (
