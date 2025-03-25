@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -15,13 +14,12 @@ WHERE sw.repo_name = $1;
 `
 	var uniqueDueDate time.Time
 
-	debugQuery := strings.Replace(query, "$1", fmt.Sprintf("'%s'", repoName), 1)
-    fmt.Printf("Executing query: %s\n", debugQuery)
 
 	err := db.connPool.QueryRow(ctx, query, repoName).Scan(&uniqueDueDate)
 	if err != nil {
-		return nil, fmt.Errorf("My brotha get good at Postgres: %s \n", err.Error())
+		return nil, fmt.Errorf("Error Retrieving Deadline: %s \n", err.Error())
 	}
+
 	return &uniqueDueDate, nil
 }
 
