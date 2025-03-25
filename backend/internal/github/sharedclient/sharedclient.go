@@ -289,7 +289,6 @@ func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *t
 		CommitMessage:     "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
-
 }
 
 func actionWithDeadline(deadline *time.Time) string {
@@ -347,16 +346,6 @@ func targetBranchProtectionAction() string {
 
 func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName, branchName string) error {
 
-	// check if the file exists
-	exists, err := api.FileExists(orgName, repoName, ".github/workflows/check-pr-target-branch.yml")
-	if err != nil {
-		return err
-	}
-	if exists {
-		fmt.Println("File already exists, skipping")
-		return nil
-	}
-
 	addition := models.RepositoryAddition{
 		FilePath:          ".github/workflows/check-pr-target-branch.yml",
 		RepoName:          repoName,
@@ -370,20 +359,45 @@ func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName
 }
 
 func (api *CommonAPI) EditRepository(ctx context.Context, addition *models.RepositoryAddition) error {
+	// Get the current file info if it exists
 	endpoint := fmt.Sprintf("/repos/%s/%s/contents/%s", addition.OwnerName, addition.RepoName, addition.FilePath)
-	encodedContent := base64.StdEncoding.EncodeToString([]byte(addition.Content))
+	req, err := api.Client.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		fmt.Println("Error getting current file info", err)
+		return err
+	}
 
+	var existingFile struct {
+		SHA string `json:"sha"`
+	}
+	_, err = api.Client.Do(ctx, req, &existingFile)
+
+	encodedContent := base64.StdEncoding.EncodeToString([]byte(addition.Content))
 	body := map[string]interface{}{
 		"message": addition.CommitMessage,
 		"content": encodedContent,
 		"branch":  addition.DestinationBranch,
 	}
-	req, err := api.Client.NewRequest("PUT", endpoint, body)
+
+	// If the file already exists, include its SHA
+	if err == nil && existingFile.SHA != "" {
+		body["sha"] = existingFile.SHA
+	}
+
+	// Make the update request
+	req, err = api.Client.NewRequest("PUT", endpoint, body)
 	if err != nil {
+		fmt.Println("Error creating update request", err)
 		return err
 	}
+
 	_, err = api.Client.Do(ctx, req, nil)
-	return err
+	if err != nil {
+		fmt.Println("Error updating file", err)
+		return err
+	}
+
+	return nil
 }
 
 func (api *CommonAPI) InviteUserToOrganization(ctx context.Context, orgName string, userID int64) error {
