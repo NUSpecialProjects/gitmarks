@@ -277,5 +277,6 @@ export const getAssignmentTotalCommits = async (
     throw new Error("Network response was not ok");
   }
   const resp = await response.json();
+  console.log("totoa", resp.total_commits)
   return resp.total_commits;
 };

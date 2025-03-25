@@ -127,6 +127,7 @@ export const useAssignmentTotalCommits = (classroomId: number | undefined, assig
     queryKey: ['totalAssignmentCommits', classroomId, assignmentId],
     queryFn: async () => {
       if (!classroomId || !assignmentId) return null;
+      console.log("called...")
       return await getAssignmentTotalCommits(classroomId, assignmentId);
     },
     enabled: !!classroomId && !!assignmentId

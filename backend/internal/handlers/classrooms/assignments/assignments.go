@@ -535,13 +535,26 @@ func (s *AssignmentService) GetCommitCount() fiber.Handler {
 
 		totalCommits := 0
 		for _, work := range works {
-			var opts github.CommitsListOptions
-			opts.Author = work.Contributors[0].GithubUsername
-			commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
-			if err != nil {
-				return errs.GithubAPIError(err)
-			}
-			totalCommits += len(commits)
+			var branchOpts github.ListOptions
+            branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
+            if err != nil {
+                return errs.GithubAPIError(err)
+            }
+            var allCommits []*github.RepositoryCommit
+
+            for  _, branch := range branches {
+                var opts github.CommitsListOptions
+                // Assumes a single contirbutor, KHO-144
+		        opts.Author = work.Contributors[0].GithubUsername
+                opts.SHA = *branch.Name
+		        commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+		        if err != nil {
+			        return errs.GithubAPIError(err)
+		        }
+                allCommits = append(allCommits, commits...)
+            }
+            totalCommits += len(allCommits)
+
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{

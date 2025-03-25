@@ -126,7 +126,6 @@ const StudentSubmission: React.FC = () => {
       return newDate;
     }
 
-
     const dates = Array.from(commitsPerDay.keys());
     if (submission) {
       const today = new Date()
@@ -134,10 +133,11 @@ const StudentSubmission: React.FC = () => {
       today.setUTCMinutes(0)
       today.setUTCSeconds(0)
 
-      if (dates.length === 0) {
+      if (dates.length <= 1) {
         setNoCommits(true)
+        return {}
       } else if (dates[dates.length - 1].toDateString() !== (today.toDateString())) {
-        dates.push(new Date())
+        dates.push(today)
       }
     }
 
@@ -164,74 +164,81 @@ const StudentSubmission: React.FC = () => {
     const sortedDates = Array.from(sortedCommitsPerDay.keys());
     const sortedCounts = Array.from(sortedCommitsPerDay.values());
 
-    const sortedDatesStrings = Array.from(sortedDates.map((a) => `${a.getUTCMonth()+1}/${a.getUTCDate()}`))
+    const sortedDatesStrings = Array.from(sortedDates.map((a) => `${a.getUTCMonth() + 1}/${a.getUTCDate()}`))
     if (sortedDatesStrings.length > 0) {
       setLoadingAllCommits(false)
     }
 
-    return {sortedDatesStrings, sortedCounts}
+    return { sortedDatesStrings, sortedCounts }
   }
 
   // useEffect for line chart 
   useEffect(() => {
     if (commitsPerDay) {
-      
-      const {sortedDatesStrings, sortedCounts} = prepLineData()
 
-      const lineData = {
-        labels: sortedDatesStrings,
-        datasets: [
-          {
-            data: sortedCounts,
-            borderColor: 'rgba(13, 148, 136, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.05,
-          },
-        ],
-      }
-      setLineData(lineData)
+      const lineInformation  = prepLineData()
+      const dates = lineInformation.sortedDatesStrings!
+      const counts = lineInformation.sortedCounts!
 
-      const lineOptions = {
-        responsive: true,
-        plugins: {
-          legend: {
-            display: false,
-          },
-          title: {
-            display: false,
-          },
-          datalabels: {
-            display: false,
-          },
-        },
-        scales: {
-          x: {
-            grid: {
-              display: false,
-            },
-          },
-          y: {
-            grid: {
-              display: false,
-            },
-            ticks: {
-              maxTicksLimit: 5,
-              beginAtZero: true,
-            },
-          },
-        },
-        elements: {
-          point: {
-            radius: 1,
-          },
-          labels: {
-            display: false
+      if (dates && counts) {
+        
+        if (dates.length > 0 && counts.length > 0) {
+          const lineData = {
+            labels: dates,
+            datasets: [
+              {
+                data: counts,
+                borderColor: 'rgba(13, 148, 136, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.05,
+              },
+            ],
           }
-        },
+          setLineData(lineData)
+
+          const lineOptions = {
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false,
+              },
+              title: {
+                display: false,
+              },
+              datalabels: {
+                display: false,
+              },
+            },
+            scales: {
+              x: {
+                grid: {
+                  display: false,
+                },
+              },
+              y: {
+                grid: {
+                  display: false,
+                },
+                ticks: {
+                  maxTicksLimit: 5,
+                  beginAtZero: true,
+                },
+              },
+            },
+            elements: {
+              point: {
+                radius: 1,
+              },
+              labels: {
+                display: false
+              }
+            },
+          }
+
+          setLineOptions(lineOptions)
+
+        }
       }
-
-      setLineOptions(lineOptions)
-
     }
 
   }, [commitsPerDay])
