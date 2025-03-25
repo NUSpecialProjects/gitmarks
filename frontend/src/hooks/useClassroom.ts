@@ -30,6 +30,7 @@ export const useClassroomValidation = (name: string) => {
     enabled: !!name && name !== "Custom",
     staleTime: 1000,
     gcTime: 0,
+    retry: false
   });
 };
 
@@ -43,7 +44,6 @@ export const useClassroomValidation = (name: string) => {
  */
 export const useClassroomInviteLink = (classroomId: number | undefined, role: ClassroomRole, enabled: boolean = true) => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
-
   return useQuery({
     queryKey: ['classroomToken', classroomId, role],
     queryFn: async () => {

@@ -312,7 +312,6 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		if err != nil {
 			return err
 		}
-		
 
 		// TODO Here: Enable Github Actions on student repo.
 

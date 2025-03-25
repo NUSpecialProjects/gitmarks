@@ -7,8 +7,12 @@ import { GraderContext } from "@/contexts/grader";
 
 import "./styles.css";
 
-const RubricTree: React.FC = () => {
-  const { studentWork, rubric, stagedFeedback, postFeedback } =
+interface IRubricTree { 
+  loading: boolean;
+}
+
+const RubricTree: React.FC<IRubricTree> = ({ loading }) => {
+  const { studentWork, rubric, stagedFeedback, postFeedback, isSubmittingGrade } =
     useContext(GraderContext);
 
   return (
@@ -17,12 +21,15 @@ const RubricTree: React.FC = () => {
 
       <SimpleBar className="RubricTree__body scrollable">
         <div className="RubricTree__items">
-          {rubric ? (
+          {
+          loading ? (
+            <span className="RubricTree__message">Loading rubric</span>
+          ) : rubric ? (
             rubric.rubric_items.map((rubricItem, i) => (
               <RubricItem key={i} {...rubricItem} />
             ))
           ) : (
-            <span style={{ padding: "8px 10px" }}>
+            <span className="RubricTree__message">
               No rubric for this assignment.
             </span>
           )}
@@ -37,7 +44,12 @@ const RubricTree: React.FC = () => {
               0
             )}
         </div>
-        <Button onClick={postFeedback}>Submit Grade</Button>
+        <Button 
+          onClick={postFeedback} 
+          disabled={isSubmittingGrade || Object.keys(stagedFeedback).length === 0}
+        >
+          {isSubmittingGrade ? "Submitting..." : "Submit Grade"}
+        </Button>
       </div>
     </ResizablePanel>
   );
