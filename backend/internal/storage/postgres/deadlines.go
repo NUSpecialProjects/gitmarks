@@ -3,20 +3,24 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
 
 func (db *DB) GetDeadlineForRepo(ctx context.Context, repoName string) (*time.Time, error){
-	query := fmt.Sprintf(`
+	query := `
 SELECT sw.unique_due_date FROM student_works as sw
 WHERE sw.repo_name = $1;
-`)
+`
 	var uniqueDueDate time.Time
+
+	debugQuery := strings.Replace(query, "$1", fmt.Sprintf("'%s'", repoName), 1)
+    fmt.Printf("Executing query: %s\n", debugQuery)
 
 	err := db.connPool.QueryRow(ctx, query, repoName).Scan(&uniqueDueDate)
 	if err != nil {
-		return nil, fmt.Errorf("My brotha get good at Postgres")
+		return nil, fmt.Errorf("My brotha get good at Postgres: %s \n", err.Error())
 	}
 	return &uniqueDueDate, nil
 }

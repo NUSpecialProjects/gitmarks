@@ -289,7 +289,7 @@ func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *t
 		RepoName: repoName,
 		OwnerName: orgName,
 		DestinationBranch: branchName,
-		Content: actionWithDeadline(deadline),
+		Content: actionWithDeadline(repoName),
 		CommitMessage: "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
@@ -297,57 +297,64 @@ func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *t
 }
 
 
-func actionWithDeadline(deadline *time.Time) string {
-	// yyyy, mm, dd, hh, mm, ss
-	  var scriptString = `name: deadline-enforcement
-  on:
-	pull_request:
-	  types: [opened, reopened, edited, synchronize]
-  
-  jobs:
-	deadline-enforcement:
-	  runs-on: ubuntu-latest
-	  steps:
-		- name: Execute python deadline check
-		  run: |
-			  python -c "
-			  from datetime import datetime, timezone
-			  import sys
-			  
-			  def check_date():
-				  target_date = datetime(%d, %d, %d, %d, %d, %d, tzinfo=timezone.utc)
-				  current_date = datetime.now(timezone.utc)
-				  if current_date > target_date:
-					  sys.exit(1)
-				  else:
-					  sys.exit(0)
-  
-			  if __name__ == '__main__':
-				  check_date()
-			  "
-  `
-  
-	  return fmt.Sprintf(scriptString, deadline.Year(), deadline.Month(), deadline.Day(), deadline.Hour(), deadline.Minute(), deadline.Second())
-  }
+func actionWithDeadline(repoName string) string {
+	fmt.Printf(repoName)
+    var scriptString = `name: deadline-enforcement
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, reopened, edited, synchronize]
+  workflow_dispatch:
+
+jobs:
+  deadline-enforcement:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Check GitMarks webhook status
+        id: webhook-check
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          RESPONSE=$(curl -s "https://on-scorpion-obliging.ngrok-free.app/overdue/$REPO_NAME")
+          echo "Response received: $RESPONSE"
+          CONTENT=$(echo "$RESPONSE" | jq -r '.overdue')
+          echo "Parsed content: $CONTENT"
+          
+          if [[ "$CONTENT" == "true" ]]; then
+            echo "::error::Webhook check failed: This assignment is overdue"
+            exit 1
+          elif [[ "$CONTENT" == "false" ]]; then
+            echo "Webhook check passed: This assignment is currently on time"
+            exit 0
+          else
+            echo "::warning::Unexpected response: $CONTENT"
+            exit 1
+          fi`
+    
+    return scriptString
+}
   
   
   func targetBranchProtectionAction() string {
 	  var actionString = `name: check-pr-target-branch
   
-  on:
-	pull_request:
-	  types: [opened, reopened, edited, synchronize]
-  
-  jobs:
-	check-pr-target-branch:
-	  runs-on: ubuntu-latest
-	  steps:
-		- name: Check PR destination branch
-		  run: |
-			if [[ "${{ github.event.pull_request.base.ref }}" == "feedback" ]]; then
-			  echo "Error: Pull requests targeting the '' branch are not allowed"
-			  exit 1
-			fi`
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+jobs:
+  check-pr-target-branch:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check PR destination branch
+      run: |
+        if [[ "${{ github.event.pull_request.base.ref }}" == "feedback" ]]; then
+            echo "Error: Pull requests targeting the 'feedback' branch are not allowed"
+            exit 1
+        fi`
 			return actionString
   }
 

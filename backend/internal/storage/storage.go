@@ -19,6 +19,7 @@ type Storage interface {
 	Rubric
 	AssignmentTemplate
 	AssignmentBaseRepo
+	Deadline
 }
 
 type FeedbackComment interface {
