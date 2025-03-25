@@ -60,3 +60,6 @@ terraform/.terraform/
 */terraform.tfstate*
 */terraform.tfvars
 
+
+# Misc
+TODO.txt
