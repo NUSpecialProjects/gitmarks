@@ -278,7 +278,6 @@ func (s *WorkService) GetCommitCount() fiber.Handler {
 		totalCount := work.CommitAmount
 		// Zero either implies bad data or no commits, double check to be safe
 		if totalCount == 0 {
-            fmt.Println("Are yountelling me this isnt being called")
             var branchOpts github.ListOptions
             branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
             if err != nil {
@@ -330,7 +329,6 @@ func (s *WorkService) GetCommitsPerDay() fiber.Handler {
         if err != nil {
             return errs.GithubAPIError(err)
         }
-        fmt.Println(branches)
         var allCommits []*github.RepositoryCommit
 
         for  _, branch := range branches {
