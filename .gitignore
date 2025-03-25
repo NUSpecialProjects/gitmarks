@@ -62,3 +62,6 @@ terraform/.terraform/
 
 #Alex env files 
 backend/.env.alex
+
+# Misc
+TODO.txt
