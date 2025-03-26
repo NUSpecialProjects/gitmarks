@@ -25,14 +25,6 @@ func (s *ClassroomService) doesClassroomExist(ctx context.Context, name string) 
 	return err == nil, nil // If no error, classroom exists
 }
 
-// Returns the classrooms the authenticated user is part of.
-func (s *ClassroomService) getUserClassrooms() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		// Implement logic here
-		return c.SendStatus(fiber.StatusNotImplemented)
-	}
-}
-
 // Returns the details of a classroom.
 func (s *ClassroomService) getClassroom() fiber.Handler {
 	return func(c *fiber.Ctx) error {

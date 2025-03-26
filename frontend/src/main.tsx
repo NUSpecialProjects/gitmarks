@@ -44,8 +44,8 @@ const queryClient = new QueryClient({
   }),
   defaultOptions: {
     queries: {
-      staleTime: 5 * 1000, // 5 seconds
-      gcTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 0, // 5 * 1000, // 5 seconds
+      gcTime: 0, //5 * 60 * 1000, // 5 minutes
       refetchOnMount: true,
       retry: 1,
     },

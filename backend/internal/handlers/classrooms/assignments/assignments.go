@@ -627,14 +627,43 @@ func (s *AssignmentService) GetFirstCommitDate() fiber.Handler {
 
 func (s *AssignmentService) GetCommitCount() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		classroomID, err := strconv.Atoi(c.Params("classroom_id"))
+		if err != nil {
+			return errs.BadRequest(err)
+		}
+
 		assignmentID, err := strconv.Atoi(c.Params("assignment_id"))
 		if err != nil {
 			return errs.BadRequest(err)
 		}
 
-		totalCommits, err := s.store.GetTotalWorkCommits(c.Context(), assignmentID)
+		works, err := s.store.GetWorks(c.Context(), classroomID, assignmentID)
 		if err != nil {
 			return errs.InternalServerError()
+		}
+
+		totalCommits := 0
+		for _, work := range works {
+			var branchOpts gh.ListOptions
+			branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
+			if err != nil {
+				return errs.GithubAPIError(err)
+			}
+			var allCommits []*gh.RepositoryCommit
+
+			for _, branch := range branches {
+				var opts gh.CommitsListOptions
+				// Assumes a single contirbutor, KHO-144
+				opts.Author = work.Contributors[0].GithubUsername
+				opts.SHA = *branch.Name
+				commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+				if err != nil {
+					return errs.GithubAPIError(err)
+				}
+				allCommits = append(allCommits, commits...)
+			}
+			totalCommits += len(allCommits)
+
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{

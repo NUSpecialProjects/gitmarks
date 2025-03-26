@@ -131,7 +131,7 @@ func CheckBaseRepoInitialized(ctx context.Context, store storage.Storage, repoID
 }
 
 func CheckBranchesExist(ctx context.Context, client github.GitHubBaseClient, repoOwner string, repoName string) (bool, error) {
-	branches, err := client.GetBranches(ctx, repoOwner, repoName)
+	branches, err := client.ListBranches(ctx, repoOwner, repoName, &gh.ListOptions{})
 	if err != nil {
 		return false, err
 	}
