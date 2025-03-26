@@ -222,13 +222,6 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		// Initialize the base repository if it is not initialized already
-		err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
-		if err != nil {
-			fmt.Println("Error initializing repo:", err)
-			return errs.InternalServerError()
-		}
-
 		// Get classroom
 		classroom, err := s.store.GetClassroomByID(c.Context(), assignment.ClassroomID)
 		if err != nil {
@@ -279,6 +272,21 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return err
 		}
 
+		// Initialize the base repository if it is not initialized already
+		if !baseRepo.Initialized {
+			err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
+			if err != nil {
+				fmt.Println("Error initializing repo:", err)
+				return errs.InternalServerError()
+			}
+		}
+
+		firstCommitSHA, err := s.getFirstCommitSHA(c.Context(), client, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
+		if err != nil {
+			fmt.Println("Error getting first commit SHA:", err)
+			return errs.InternalServerError()
+		}
+
 		// Generate fork
 		err = client.ForkRepository(c.Context(),
 			baseRepo.BaseRepoOwner,
@@ -324,6 +332,19 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			initialDelay *= 2
 		}
 
+		// Force push to the first commit, then merge them back in to get rid of the "enable actions" button
+		err = client.SetBranchToCommit(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName(), "main", *firstCommitSHA)
+		if err != nil {
+			fmt.Println("Error setting branch to commit:", err)
+			return errs.GithubAPIError(err)
+		}
+
+		err = client.SyncForkWithUpstream(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName(), "main")
+		if err != nil {
+			fmt.Println("Error syncing fork with upstream:", err)
+			return errs.GithubAPIError(err)
+		}
+
 		// Create feedback pull request
 		err = client.CreateFeedbackPR(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName())
 		if err != nil {
@@ -332,7 +353,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		}
 
 		// KHO-239
-		err = client.CreateBranchRuleset(c.Context(), classroom.OrgName, forkName)
+		err = client.CreateBranchRuleset(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName())
 		if err != nil {
 			fmt.Println("Error creating branch ruleset:", err)
 			return errs.CriticalGithubError()
@@ -352,13 +373,21 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return err
 		}
 
-		// TODO Here: Enable Github Actions on student repo.
-
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":  "Assignment Accepted!",
 			"repo_url": studentWorkRepo.GetHTMLURL(),
 		})
 	}
+}
+
+func (s *AssignmentService) getFirstCommitSHA(ctx context.Context, client github.GitHubBaseClient, orgName string, repoName string) (*string, error) {
+	commits, err := client.ListCommits(ctx, orgName, repoName, &gh.CommitsListOptions{
+		SHA: "main",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return commits[len(commits)-1].SHA, nil
 }
 
 // Checks if an assignment with a given name exists in a classroom.
