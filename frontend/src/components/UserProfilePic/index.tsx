@@ -12,7 +12,7 @@ const UserProfilePic: React.FC = () => {
       {user ? (
         <img src={user.github_user.avatar_url} alt={user.github_user.login} className="User__avatar" />
       ) : (
-        <div className="User__avatar"> </div>
+        <div className="User__icon"></div>
       )}
     </div>
   );
