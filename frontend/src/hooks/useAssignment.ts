@@ -4,6 +4,7 @@ import {
   getAssignmentIndirectNav,
   getAssignments,
   getAssignmentTemplate,
+  getAssignmentTotalCommits,
   postAssignmentToken,
 } from "@/api/assignments";
 import {
@@ -109,6 +110,25 @@ export const useAssignmentTemplate = (classroomId: number | undefined, assignmen
     queryFn: async () => {
       if (!classroomId || !assignmentId) return null;
       return await getAssignmentTemplate(classroomId, assignmentId);
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+};
+
+/**
+ * Provides the number of commits made for this assignment
+ * 
+ * @param classroomId - The ID of the classroom to fetch the template for.
+ * @param assignmentId - The ID of the assignment to fetch the template for.
+ * @returns The the number of commits made for this assignment.
+ */
+export const useAssignmentTotalCommits = (classroomId: number | undefined, assignmentId: number | undefined) => {
+  return useQuery({
+    queryKey: ['totalAssignmentCommits', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return null;
+      console.log("called...")
+      return await getAssignmentTotalCommits(classroomId, assignmentId);
     },
     enabled: !!classroomId && !!assignmentId
   });

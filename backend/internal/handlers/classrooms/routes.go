@@ -31,9 +31,6 @@ func classroomRoutes(router fiber.Router, service *ClassroomService) fiber.Route
 		"/classrooms",
 	).Use(middleware.Protected(service.userCfg.JWTSecret))
 
-	// Get the classrooms the authenticated user is part of
-	classroomRouter.Get("/", service.getUserClassrooms())
-
 	// Get the details of a classroom
 	classroomRouter.Get("/classroom/:classroom_id", service.getClassroom())
 
@@ -45,9 +42,6 @@ func classroomRoutes(router fiber.Router, service *ClassroomService) fiber.Route
 
 	// Update a classroom
 	classroomRouter.Put("/classroom/:classroom_id", service.updateClassroom())
-
-	// Update a classroom's name
-	classroomRouter.Put("/classroom/:classroom_id/name", service.updateClassroomName())
 
 	// Update a classroom's name
 	classroomRouter.Put("/classroom/:classroom_id/name", service.updateClassroomName())

@@ -275,9 +275,43 @@ func (s *WorkService) GetCommitCount() fiber.Handler {
 			return err
 		}
 
+		totalCount := work.CommitAmount
+		// Zero either implies bad data or no commits, double check to be safe
+		if totalCount == 0 {
+            var branchOpts github.ListOptions
+            branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
+            if err != nil {
+                return errs.GithubAPIError(err)
+            }
+            var allCommits []*github.RepositoryCommit
+
+            for  _, branch := range branches {
+                var opts github.CommitsListOptions
+                // Assumes a single contirbutor, KHO-144
+		        opts.Author = work.Contributors[0].GithubUsername
+                opts.SHA = *branch.Name
+		        commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+		        if err != nil {
+			        return errs.GithubAPIError(err)
+		        }
+                allCommits = append(allCommits, commits...)
+            }
+            totalCount = len(allCommits)
+            
+            // If there were commits, update the student work
+            if totalCount != 0 {
+                work.StudentWork.CommitAmount = totalCount
+                _, err := s.store.UpdateStudentWork(c.Context(), work.StudentWork)
+                if err != nil {
+                    return errs.InternalServerError()
+                }
+            }
+		}
+
+
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"work_id":      work.ID,
-			"commit_count": work.CommitAmount,
+			"commit_count": totalCount,
 		})
 	}
 }
@@ -289,15 +323,29 @@ func (s *WorkService) GetCommitsPerDay() fiber.Handler {
 			return err
 		}
 
-		var opts github.CommitsListOptions
-		opts.Author = work.Contributors[0].GithubUsername
-		commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
-		if err != nil {
-			return errs.GithubAPIError(err)
-		}
+
+        var branchOpts github.ListOptions
+        branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
+        if err != nil {
+            return errs.GithubAPIError(err)
+        }
+        var allCommits []*github.RepositoryCommit
+
+        for  _, branch := range branches {
+            var opts github.CommitsListOptions
+            // Assumes a single contirbutor, KHO-144
+		    opts.Author = work.Contributors[0].GithubUsername
+            opts.SHA = *branch.Name
+		    commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+		    if err != nil {
+			    return errs.GithubAPIError(err)
+		    }
+            allCommits = append(allCommits, commits...)
+        }
+        
 
 		commitDatesMap := make(map[time.Time]int)
-		for _, commit := range commits {
+		for _, commit := range allCommits {
 			commitDate := commit.GetCommit().GetCommitter().Date
 			if commitDate != nil {
 				// Standardize times to midday UTC
@@ -319,9 +367,47 @@ func (s *WorkService) GetFirstCommitDate() fiber.Handler {
 			return err
 		}
 
+		fcd := work.FirstCommitDate
+
+		if fcd == nil {
+            var branchOpts github.ListOptions
+            branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
+            if err != nil {
+                return errs.GithubAPIError(err)
+            }
+            fmt.Println(branches)
+            var allCommits []*github.RepositoryCommit
+
+            for  _, branch := range branches {
+                var opts github.CommitsListOptions
+                // Assumes a single contirbutor, KHO-144
+		        opts.Author = work.Contributors[0].GithubUsername
+                opts.SHA = *branch.Name
+		        commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+		        if err != nil {
+			        return errs.GithubAPIError(err)
+		        }
+                allCommits = append(allCommits, commits...)
+            }
+        
+
+
+			if len(allCommits) > 0 {
+			    fcd = allCommits[len(allCommits)-1].GetCommit().GetCommitter().Date
+                  
+                work.StudentWork.FirstCommitDate = fcd
+                _, err := s.store.UpdateStudentWork(c.Context(), work.StudentWork)
+                if err != nil {
+                    return errs.InternalServerError()
+                }
+            
+			}
+
+		}
+
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"work_id":         work.ID,
-			"first_commit_at": work.FirstCommitDate,
+			"first_commit_at": fcd,
 		})
 	}
 }
