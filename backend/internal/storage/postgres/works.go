@@ -215,6 +215,27 @@ WHERE sw.repo_name = $1
 	return work.StudentWork, nil
 }
 
+func (db *DB) GetWorkByGitHubUserID(ctx context.Context, classroomID int, assignmentID int, gitHubUserID int64) (models.StudentWork, error) {
+	query := fmt.Sprintf(`
+	SELECT %s FROM %s
+	WHERE u.github_user_id = $1 AND ao.classroom_id = $2 AND ao.id = $3
+	`, DesiredFields, JoinedTable)
+
+	rows, err := db.connPool.Query(ctx, query, gitHubUserID, classroomID, assignmentID)
+	if err != nil {
+		return models.StudentWork{}, err
+	}
+
+	defer rows.Close()
+
+	work, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[models.RawStudentWork])
+	if err != nil {
+		return models.StudentWork{}, err
+	}
+
+	return work.StudentWork, nil
+}
+
 func (db *DB) UpdateStudentWork(ctx context.Context, studentWork models.StudentWork) (models.StudentWork, error) {
 	_, err := db.connPool.Exec(ctx, `
 		UPDATE student_works
