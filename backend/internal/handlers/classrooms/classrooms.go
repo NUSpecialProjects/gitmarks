@@ -402,18 +402,18 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 		// Go get the token from the DB
 		classroomToken, err := s.store.GetClassroomToken(c.Context(), token)
 		if err != nil {
-			return errs.AuthenticationError()
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid link"})
 		}
 
 		// Check if the token is valid
 		if classroomToken.ExpiresAt != nil && classroomToken.ExpiresAt.Before(time.Now()) {
-			return errs.ExpiredTokenError()
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "Link has expired"})
 		}
 
 		message, classroom, classroomUser, err := s.inviteUserToClassroom(
 			c.Context(), classroomToken.ClassroomID, classroomToken.ClassroomRole, &user, client)
 		if err != nil {
-			return err
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": "Error occursed while joining classroom"})
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
