@@ -43,7 +43,8 @@ export async function useAssignmentToken(
   );
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    const errorData = await response.json();
+    throw new Error(errorData.message || "An error occurred joining classroom");
   }
 
   const resp: IAssignmentAcceptResponse = await response.json();

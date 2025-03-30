@@ -182,33 +182,38 @@ func (s *AssignmentService) generateAssignmentToken() fiber.Handler {
 func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 	//@KHO-239
 	return func(c *fiber.Ctx) error {
+		// Retrieve user client and session
+		client, _, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
+		if err != nil {
+			return errs.AuthenticationError()
+		}
+
 		token := c.Params("token")
 		if token == "" {
 			return errs.BadRequest(errors.New("token is required"))
 		}
 
+		// Go get the token from the DB
+		assignmentToken, err := s.store.GetAssignmentToken(c.Context(), token)
+		if err != nil {
+			return c.Status(http.StatusNotFound).JSON(fiber.Map{"message": "Invalid link"})
+		}
+
+		// Check if the token is valid
+		if assignmentToken.ExpiresAt != nil && assignmentToken.ExpiresAt.Before(time.Now()) {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "Link has expired"})
+		}
+
 		// Get assignment using the token
 		assignment, err := s.store.GetAssignmentByToken(c.Context(), token)
 		if err != nil {
-			return errs.BadRequest(errors.New("invalid token"))
+			return c.Status(http.StatusNotFound).JSON(fiber.Map{"message": "Invalid token"})
 		}
 
 		// Get assignment base repository
 		baseRepo, err := s.store.GetBaseRepoByID(c.Context(), assignment.BaseRepoID)
 		if err != nil {
 			return errs.InternalServerError()
-		}
-
-		// Retrieve user client and session
-		client, err := middleware.GetClient(c, s.store, s.userCfg)
-		if err != nil {
-			return errs.AuthenticationError()
-		}
-
-		// Get user
-		user, err := client.GetCurrentUser(c.Context())
-		if err != nil {
-			return errs.GithubAPIError(err)
 		}
 
 		// Get classroom
@@ -536,24 +541,24 @@ func (s *AssignmentService) GetCommitCount() fiber.Handler {
 		totalCommits := 0
 		for _, work := range works {
 			var branchOpts github.ListOptions
-            branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
-            if err != nil {
-                return errs.GithubAPIError(err)
-            }
-            var allCommits []*github.RepositoryCommit
+			branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
+			if err != nil {
+				return errs.GithubAPIError(err)
+			}
+			var allCommits []*github.RepositoryCommit
 
-            for  _, branch := range branches {
-                var opts github.CommitsListOptions
-                // Assumes a single contirbutor, KHO-144
-		        opts.Author = work.Contributors[0].GithubUsername
-                opts.SHA = *branch.Name
-		        commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
-		        if err != nil {
-			        return errs.GithubAPIError(err)
-		        }
-                allCommits = append(allCommits, commits...)
-            }
-            totalCommits += len(allCommits)
+			for _, branch := range branches {
+				var opts github.CommitsListOptions
+				// Assumes a single contirbutor, KHO-144
+				opts.Author = work.Contributors[0].GithubUsername
+				opts.SHA = *branch.Name
+				commits, err := s.appClient.ListCommits(c.Context(), work.OrgName, work.RepoName, &opts)
+				if err != nil {
+					return errs.GithubAPIError(err)
+				}
+				allCommits = append(allCommits, commits...)
+			}
+			totalCommits += len(allCommits)
 
 		}
 

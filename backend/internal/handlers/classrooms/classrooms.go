@@ -402,7 +402,7 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 		// Go get the token from the DB
 		classroomToken, err := s.store.GetClassroomToken(c.Context(), token)
 		if err != nil {
-			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid link"})
+			return c.Status(http.StatusNotFound).JSON(fiber.Map{"message": "Invalid link"})
 		}
 
 		// Check if the token is valid
