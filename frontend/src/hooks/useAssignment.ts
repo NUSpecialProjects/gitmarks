@@ -86,7 +86,7 @@ export const useStudentWorks = (classroomId: number | undefined, assignmentId: n
  * @param expirationDuration - The expiration duration to use for the invite link.
  * @returns The invite link for the assignment.
  */
-export const useAssignmentInviteLink = (classroomId: number | undefined, assignmentId: number | undefined, baseUrl: string, expirationDuration: number | undefined) => {
+export const useAssignmentInviteLink = (classroomId: number | undefined, assignmentId: number | undefined, baseUrl: string, expirationDuration: number | undefined = undefined) => {
   return useQuery({
     queryKey: ['assignmentToken', classroomId, assignmentId, expirationDuration],
     queryFn: async () => {

@@ -43,7 +43,7 @@ export const useClassroomValidation = (name: string) => {
  * @param enabled - Manually enable or disable the query.
  * @returns The invite link for the classroom.
  */
-export const useClassroomInviteLink = (classroomId: number | undefined, role: ClassroomRole, expirationDuration: number | undefined, enabled: boolean = true) => {
+export const useClassroomInviteLink = (classroomId: number | undefined, role: ClassroomRole, expirationDuration: number | undefined = undefined, enabled: boolean = true) => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
   return useQuery({
     queryKey: ['classroomToken', classroomId, role, expirationDuration],
