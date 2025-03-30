@@ -413,7 +413,7 @@ func (s *ClassroomService) useClassroomToken() fiber.Handler {
 		message, classroom, classroomUser, err := s.inviteUserToClassroom(
 			c.Context(), classroomToken.ClassroomID, classroomToken.ClassroomRole, &user, client)
 		if err != nil {
-			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": "Error occursed while joining classroom"})
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": "Error occurred while joining classroom"})
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
