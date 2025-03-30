@@ -44,13 +44,13 @@ const CreateAssignment: React.FC = () => {
           throw new Error("Please provide an assignment name.");
         }
 
+        // Remove leading and trailing whitespace
+        data.assignmentName = data.assignmentName.trim();
+
         // Validate assignment name for illegal characters
         if (!validateRepoName(data.assignmentName)) {
           throw new Error("Assignment name cannot contain any special characters.");
         }
-
-        // Remove leading and trailing whitespace
-        data.assignmentName = data.assignmentName.trim();
 
         // Check if the assignment name is unique
         const nameExists = await assignmentNameExists(
