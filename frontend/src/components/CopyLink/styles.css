@@ -21,6 +21,11 @@
     position: relative;
     align-items: center;
 
+    &--loading {
+        cursor: default;
+        pointer-events: none;
+    }
+
     &__link {
         padding: 10px;
         width: 100%;
@@ -46,6 +51,10 @@
         &:active {
             background-color: var(--brand);
             color: var(--primary-text-white);
+        }
+
+        &:disabled {
+            cursor: default;
         }
     }
 

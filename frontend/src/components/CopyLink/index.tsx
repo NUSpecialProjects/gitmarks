@@ -43,8 +43,22 @@ export const CopyLinkWithExpiration: React.FC<ICopyLinkWithExpirationProps> = ({
     }));
 
     if (loading) {
-        return <div className="CopyLink">
-            <input id={name} type="text" value={""} className="CopyLink__link" readOnly></input>
+        return <div className="CopyLink CopyLink--loading">
+            <input id={name} type="text" value="" className="CopyLink__link loading-ellipsis" readOnly></input>
+            {expirationOptions.length > 0 && (
+                <div className="CopyLink__dropdownWrapper">
+                    <GenericDropdown
+                        options={dropdownOptions}
+                        selectedOption={(duration?.value?.toString() ?? 'Never')}
+                        onChange={() => {}}
+                        loading={true}
+                        labelText=""
+                        placeholder="Expiration"
+                        disabled={true}
+                    />
+                </div>
+            )}
+            <button className="CopyLink__copyButton" disabled><FaRegCopy /></button>
         </div>
     }
 
