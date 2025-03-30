@@ -183,7 +183,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 	//@KHO-239
 	return func(c *fiber.Ctx) error {
 		// Retrieve user client and session
-		client, _, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
+		client, githubUser, _, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
 		if err != nil {
 			return errs.AuthenticationError()
 		}
@@ -229,7 +229,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		}
 
 		// Check if fork already exists
-		forkName := generateSlugCase(classroom.Name, assignment.Name, user.Login)
+		forkName := generateSlugCase(classroom.Name, assignment.Name, githubUser.Login)
 		studentWorkRepo, _ := client.GetRepository(c.Context(), classroom.OrgName, forkName)
 		if studentWorkRepo != nil {
 			// Ensure student team is removed
@@ -242,7 +242,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			studentWork, err := s.store.GetWorkByRepoName(c.Context(), *studentWorkRepo.Name)
 			if err != nil {
 				// Recover from the case where the student work does not exist, but the repo does exist
-				studentWork, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
+				studentWork, err = s.store.CreateStudentWork(c.Context(), assignment.ID, githubUser.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
 				if err != nil {
 					return errs.InternalServerError()
 				}
@@ -314,7 +314,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		}
 
 		// Insert into DB
-		_, err = s.store.CreateStudentWork(c.Context(), assignment.ID, user.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
+		_, err = s.store.CreateStudentWork(c.Context(), assignment.ID, githubUser.ID, forkName, models.WorkStateAccepted, assignment.MainDueDate)
 		if err != nil {
 			return err
 		}
