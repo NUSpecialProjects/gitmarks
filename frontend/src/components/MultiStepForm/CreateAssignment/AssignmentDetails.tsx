@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import Input from "@/components/Input";
-import Checkbox from "@/components/Checkbox";
 import "./styles.css";
 
 const AssignmentDetails: React.FC<IStepComponentProps<IAssignmentFormData>> = ({
