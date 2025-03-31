@@ -68,7 +68,7 @@ const AssignmentDetails: React.FC<IStepComponentProps<IAssignmentFormData>> = ({
         ></Input>
       </div>
 
-      <div className="CreateAssignmentForms__formGroup">
+      {/* <div className="CreateAssignmentForms__formGroup">
         <Input
           label="Default Score"
           type="number"
@@ -79,9 +79,9 @@ const AssignmentDetails: React.FC<IStepComponentProps<IAssignmentFormData>> = ({
           required
           caption="Manual grading score will start at this value; defaults to 0 if left blank"
         ></Input>
-      </div>
+      </div> */}
 
-      <div className="CreateAssignmentForms__checkboxGroup">
+      {/* <div className="CreateAssignmentForms__checkboxGroup">
         <Checkbox
           id="groupAssignment"
           name="groupAssignment"
@@ -90,7 +90,7 @@ const AssignmentDetails: React.FC<IStepComponentProps<IAssignmentFormData>> = ({
           onChange={handleInputChange}
           caption="If left unchecked the assignment will be an individual submission for each student"
         ></Checkbox>
-      </div>
+      </div> */}
     </form>
   );
 };
