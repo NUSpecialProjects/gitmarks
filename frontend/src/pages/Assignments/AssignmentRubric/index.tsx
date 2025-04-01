@@ -9,9 +9,6 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { getAssignmentRubric } from "@/api/assignments";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
-import { FaChevronRight } from "react-icons/fa6";
-import { FaChevronDown } from "react-icons/fa";
-
 
 const AssignmentRubric: React.FC = () => {
   const location = useLocation();
