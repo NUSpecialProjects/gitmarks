@@ -393,7 +393,6 @@ const RubricEditor: React.FC = () => {
 
 
                 <div className="NewRubric__newItem" style={{ textDecoration: "underline" }} onClick={addNewItem}> + Add a new item</div>
-                <div className="NewRubric__newItem" style={{ textDecoration: "underline" }} onClick={() => console.log(rubricItemData)}> check</div>
 
 
                 <div className="NewRubric__decisionButtonsBar">
