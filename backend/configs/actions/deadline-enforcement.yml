@@ -1,0 +1,34 @@
+name: deadline-enforcement
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, reopened, edited, synchronize]
+  workflow_dispatch:
+
+jobs:
+  deadline-enforcement:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Check GitMarks webhook status
+        id: webhook-check
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          RESPONSE=$(curl -s "https://on-scorpion-obliging.ngrok-free.app/overdue/$REPO_NAME") # TODO: fix this
+          echo "Response received: $RESPONSE"
+          CONTENT=$(echo "$RESPONSE" | jq -r '.overdue')
+          echo "Parsed content: $CONTENT"
+          
+          if [[ "$CONTENT" == "true" ]]; then
+            echo "::error::Webhook check failed: This assignment is overdue"
+            exit 1
+          elif [[ "$CONTENT" == "false" ]]; then
+            echo "Webhook check passed: This assignment is currently on time"
+            exit 0
+          else
+            echo "::warning::Unexpected response: $CONTENT"
+            exit 1
+          fi
