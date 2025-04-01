@@ -135,41 +135,56 @@ const AssignmentRubric: React.FC = () => {
             </div>
           ) : (
             <div className="AssignmentRubric__noRubric">
-              <div className="AssignmentRubric__noRubricTitle">This Assignment does not have a Rubric yet.</div>
 
 
               {importing ? (
                 <>
-                    <TableDiv className="GradingAssignmentRow__submissions">
-                      {rubrics ? (
-                        <>
-                          <Table cols={1}>
-                            <TableRow style={{ borderTop: "none" }}>
-                              <TableCell>Rubrics</TableCell>
+                  
+
+                  <TableDiv className="GradingAssignmentRow__submissions">
+                    {rubrics.length > 0 ? (
+                      <>
+                        <Table cols={1}>
+                          <TableRow style={{borderTop: "none"}}>
+                            <TableCell>
+                            <div> Select a rubric for this Assignment.</div>
+                            </TableCell>
+                          </TableRow>
+                          {rubrics.map((rubric, i: number) => (
+                            <TableRow
+                              key={i}
+                              onClick={() => {
+                                console.log("clicked!");
+                                // navigate(...);
+                              }}
+                            >
+                              <TableCell>{rubric.rubric.name}</TableCell>
                             </TableRow>
-                            {rubrics.map((rubric, i: number) => (
-                              <TableRow
-                                key={i}
-                                onClick={() => {
-                                  console.log("clicked!");
-                                  // navigate(...);
-                                }}
-                              >
-                                <TableCell>{rubric.rubric.name}</TableCell>
-                              </TableRow>
-                            ))}
-                          </Table>
-                        </>
-                      ) : (
-                        <div style={{ padding: "15px 20px" }}>
+                          ))}
+                        </Table>
+                      </>
+                    ) : (
+                      <div >
+                        <div >
                           No rubrics have been created.
                         </div>
-                      )}
-                    </TableDiv>
+
+                        <Link to={`/app/rubrics/new`} state={{ assignment }}>
+                          {/* A horrific solution to the styling, it's temporary */}
+                          <Button className="AssignmentRubric__button" href="">
+                            Add new rubric
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </TableDiv>
                 </>
 
 
               ) : (
+<>
+                <div className="AssignmentRubric__noRubricTitle">This Assignment does not have a Rubric yet.</div>
+
                 <div className="AssignmentRubric__selectOption">
                   <Button
                     href=""
@@ -185,6 +200,8 @@ const AssignmentRubric: React.FC = () => {
                     </Button>
                   </Link>
                 </div>
+
+                </>
               )}
 
             </div>
