@@ -82,7 +82,7 @@ func (s *WebHookService) baseRepoInitialization(c *fiber.Ctx, pushEvent github.P
 	}
 
 	// Initialize the repository with branches, empty commit, and deadline enforcement
-	err := common.InitializePushEventRepo(c.Context(), s.appClient, s.store, pushEvent.Repo)
+	err := common.InitializePushEventRepo(c.Context(), s.appClient, s.store, pushEvent.Repo, s.domains.BACKEND_URL)
 	if err != nil {
 		return err
 	}

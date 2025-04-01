@@ -7,7 +7,7 @@ import (
 )
 
 func Routes(app *fiber.App, params types.Params) {
-	service := newWebHookService(params.Store, params.GitHubApp)
+	service := newWebHookService(params.Store, params.GitHubApp, params.Domains)
 	baseRouter := app.Group("")
 
 	baseRouter.Post("/webhook", middleware.ProtectedWebhook(params.GitHubApp.GetWebhookSecret()), service.WebhookHandler)
