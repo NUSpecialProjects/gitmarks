@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
@@ -293,39 +292,88 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName
 }
 
 func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName string) error {
-	// Read the action YAML file
-	actionContent, err := os.ReadFile("configs/actions/deadline-enforcement.yml")
-	if err != nil {
-		return fmt.Errorf("error reading deadline enforcement action file: %v", err)
-	}
-
 	addition := models.RepositoryAddition{
 		FilePath:          ".github/workflows/deadline-enforcement.yml",
 		RepoName:          repoName,
 		OwnerName:         orgName,
 		DestinationBranch: branchName,
-		Content:           string(actionContent),
+		Content:           actionWithDeadline(),
 		CommitMessage:     "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
 }
 
+func actionWithDeadline() string {
+	var scriptString = `name: deadline-enforcement
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, reopened, edited, synchronize]
+  workflow_dispatch:
+
+jobs:
+  deadline-enforcement:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Check GitMarks webhook status
+        id: webhook-check
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          RESPONSE=$(curl -s "https://on-scorpion-obliging.ngrok-free.app/overdue/$REPO_NAME")
+          echo "Response received: $RESPONSE"
+          CONTENT=$(echo "$RESPONSE" | jq -r '.overdue')
+          echo "Parsed content: $CONTENT"
+          
+          if [[ "$CONTENT" == "true" ]]; then
+            echo "::error::Webhook check failed: This assignment is overdue"
+            exit 1
+          elif [[ "$CONTENT" == "false" ]]; then
+            echo "Webhook check passed: This assignment is currently on time"
+            exit 0
+          else
+            echo "::warning::Unexpected response: $CONTENT"
+            exit 1
+          fi`
+
+	return scriptString
+}
+
+func targetBranchProtectionAction() string {
+	var actionString = `name: check-pr-target-branch
+  
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+jobs:
+  check-pr-target-branch:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check PR destination branch
+      run: |
+        if [[ "${{ github.event.pull_request.base.ref }}" == "feedback" ]]; then
+            echo "Error: Pull requests targeting the 'feedback' branch are not allowed"
+            exit 1
+        fi`
+	return actionString
+}
+
 func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName, branchName string) error {
-	// Read the action YAML file
-	actionContent, err := os.ReadFile("configs/actions/check-pr-target-branch.yml")
-	if err != nil {
-		return fmt.Errorf("error reading PR target branch action file: %v", err)
-	}
 
 	addition := models.RepositoryAddition{
 		FilePath:          ".github/workflows/check-pr-target-branch.yml",
 		RepoName:          repoName,
 		OwnerName:         orgName,
 		DestinationBranch: branchName,
-		Content:           string(actionContent),
-		CommitMessage:     "PR target branch enforcement GH action files",
+		Content:           targetBranchProtectionAction(),
+		CommitMessage:     "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
+
 }
 
 func (api *CommonAPI) EditRepository(ctx context.Context, addition *models.RepositoryAddition) error {
