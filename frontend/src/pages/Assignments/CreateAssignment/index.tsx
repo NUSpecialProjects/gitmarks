@@ -27,9 +27,9 @@ const CreateAssignment: React.FC = () => {
   const initialData: IAssignmentFormData = {
     assignmentName: "",
     classroomId: selectedClassroom?.id || -1,
-    groupAssignment: false,
+    // groupAssignment: false,
     mainDueDate: null,
-    defaultScore: 0,
+    // defaultScore: 0,
     templateRepo: null,
   };
 
