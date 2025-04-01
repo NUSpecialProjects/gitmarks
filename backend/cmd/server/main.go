@@ -53,6 +53,7 @@ func main() {
 		Store:     db,
 		GitHubApp: GitHubApp,
 		UserCfg:   cfg.GitHubUserClient,
+		Domains: cfg.Domains,
 	})
 
 	// Start the server in a separate goroutine

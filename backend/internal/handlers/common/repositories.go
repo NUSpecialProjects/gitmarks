@@ -16,7 +16,8 @@ var (
 	OtherRepoBranches = []string{"development", "feedback"}
 )
 
-func InitializeRepo(ctx context.Context, client github.GitHubBaseClient, store storage.Storage, repoID int64, repoOwner string, repoName string) error {
+//@Cam TODO
+func InitializeRepo(ctx context.Context, client github.GitHubBaseClient, store storage.Storage, repoID int64, repoOwner, repoName, serverUrl string) error {
 	repo := gh.PushEventRepository{
 		ID:           &repoID,
 		Organization: &repoOwner,
@@ -26,10 +27,10 @@ func InitializeRepo(ctx context.Context, client github.GitHubBaseClient, store s
 		},
 	}
 
-	return InitializePushEventRepo(ctx, client, store, &repo)
+	return InitializePushEventRepo(ctx, client, store, &repo, serverUrl)
 }
 
-func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient, store storage.Storage, repository *gh.PushEventRepository) error {
+func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient, store storage.Storage, repository *gh.PushEventRepository, serverUrl string) error {
 	// Retrieve assignment deadline from DB
 	template, err := store.GetAssignmentByRepoName(ctx, *repository.Name)
 	if err != nil {
@@ -40,7 +41,7 @@ func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient
 
 	if template.MainDueDate != nil {
 		// There is a deadline
-		err = client.CreateDeadlineEnforcement(ctx, template.MainDueDate, *repository.Organization, *repository.Name, MainRepoBranch)
+		err = client.CreateDeadlineEnforcement(ctx, template.MainDueDate, *repository.Organization, *repository.Name, MainRepoBranch, serverUrl)
 		if err != nil {
 			//@KHO-239
 			fmt.Println("Error creating deadline enforcement:", err)

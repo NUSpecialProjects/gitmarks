@@ -274,7 +274,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 
 		// Initialize the base repository if it is not initialized already
 		if !baseRepo.Initialized {
-			err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
+			err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName, s.domains.BACKEND_URL)
 			if err != nil {
 				fmt.Println("Error initializing repo:", err)
 				return errs.InternalServerError()

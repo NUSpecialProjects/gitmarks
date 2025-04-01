@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
@@ -291,20 +292,20 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName
 	return api.createRuleSet(ctx, body, orgName, repoName)
 }
 
-func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName string) error {
+func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error {
 	addition := models.RepositoryAddition{
 		FilePath:          ".github/workflows/deadline-enforcement.yml",
 		RepoName:          repoName,
 		OwnerName:         orgName,
 		DestinationBranch: branchName,
-		Content:           actionWithDeadline(),
+		Content:           actionWithDeadline(serverUrl),
 		CommitMessage:     "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
 }
 
-func actionWithDeadline() string {
-	var scriptString = `name: deadline-enforcement
+func actionWithDeadline(serverUrl string) string {
+	scriptString := `name: deadline-enforcement
 
 on:
   pull_request:
@@ -323,7 +324,7 @@ jobs:
         id: webhook-check
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          RESPONSE=$(curl -s "https://on-scorpion-obliging.ngrok-free.app/overdue/$REPO_NAME")
+          RESPONSE=$(curl -s "%s/overdue/$REPO_NAME")
           echo "Response received: $RESPONSE"
           CONTENT=$(echo "$RESPONSE" | jq -r '.overdue')
           echo "Parsed content: $CONTENT"
@@ -339,7 +340,7 @@ jobs:
             exit 1
           fi`
 
-	return scriptString
+	return fmt.Sprintf(scriptString, strings.TrimRight(serverUrl, "/"))
 }
 
 func targetBranchProtectionAction() string {
