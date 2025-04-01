@@ -16,7 +16,6 @@ var (
 	OtherRepoBranches = []string{"development", "feedback"}
 )
 
-//@Cam TODO
 func InitializeRepo(ctx context.Context, client github.GitHubBaseClient, store storage.Storage, repoID int64, repoOwner, repoName, serverUrl string) error {
 	repo := gh.PushEventRepository{
 		ID:           &repoID,
