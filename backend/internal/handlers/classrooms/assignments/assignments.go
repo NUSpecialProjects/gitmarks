@@ -564,14 +564,14 @@ func (s *AssignmentService) getGradedCount() fiber.Handler {
 		if err != nil {
 			return errs.InternalServerError()
 		}
-		notAcceptedWork := numStudents - totalCounts[models.WorkStateAccepted] -
+		notAcceptedWorks := numStudents - totalCounts[models.WorkStateAccepted] -
 			totalCounts[models.WorkStateStarted] -
 			totalCounts[models.WorkStateSubmitted] -
 			totalCounts[models.WorkStateGradingAssigned] -
 			totalCounts[models.WorkStateGradingCompleted] -
 			totalCounts[models.WorkStateGradePublished]
 
-		ungradedWorks = ungradedWorks + notAcceptedWork
+        ungradedWorks = ungradedWorks + notAcceptedWorks
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"assignment_id": assignmentID,
