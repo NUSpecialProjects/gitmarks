@@ -26,22 +26,16 @@ const AssignmentRubric: React.FC = () => {
   const [rubricData, setRubricData] = useState<IFullRubric>()
   const [rubrics, setRubrics] = useState<IFullRubric[]>([])
 
-  const [collapsed, setCollapsed] = useState(true);
-
-
   const [importing, setImporting] = useState(false)
 
 
-  const choseExisting = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedId = parseInt(event.target.value, 10);
-    if (selectedId) {
-      const selectedRubric = rubrics.find((rubric) => rubric.rubric.id === selectedId);
-      if (selectedRubric && assignment) {
+  const choseExisting = async (rubric: IFullRubric) => {
+    if (rubric && assignment) {
         navigate('/app/rubrics/new', {
-          state: { assignment: assignment, rubricData: selectedRubric, newRubric: true },
-        });
+          state: { assignment: assignment, rubricData: rubric, newRubric: true },
+        }); 
 
-      }
+      
     }
   };
 
@@ -147,15 +141,14 @@ const AssignmentRubric: React.FC = () => {
                         <Table cols={1}>
                           <TableRow style={{borderTop: "none"}}>
                             <TableCell>
-                            <div> Select a rubric for this Assignment.</div>
+                            <div> Select a starter rubric for this Assignment.</div>
                             </TableCell>
                           </TableRow>
                           {rubrics.map((rubric, i: number) => (
                             <TableRow
                               key={i}
                               onClick={() => {
-                                console.log("clicked!");
-                                // navigate(...);
+                                choseExisting(rubric)
                               }}
                             >
                               <TableCell>{rubric.rubric.name}</TableCell>
@@ -164,7 +157,7 @@ const AssignmentRubric: React.FC = () => {
                         </Table>
                       </>
                     ) : (
-                      <div >
+                      <div className="AssignmentRubric__noRubric">
                         <div >
                           No rubrics have been created.
                         </div>
