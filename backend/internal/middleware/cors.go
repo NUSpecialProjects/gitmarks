@@ -9,6 +9,10 @@ import (
 func Cors(domains config.Domains) fiber.Handler {
 	allowedOrigins := domains.FRONTEND_URL
 
+	if (allowedOrigins == "") {
+		allowedOrigins = "https://gitmarks.org"
+	}
+
 	return cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
 		AllowMethods:     "GET, POST, PUT, PATCH, DELETE, OPTIONS",
