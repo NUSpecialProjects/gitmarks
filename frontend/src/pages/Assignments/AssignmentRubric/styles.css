@@ -6,6 +6,8 @@
         font-size: 1.2rem;
         padding-top: 20px;
         padding-bottom: 20px;
+        justify-content: space-between;
+
     }
 
     &__chooseRubric {
@@ -35,6 +37,16 @@
     }
 
     &__button {
-        padding: 14px 58px;
+        padding: 14px 46px;
+    }
+
+
+    &__scratchLink {
+        color: var(--primary-text);
+        text-decoration: underline;
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.75em;
+        display: block;
     }
 }

@@ -100,6 +100,8 @@ const AssignmentRubric: React.FC = () => {
               <div className="AssignmentRubric__title">
                 {rubricData.rubric.name}
 
+
+
                 <Link to={`/app/rubrics/new`} state={{ assignment, rubricData }}>
                   <Button href=""> Edit Rubric </Button>
                 </Link>
@@ -152,12 +154,13 @@ const AssignmentRubric: React.FC = () => {
                             </TableRow>
                           ))}
                           <TableRow className="AssignmentRubric__chooseRubric">
+
                             <Link to={`/app/rubrics/new`} state={{ assignment }}>
-                              {/* A horrific solution to the styling, it's temporary */}
-                              <Button className="AssignmentRubric__button" href="">
+                              <div className="AssignmentRubric__scratchLink">
                                 Create one from scratch
-                              </Button>
+                              </div>
                             </Link>
+
                           </TableRow>
                         </Table>
                       </div>
@@ -189,12 +192,12 @@ const AssignmentRubric: React.FC = () => {
                       variant="secondary"
                       onClick={() => setImporting(true)}
                     >
-                      Import existing rubric
+                      Copy existing rubric
                     </Button>
                     <Link to={`/app/rubrics/new`} state={{ assignment }}>
                       {/* A horrific solution to the styling, it's temporary */}
                       <Button className="AssignmentRubric__button" href="">
-                        Add new rubric
+                        Create new rubric
                       </Button>
                     </Link>
                   </div>
