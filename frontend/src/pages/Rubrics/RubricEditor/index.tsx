@@ -11,7 +11,6 @@ import { ClassroomRole } from "@/types/enums";
 import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import { ErrorToast, SuccessToast } from "@/components/Toast";
-import { FaRegTrashAlt } from "react-icons/fa";
 
 interface IEditableItem {
     frontFacingIndex: number;
