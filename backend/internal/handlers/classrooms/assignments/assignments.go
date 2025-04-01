@@ -537,7 +537,6 @@ func (s *AssignmentService) getGradedCount() fiber.Handler {
 			return errs.BadRequest(err)
 		}
 
-
 		// Query work status counts
 		counts, err := s.store.CountWorksByState(c.Context(), int(assignmentID))
 		if err != nil {
@@ -555,25 +554,24 @@ func (s *AssignmentService) getGradedCount() fiber.Handler {
 			}
 		}
 
-
-        // Adds the number of unaccepted assignments to the number of ungraded 
+		// Adds the number of unaccepted assignments to the number of ungraded
 		totalCounts, err := s.store.CountWorksByState(c.Context(), int(assignmentID))
 		if err != nil {
 			return errs.InternalServerError()
 		}
 
-        numStudents, err := s.store.GetNumberOfStudentsInClassroom(c.Context(), classroomID)
+		numStudents, err := s.store.GetNumberOfStudentsInClassroom(c.Context(), classroomID)
 		if err != nil {
 			return errs.InternalServerError()
 		}
 		notAcceptedWork := numStudents - totalCounts[models.WorkStateAccepted] -
-        totalCounts[models.WorkStateStarted] - 
-        totalCounts[models.WorkStateSubmitted] - 
-        totalCounts[models.WorkStateGradingAssigned] - 
-        totalCounts[models.WorkStateGradingCompleted] -
-		totalCounts[models.WorkStateGradePublished]
+			totalCounts[models.WorkStateStarted] -
+			totalCounts[models.WorkStateSubmitted] -
+			totalCounts[models.WorkStateGradingAssigned] -
+			totalCounts[models.WorkStateGradingCompleted] -
+			totalCounts[models.WorkStateGradePublished]
 
-        ungradedWorks = ungradedWorks + notAcceptedWork
+		ungradedWorks = ungradedWorks + notAcceptedWork
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"assignment_id": assignmentID,
