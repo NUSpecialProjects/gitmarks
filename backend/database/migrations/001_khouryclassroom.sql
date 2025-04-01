@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS assignment_base_repos (
     base_repo_id INTEGER PRIMARY KEY,
     base_repo_owner VARCHAR(255) NOT NULL,
     base_repo_name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+    created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    initialized BOOLEAN DEFAULT FALSE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS rubrics (

@@ -139,9 +139,9 @@ export const createAssignment = async (
         template_id: templateRepoID,
         name: assignment.assignmentName,
         classroom_id: assignment.classroomId,
-        group_assignment: assignment.groupAssignment,
+        // group_assignment: assignment.groupAssignment,
         main_due_date: assignment.mainDueDate,
-        default_score: Number(assignment.defaultScore),
+        // default_score: Number(assignment.defaultScore),
       }),
     }
   );
