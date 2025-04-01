@@ -2,8 +2,6 @@ module github.com/CamPlume1/khoury-classroom
 
 go 1.23
 
-toolchain go1.23.1
-
 require (
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -28,7 +26,7 @@ require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/caarlos0/env/v11 v11.2.2
 	github.com/goccy/go-json v0.10.3
-	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/klauspost/compress v1.17.0 // indirect
