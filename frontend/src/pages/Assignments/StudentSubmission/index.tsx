@@ -287,6 +287,7 @@ const StudentSubmission: React.FC = () => {
                   <Line className="StudentSubmission__commitsOverTimeChart"
                     options={lineOptions}
                     data={lineData}
+                    redraw={false}
                   />
                 )}
               </div>
