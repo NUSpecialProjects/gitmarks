@@ -10,4 +10,9 @@ func Routes(app *fiber.App, params types.Params) {
 	baseRouter := app.Group("")
 
 	baseRouter.Get("/overdue/:repo",  service.DeadlineHandler)
+
+
+	baseRouter.Post("/extension/assignment", service.AssignmentExtensionHandler)
+	
+	baseRouter.Post("/extension/individual", service.IndividualExtensionHandler)
 }

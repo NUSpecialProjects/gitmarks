@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { MdEdit, MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -21,6 +21,8 @@ import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
 import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics } from "@/hooks/useAssignment";
 import { ErrorToast } from "@/components/Toast";
+import TimeSelection from "@/components/TimeSelection";
+import { createAssignmentExtension } from "@/api/extensions";
 
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);
@@ -35,6 +37,32 @@ const Assignment: React.FC = () => {
     selectedClassroom?.id, 
     Number(assignmentID)
   );
+//const { executeWithToast } = useActionToast();
+
+// Due Date handling
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [selectedDate, setSelectedDate] = useState("");
+
+const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  setSelectedDate(event.target.value)
+}
+
+const handleDateSave = () => {
+  console.log(selectedDate)
+  createAssignmentExtension(selectedClassroom!.id, Number(assignmentID), formatDate(assignment.main_due_date))
+  setIsModalOpen(false)
+}
+
+const handleDateClick = () => {
+  console.log("Clicked Due Date")
+  setIsModalOpen(true);
+};
+
+
+const handleDatePickerClose = () => {
+  setIsModalOpen(false)
+}
+
   const { data: inviteLink = "", error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url);
   const { data: assignmentTemplate, error: templateError } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
   const { acceptanceMetrics, gradedMetrics, error: metricsError } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
@@ -72,9 +100,10 @@ const Assignment: React.FC = () => {
             </div>
             <div className="Assignment__date">
               <div className="Assignment__date--title"> {"Due Date:"}</div>
-              {assignment.main_due_date
-                ? formatDate(assignment.main_due_date)
-                : "N/A"}
+                <span className="clickable" onClick={handleDateClick}>
+                  {assignment.main_due_date ? formatDate(assignment.main_due_date) : "N/A"}
+                </span>
+                {isModalOpen && (<TimeSelection selectedDate={selectedDate} handleDateChange={handleDateChange} handleSave={handleDateSave} handleClose={handleDatePickerClose}/>)}
             </div>
           </div>
         </SubPageHeader>

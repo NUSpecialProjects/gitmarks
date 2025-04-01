@@ -24,3 +24,31 @@ func (s *DeadlineService) DeadlineHandler(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(map[string]bool{"overdue": due.Before(time.Now())})
 
 }
+
+
+func (s *DeadlineService) IndividualExtensionHandler(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON("Stub")
+}
+
+
+func (s *DeadlineService) AssignmentExtensionHandler(c *fiber.Ctx) error {
+	// Define a struct to parse the request body
+	type RequestBody struct {
+		NewDate string `json:"newDate"`
+	}
+
+	// Parse the JSON request body
+	var reqBody RequestBody
+	if err := c.BodyParser(&reqBody); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Parse the newDate string into a time.Time object @TODO fix time parsing parament
+	newDate, err := time.Parse(time.RFC3339, reqBody.NewDate)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid date format"})
+	}
+
+	// Return the parsed date in the response
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"newDate": newDate.Format(time.RFC3339)})
+}
