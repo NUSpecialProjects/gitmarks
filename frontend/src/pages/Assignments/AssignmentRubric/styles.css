@@ -8,6 +8,12 @@
         padding-bottom: 20px;
     }
 
+    &__chooseRubric {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
     &__noRubric {
         display: flex;
         flex-direction: column;

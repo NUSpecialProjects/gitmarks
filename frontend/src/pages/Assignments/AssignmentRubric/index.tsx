@@ -31,11 +31,11 @@ const AssignmentRubric: React.FC = () => {
 
   const choseExisting = async (rubric: IFullRubric) => {
     if (rubric && assignment) {
-        navigate('/app/rubrics/new', {
-          state: { assignment: assignment, rubricData: rubric, newRubric: true },
-        }); 
+      navigate('/app/rubrics/new', {
+        state: { assignment: assignment, rubricData: rubric, newRubric: true },
+      });
 
-      
+
     }
   };
 
@@ -133,15 +133,15 @@ const AssignmentRubric: React.FC = () => {
 
               {importing ? (
                 <>
-                  
+
 
                   <TableDiv className="GradingAssignmentRow__submissions">
                     {rubrics.length > 0 ? (
-                      <>
+                      <div>
                         <Table cols={1}>
-                          <TableRow style={{borderTop: "none"}}>
+                          <TableRow style={{ borderTop: "none" }}>
                             <TableCell>
-                            <div> Select a starter rubric for this Assignment.</div>
+                              <div> Select a starter rubric for this Assignment.</div>
                             </TableCell>
                           </TableRow>
                           {rubrics.map((rubric, i: number) => (
@@ -154,8 +154,16 @@ const AssignmentRubric: React.FC = () => {
                               <TableCell>{rubric.rubric.name}</TableCell>
                             </TableRow>
                           ))}
+                          <TableRow className="AssignmentRubric__chooseRubric">
+                            <Link to={`/app/rubrics/new`} state={{ assignment }}>
+                              {/* A horrific solution to the styling, it's temporary */}
+                              <Button className="AssignmentRubric__button" href="">
+                                Create one from scratch
+                              </Button>
+                            </Link>
+                          </TableRow>
                         </Table>
-                      </>
+                      </div>
                     ) : (
                       <div className="AssignmentRubric__noRubric">
                         <div >
@@ -175,24 +183,24 @@ const AssignmentRubric: React.FC = () => {
 
 
               ) : (
-<>
-                <div className="AssignmentRubric__noRubricTitle">This Assignment does not have a Rubric yet.</div>
+                <>
+                  <div className="AssignmentRubric__noRubricTitle">This Assignment does not have a Rubric yet.</div>
 
-                <div className="AssignmentRubric__selectOption">
-                  <Button
-                    href=""
-                    variant="secondary"
-                    onClick={() => setImporting(true)}
-                  >
-                    Import existing rubric
-                  </Button>
-                  <Link to={`/app/rubrics/new`} state={{ assignment }}>
-                    {/* A horrific solution to the styling, it's temporary */}
-                    <Button className="AssignmentRubric__button" href="">
-                      Add new rubric
+                  <div className="AssignmentRubric__selectOption">
+                    <Button
+                      href=""
+                      variant="secondary"
+                      onClick={() => setImporting(true)}
+                    >
+                      Import existing rubric
                     </Button>
-                  </Link>
-                </div>
+                    <Link to={`/app/rubrics/new`} state={{ assignment }}>
+                      {/* A horrific solution to the styling, it's temporary */}
+                      <Button className="AssignmentRubric__button" href="">
+                        Add new rubric
+                      </Button>
+                    </Link>
+                  </div>
 
                 </>
               )}
