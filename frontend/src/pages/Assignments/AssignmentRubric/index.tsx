@@ -4,11 +4,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./styles.css";
 import { getRubric, getRubricsInClassroom } from "@/api/rubrics";
 import Button from "@/components/Button";
-import { Table, TableCell, TableRow } from "@/components/Table";
+import { Table, TableCell, TableDiv, TableRow } from "@/components/Table";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { getAssignmentRubric } from "@/api/assignments";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
+import { FaChevronRight } from "react-icons/fa6";
+import { FaChevronDown } from "react-icons/fa";
 
 
 const AssignmentRubric: React.FC = () => {
@@ -23,6 +25,9 @@ const AssignmentRubric: React.FC = () => {
   const [assignment, setAssignmentData] = useState<IAssignmentOutline>()
   const [rubricData, setRubricData] = useState<IFullRubric>()
   const [rubrics, setRubrics] = useState<IFullRubric[]>([])
+
+  const [collapsed, setCollapsed] = useState(true);
+
 
   const [importing, setImporting] = useState(false)
 
@@ -76,7 +81,7 @@ const AssignmentRubric: React.FC = () => {
     };
 
     fetchData();
-}, [location.state, selectedClassroom, assignment]);
+  }, [location.state, selectedClassroom, assignment]);
 
 
 
@@ -133,33 +138,55 @@ const AssignmentRubric: React.FC = () => {
               <div className="AssignmentRubric__noRubricTitle">This Assignment does not have a Rubric yet.</div>
 
 
-              {importing ?
-                <div>
-                  <select id="dropdown" onChange={choseExisting}>
-                    <option value="">-- Select a starter rubric --</option>
-                    {rubrics.map((rubric) => (
-                      <option key={rubric.rubric.id} value={rubric.rubric.id!}>
-                        {rubric.rubric.name}
-                      </option>
-                    ))}
-                  </select>
+              {importing ? (
+                <>
+                    <TableDiv className="GradingAssignmentRow__submissions">
+                      {rubrics ? (
+                        <>
+                          <Table cols={1}>
+                            <TableRow style={{ borderTop: "none" }}>
+                              <TableCell>Rubrics</TableCell>
+                            </TableRow>
+                            {rubrics.map((rubric, i: number) => (
+                              <TableRow
+                                key={i}
+                                onClick={() => {
+                                  console.log("clicked!");
+                                  // navigate(...);
+                                }}
+                              >
+                                <TableCell>{rubric.rubric.name}</TableCell>
+                              </TableRow>
+                            ))}
+                          </Table>
+                        </>
+                      ) : (
+                        <div style={{ padding: "15px 20px" }}>
+                          No rubrics have been created.
+                        </div>
+                      )}
+                    </TableDiv>
+                </>
 
-                  <Button href="" variant="secondary" onClick={() => setImporting(false)}>
-                    Cancel
+
+              ) : (
+                <div className="AssignmentRubric__selectOption">
+                  <Button
+                    href=""
+                    variant="secondary"
+                    onClick={() => setImporting(true)}
+                  >
+                    Import existing rubric
                   </Button>
-                </div>
-
-                :
-                <div>
-                  <Button href="" variant="secondary" onClick={() => setImporting(true)}> Import existing rubric</Button>
-
-
                   <Link to={`/app/rubrics/new`} state={{ assignment }}>
-                    <Button href="" > Add new rubric</Button>
+                    {/* A horrific solution to the styling, it's temporary */}
+                    <Button className="AssignmentRubric__button" href="">
+                      Add new rubric
+                    </Button>
                   </Link>
                 </div>
+              )}
 
-              }
             </div>
           )}
         </>

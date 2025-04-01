@@ -20,4 +20,15 @@
         padding-bottom: 30px;
 
     }
+
+    &__selectOption {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+
+    &__button {
+        padding: 14px 58px;
+    }
 }
