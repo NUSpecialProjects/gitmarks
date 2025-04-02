@@ -12,10 +12,11 @@ type AssignmentService struct {
 	userCfg *config.GitHubUserClient
 	appClient github.GitHubAppClient
 	middleware.RoleChecker[AssignmentService]
+	domains config.Domains
 }
 
-func NewAssignmentService(store storage.Storage, userCfg *config.GitHubUserClient, appClient github.GitHubAppClient) *AssignmentService {
-	service := &AssignmentService{store: store, userCfg: userCfg, appClient: appClient}
+func NewAssignmentService(store storage.Storage, userCfg *config.GitHubUserClient, appClient github.GitHubAppClient, domains config.Domains) *AssignmentService {
+	service := &AssignmentService{store: store, userCfg: userCfg, appClient: appClient, domains: domains}
 	service.RoleChecker = middleware.RoleChecker[AssignmentService]{Checkable: service}
 	return service
 }

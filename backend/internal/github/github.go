@@ -166,5 +166,5 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Check if a file or directory exists in a repository
 	FileExists(owner string, repo string, path string) (bool, error)
 
-	CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName string) error
+	CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error
 }
