@@ -18,6 +18,12 @@
     font-size: var(--font-size-s);
     font-weight: 500;
     padding-bottom: 10px;
+    min-height: 0;
+    
+    &:empty {
+      padding-bottom: 0;
+      display: none;
+    }
   }
 
   &__option {
@@ -54,6 +60,10 @@
     align-items: center;
   }
 
+  &__selected-text {
+    padding-right: 10px;
+  }
+
   &__button {
     max-width: 400px;
     padding: 10px;
@@ -72,6 +82,10 @@
     align-items: center;
     justify-content: space-between;
     text-align: left;
+
+    &:hover {
+      background: var(--panels-background);
+    }
   }
 
   &__options-list {

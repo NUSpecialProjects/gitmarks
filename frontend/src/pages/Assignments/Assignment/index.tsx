@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { MdEdit, MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -10,7 +10,7 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { formatDate, formatDateTime } from "@/utils/date";
 
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
-import CopyLink from "@/components/CopyLink";
+import { CopyLinkWithExpiration, IExpirationOption } from "@/components/CopyLink";
 import { Table, TableCell, TableRow } from "@/components/Table";
 import Button from "@/components/Button";
 import MetricPanel from "@/components/Metrics/MetricPanel";
@@ -35,15 +35,23 @@ const Assignment: React.FC = () => {
     selectedClassroom?.id, 
     Number(assignmentID)
   );
-  const { data: inviteLink = "", error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url);
+
+  const [expirationDuration, setExpirationDuration] = useState<IExpirationOption>({ label: "Expires: Never", value: undefined });
+  const expirationOptions = [
+    { label: "Expires: 6 hours", value: 360 },
+    { label: "Expires: 12 hours", value: 720 },
+    { label: "Expires: 1 day", value: 1440 },
+    { label: "Expires: 7 days", value: 10080 },
+    { label: "Expires: 1 month", value: 43200 },
+    { label: "Expires: Never", value: undefined },
+  ];
+  const { data: inviteLink = "", isLoading: linkIsLoading, error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url, expirationDuration.value);
 
   const { data: totalAssignmentCommits } = useAssignmentTotalCommits(selectedClassroom?.id, assignment?.id);
   const { data: assignmentTemplate, error: templateError } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
   const { acceptanceMetrics, gradedMetrics, error: metricsError } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
 
   const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
-  
-  
 
   useEffect(() => {
     if (linkError || templateError || metricsError) {
@@ -96,7 +104,14 @@ const Assignment: React.FC = () => {
 
           <div className="Assignment__link">
             <h2>Assignment Link</h2>
-            <CopyLink link={inviteLink} name="invite-assignment" />
+            <CopyLinkWithExpiration 
+              link={inviteLink} 
+              name="invite-assignment" 
+              duration={expirationDuration}
+              setDuration={(newDuration: IExpirationOption) => setExpirationDuration(newDuration)}
+              expirationOptions={expirationOptions}
+              loading={linkIsLoading}
+            />
           </div>
 
           <div className="Assignment__metrics">

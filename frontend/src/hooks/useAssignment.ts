@@ -84,14 +84,15 @@ export const useStudentWorks = (classroomId: number | undefined, assignmentId: n
  * @param classroomId - The ID of the classroom to fetch the invite link for.
  * @param assignmentId - The ID of the assignment to fetch the invite link for.
  * @param baseUrl - The base URL to use for the invite link.
+ * @param expirationDuration - The expiration duration to use for the invite link.
  * @returns The invite link for the assignment.
  */
-export const useAssignmentInviteLink = (classroomId: number | undefined, assignmentId: number | undefined, baseUrl: string) => {
+export const useAssignmentInviteLink = (classroomId: number | undefined, assignmentId: number | undefined, baseUrl: string, expirationDuration: number | undefined = undefined) => {
   return useQuery({
-    queryKey: ['assignmentToken', classroomId, assignmentId],
+    queryKey: ['assignmentToken', classroomId, assignmentId, expirationDuration],
     queryFn: async () => {
       if (!classroomId || !assignmentId) return "";
-      const tokenData = await postAssignmentToken(classroomId, assignmentId);
+      const tokenData = await postAssignmentToken(classroomId, assignmentId, expirationDuration);
       return `${baseUrl}/token/assignment/accept?token=${tokenData.token}`;
     },
     enabled: !!classroomId && !!assignmentId

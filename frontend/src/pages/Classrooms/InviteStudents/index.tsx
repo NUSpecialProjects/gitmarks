@@ -11,7 +11,7 @@ import { useClassroomInviteLink } from "@/hooks/useClassroom";
 const InviteStudents: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
 
-  const { data: tokenData, error } = useClassroomInviteLink(selectedClassroom?.id, ClassroomRole.STUDENT);
+  const { data: tokenData, isLoading, error } = useClassroomInviteLink(selectedClassroom?.id, ClassroomRole.STUDENT);
 
   return (
     <Panel title="Add Students" logo={true}>
@@ -25,7 +25,7 @@ const InviteStudents: React.FC = () => {
               }
             </div>
           </div>
-          <CopyLink link={tokenData || ""} name="invite-students"></CopyLink>
+          <CopyLink link={tokenData || ""} name="invite-students" loading={isLoading}></CopyLink>
           {error && <p className="error">Failed to generate invite URL. Please try again.</p>}
         </div>
         <div className="ButtonWrapper">

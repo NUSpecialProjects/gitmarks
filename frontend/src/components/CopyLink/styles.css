@@ -2,7 +2,10 @@
     margin-top: 10px;
     min-width: fit-content;
     max-width: 500px;
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 5px;
+    padding-right: 10px;
     background: var(--page-background);
     color: var(--primary-text);
     font-size: var(--body-font-size);
@@ -12,12 +15,19 @@
     border-color: var(--button-border-color);
     cursor: pointer;
     transition: background 0.2s ease;
-    padding-bottom: 10px;
     display: flex;
     flex-direction: row;
     gap: 10px;
+    position: relative;
+    align-items: center;
+
+    &--loading {
+        cursor: default;
+        pointer-events: none;
+    }
 
     &__link {
+        padding: 10px;
         width: 100%;
         border: 0px;
         font-size: var(--body-font-size);
@@ -41,6 +51,23 @@
         &:active {
             background-color: var(--brand);
             color: var(--primary-text-white);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+    }
+
+    &__dropdownWrapper {
+        width: auto;
+        height: 10px;
+        min-width: 200px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+
+        & > .Dropdown {
+            width: 100%;
         }
     }
 }

@@ -18,6 +18,7 @@ interface IDropdownProps {
   placeholder?: string;
   loadingText?: string;
   noOptionsText?: string;
+  disabled?: boolean;
 }
 
 const GenericDropdown = ({
@@ -30,6 +31,7 @@ const GenericDropdown = ({
   placeholder = 'Select an option',
   loadingText = 'Loading options...',
   noOptionsText = 'No options available',
+  disabled = false,
 }: IDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -54,12 +56,13 @@ const GenericDropdown = ({
             className="Dropdown__button"
             onClick={() => setIsOpen(!isOpen)}
             onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+            disabled={disabled}
           >
             <span className="Dropdown__selected-text">{selectedLabel}</span>
             <Caret isUp={!isOpen} clickable={false}/>
           </button>
           
-          {isOpen && (
+          {isOpen && !disabled && (
             <ul className="Dropdown__options-list">
               {loading ? (
                 <li className="Dropdown__option Dropdown__option--disabled">{loadingText}</li>
