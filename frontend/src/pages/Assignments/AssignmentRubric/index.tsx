@@ -174,7 +174,6 @@ const AssignmentRubric: React.FC = () => {
                         </div>
 
                         <Link to={`/app/rubrics/new`} state={{ assignment }}>
-                          {/* A horrific solution to the styling, it's temporary */}
                           <Button className="AssignmentRubric__button" href="">
                             Add new rubric
                           </Button>
@@ -191,14 +190,15 @@ const AssignmentRubric: React.FC = () => {
 
                   <div className="AssignmentRubric__selectOption">
                     <Button
+                    className="AssignmentRubric__button"
                       href=""
                       variant="secondary"
                       onClick={() => setImporting(true)}
                     >
                       Copy existing rubric
                     </Button>
+
                     <Link to={`/app/rubrics/new`} state={{ assignment }}>
-                      {/* A horrific solution to the styling, it's temporary */}
                       <Button className="AssignmentRubric__button" href="">
                         Create new rubric
                       </Button>
