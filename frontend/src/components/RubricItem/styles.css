@@ -5,6 +5,7 @@
     background-color: #F5F5F5;
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     border-radius: 5px;
     width: 100%;
 
@@ -20,11 +21,17 @@
     cursor: pointer;
     padding-bottom: 10px;
     align-self: flex-start;
-    width: 100%;
+    /* width: 100%; */
+  }
+
+  &__buttonAndPoints {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   &__itemPoints {
-    width: 80%;
+    /* width: 80%; */
     padding: 10px;
     color: var(--primary-text);
     font-size: var(--body-font-size);
@@ -37,6 +44,10 @@
 
   }
 
+  &__Comment {
+padding-right: 10px;
+  }
+
   &__buttonWrap {
     display: flex;
     flex-direction: row;
@@ -45,20 +56,51 @@
 
 
   &__button {
-    background-color: #F5F5F5;
-    width: 30px;
+    background-color: #f5f5f5;
+    width: fit-content;
+    height: fit-content;
+    padding: 4px 8px;   
+    min-width: unset;   
+    min-height: unset; 
   }
 
- 
+
   &__buttonDeductionActive {
     background-color: red;
-    width: 30px;
+    width: fit-content;
+    height: fit-content;
+    padding: 4px 8px;   
+    min-width: unset;   
+    min-height: unset; 
   }
 
   &__buttonAdditionActive {
     background-color: green;
-    width: 30px;
+    width: fit-content;
+    height: fit-content;
+    padding: 4px 8px;   
+    min-width: unset;  
+    min-height: unset;   
 
+  }
+
+  &__buttonAdditionActive:hover {
+    background-color: green;
+
+  }
+
+  &__buttonDeductionActive:hover {
+    background-color: red;
+  }
+
+
+  &__deleteButton {
+    height: auto;
+    width: fit-content;
+  }
+
+  &__deleteButton:hover {
+    background-color: rgb(224, 18, 18);
   }
 
 }
