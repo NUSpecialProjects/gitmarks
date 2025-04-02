@@ -69,7 +69,10 @@ const Grader: React.FC = () => {
                 <span>{studentWork.assignment_name}</span>
               </>
             ) : (
-              <h2>Grading</h2>
+              <>
+                <h2>Loading Contributors</h2>
+                <span>Loading Assignment Name</span>
+              </>
             )}
           </div>
         </div>
