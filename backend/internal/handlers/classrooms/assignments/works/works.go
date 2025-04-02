@@ -257,10 +257,17 @@ func (s *WorkService) gradeWorkByID() fiber.Handler {
 		}
 
 		// insert into DB
-		err = insertFeedbackInDB(s, c, requestBody.Comments, *taUser.ID, work.ID)
+        err = insertFeedbackInDB(s, c, requestBody.Comments, *taUser.ID, work.ID)
 		if err != nil {
 			return err
 		}
+
+        work.StudentWork.WorkState = models.WorkStateGradingCompleted
+        //work, err := s.store
+        _, err = s.store.UpdateStudentWork(c.Context(), work.StudentWork)
+        if err != nil {
+            return errs.InternalServerError()
+        }
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"review": review,
