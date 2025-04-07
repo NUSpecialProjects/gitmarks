@@ -132,18 +132,40 @@ func (api *UserAPI) AcceptOrgInvitation(ctx context.Context, orgName string) err
 func (api *UserAPI) ForkRepository(ctx context.Context, srcOwner, srcRepo, dstOrg, dstRepo string) error {
 	endpoint := fmt.Sprintf("/repos/%s/%s/forks", srcOwner, srcRepo)
 
-	//Initialize post request
-	req, err := api.Client.NewRequest("POST", endpoint, map[string]interface{}{
-		"organization": dstOrg,
-		"name":         dstRepo,
-	})
+	body := map[string]interface{}{
+		"organization":        dstOrg,
+		"name":                dstRepo,
+		"default_branch_only": false,
+	}
+
+	req, err := api.Client.NewRequest("POST", endpoint, body)
 	if err != nil {
 		return errs.GithubAPIError(err)
 	}
 
-	// Make the API call
 	response, err := api.Client.Do(ctx, req, nil)
 	if err != nil && response.StatusCode != 202 {
+		return errs.GithubAPIError(err)
+	}
+
+	return nil
+}
+
+// SyncForkWithUpstream syncs a forked repository with its upstream repository
+func (api *UserAPI) SyncForkWithUpstream(ctx context.Context, owner, repo string, branch string) error {
+	endpoint := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
+
+	body := map[string]interface{}{
+		"branch": branch,
+	}
+
+	req, err := api.Client.NewRequest("POST", endpoint, body)
+	if err != nil {
+		return errs.GithubAPIError(err)
+	}
+
+	_, err = api.Client.Do(ctx, req, nil)
+	if err != nil {
 		return errs.GithubAPIError(err)
 	}
 
@@ -154,9 +176,11 @@ func (api *UserAPI) CreateFeedbackPR(ctx context.Context, owner, repo string) er
 	// get default branch
 	ghRepo, err := api.GetRepository(ctx, owner, repo)
 	if err != nil {
+		fmt.Println("Error getting repository:", err)
 		return err
 	}
 	if ghRepo.DefaultBranch == nil {
+		fmt.Println("Missing default branch")
 		return errs.MissingDefaultBranchError()
 	}
 
@@ -170,10 +194,34 @@ func (api *UserAPI) CreateFeedbackPR(ctx context.Context, owner, repo string) er
 		"body":  "Grade and feedback will be left here. Do not close or modify this PR!<br>Once graded, reply with a justification to any deduction you would like to dispute.",
 	})
 	if err != nil {
+		fmt.Println("Error creating request:", err)
 		return errs.GithubAPIError(err)
 	}
 
 	// Make the API call
+	_, err = api.Client.Do(ctx, req, nil)
+	if err != nil {
+		fmt.Println("Error making API call:", err)
+		return errs.GithubAPIError(err)
+	}
+
+	return nil
+}
+
+// Set branch to specific commit
+func (api *UserAPI) SetBranchToCommit(ctx context.Context, owner, repo, branch, sha string) error {
+	endpoint := fmt.Sprintf("/repos/%s/%s/git/refs/heads/%s", owner, repo, branch)
+
+	body := map[string]interface{}{
+		"sha":   sha,
+		"force": true,
+	}
+
+	req, err := api.Client.NewRequest("PATCH", endpoint, body)
+	if err != nil {
+		return errs.GithubAPIError(err)
+	}
+
 	_, err = api.Client.Do(ctx, req, nil)
 	if err != nil {
 		return errs.GithubAPIError(err)

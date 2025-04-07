@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
+	"fmt"
 	"log/slog"
 
 	"github.com/CamPlume1/khoury-classroom/internal/config"
@@ -30,6 +30,7 @@ func main() {
 
 	// Load configuration
 	cfg, err := config.LoadConfig()
+	fmt.Printf("Frontend URL Domain: %s", cfg.Domains.FRONTEND_URL)
 	if err != nil {
 		log.Println(err.Error())
 		log.Fatalf("Unable to load configuration: %v", err)
@@ -53,6 +54,7 @@ func main() {
 		Store:     db,
 		GitHubApp: GitHubApp,
 		UserCfg:   cfg.GitHubUserClient,
+		Domains: cfg.Domains,
 	})
 
 	// Start the server in a separate goroutine

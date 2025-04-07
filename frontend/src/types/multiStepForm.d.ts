@@ -26,8 +26,8 @@ interface IMultiStepFormProps<T> {
 interface IAssignmentFormData {
   assignmentName: string;
   classroomId: number;
-  groupAssignment: boolean;
+  // groupAssignment: boolean;
   mainDueDate: Date | null;
-  defaultScore: number;
+  // defaultScore: number;
   templateRepo: ITemplateRepo | null;
 }
