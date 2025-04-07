@@ -28,6 +28,7 @@ const StudentSubmission: React.FC = () => {
   const [firstCommit, setFirstCommit] = useState<string>("");
   const [totalCommits, setTotalCommits] = useState<string>();
   const [noCommits, setNoCommits] = useState(false)
+  const [notEnoughData, setNotEnoughData] = useState(false);
   const [loadingAllCommits, setLoadingAllCommits] = useState(true)
 
 
@@ -133,8 +134,12 @@ const StudentSubmission: React.FC = () => {
       today.setUTCMinutes(0)
       today.setUTCSeconds(0)
 
-      if (dates.length <= 1) {
+      if (dates.length < 1) {
         setNoCommits(true)
+        return {}
+      } else if (dates.length === 1 ){
+        setNotEnoughData(true)
+        setLoadingAllCommits(false)
         return {}
       } else if (dates[dates.length - 1].toDateString() !== (today.toDateString())) {
         dates.push(today)
@@ -272,26 +277,31 @@ const StudentSubmission: React.FC = () => {
         <MetricPanel>
           <Metric title="First Commit Date">{firstCommit}</Metric>
           <Metric title="Total Commits">{totalCommits ?? "N/A"}</Metric>
-          {lineData && lineOptions && (
             <Metric title="Commits Over Time" className="Metric__bigContent">
+
               <div>
                 {noCommits && (
                   <div>N/A</div>
                 )}
 
+                {!noCommits && notEnoughData &&
+                  <div> Insufficient Data </div>
+                }
+
                 {!noCommits && loadingAllCommits &&
                   <div>Loading...</div>
                 }
 
-                {!noCommits && !loadingAllCommits && (
+                {lineData && lineOptions && !noCommits && !loadingAllCommits && (
                   <Line className="StudentSubmission__commitsOverTimeChart"
                     options={lineOptions}
                     data={lineData}
+                    redraw={false}
                   />
                 )}
               </div>
+
             </Metric>
-          )}
         </MetricPanel>
 
         <div>{ }</div>

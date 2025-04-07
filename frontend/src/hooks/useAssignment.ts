@@ -13,6 +13,7 @@ import {
 } from "@/api/metrics";
 import { getStudentWorks } from "@/api/student_works";
 import { ChartData } from 'chart.js';
+import { getOrganizationTemplates } from "@/api/organizations";
 
 /**
  * Provides the list of assignments for a classroom.
@@ -116,6 +117,26 @@ export const useAssignmentTemplate = (classroomId: number | undefined, assignmen
 };
 
 /**
+ * Provides template repositories for an organization
+ * 
+ * @param orgName - The name of the organization to fetch templates for
+ * @returns The template repositories and loading state
+ */
+export const useTemplateRepos = (orgName: string | undefined) => {
+  return useQuery({
+    queryKey: ['templateRepos', orgName],
+    queryFn: async () => {
+      if (!orgName) return [];
+      // TODO: KHO-211 Implement dynamic pagination in template dropdown
+      const response = await getOrganizationTemplates(orgName, "100", "1");
+      return response.templates;
+    },
+    enabled: !!orgName,
+    initialData: [] as ITemplateRepo[]
+  });
+};
+
+/**
  * Provides the number of commits made for this assignment
  * 
  * @param classroomId - The ID of the classroom to fetch the template for.
@@ -150,7 +171,7 @@ export const useAssignmentMetrics = (classroomId: number | undefined, assignment
         const metrics = await getAssignmentAcceptanceMetrics(classroomId, Number(assignmentId));
         return {
           data: {
-            labels: ["Not Accepted", "Accepted", "Started", "Submitted", "In Grading"],
+            labels: ["Not Accepted", "Accepted", "Started", "Submitted", "Graded"],
             datasets: [{
               backgroundColor: ["#f83b5c", "#50c878", "#fece5a", "#7895cb", "#219386"],
               data: [metrics.not_accepted, metrics.accepted, metrics.started, metrics.submitted, metrics.in_grading]

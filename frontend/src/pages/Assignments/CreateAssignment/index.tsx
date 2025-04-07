@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import { getOrganizationTemplates } from "@/api/organizations";
 import { useNavigate } from "react-router-dom";
 
 import MultiStepForm from "@/components/MultiStepForm";
@@ -11,52 +9,27 @@ import "./styles.css";
 import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import { ClassroomRole } from "@/types/enums";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
+import { useTemplateRepos } from "@/hooks/useAssignment";
+import validateRepoName from "@/utils/repo-name-validation";
 import { useActionToast } from "@/components/Toast";
 
 const CreateAssignment: React.FC = () => {
   const navigate = useNavigate();
 
-  // Determine active classroom and organization
   const { selectedClassroom } = useCurrentClassroom();
   useClassroomUser(ClassroomRole.PROFESSOR, "/app/access-denied");
   const orgName = selectedClassroom?.org_name;
   const { executeWithToast } = useActionToast();
 
-  // Fetch template repositories
-  const [templateRepos, setTemplateRepos] = useState<ITemplateRepo[]>([]);
-  const [loadingTemplates, setLoadingTemplates] = useState(true);
-
-  useEffect(() => {
-    const fetchTemplates = async (orgName: string | undefined) => {
-      if (orgName) {
-        setLoadingTemplates(true);
-
-        // TODO: Implement dynamic pagination in template dropdown
-        // Currently, only the first 100 templates are fetched,
-        // which are not necessarily all templates.
-        getOrganizationTemplates(orgName, "100", "1")
-          .then((response) => {
-            setTemplateRepos(response.templates);
-          })
-          .catch((_: unknown) => {
-            // do nothing
-          })
-          .finally(() => {
-            setLoadingTemplates(false);
-          });
-      }
-    };
-
-    fetchTemplates(orgName);
-  }, [orgName]);
+  const { data: templateRepos, isLoading: loadingTemplates } = useTemplateRepos(orgName);
 
   // Initial form state
   const initialData: IAssignmentFormData = {
     assignmentName: "",
     classroomId: selectedClassroom?.id || -1,
-    groupAssignment: false,
+    // groupAssignment: false,
     mainDueDate: null,
-    defaultScore: 0,
+    // defaultScore: 0,
     templateRepo: null,
   };
 
@@ -69,6 +42,14 @@ const CreateAssignment: React.FC = () => {
         // Check the user provided an assignment name
         if (!data.assignmentName) {
           throw new Error("Please provide an assignment name.");
+        }
+
+        // Remove leading and trailing whitespace
+        data.assignmentName = data.assignmentName.trim();
+
+        // Validate assignment name for illegal characters
+        if (!validateRepoName(data.assignmentName)) {
+          throw new Error("Assignment name cannot contain any special characters.");
         }
 
         // Check if the assignment name is unique

@@ -9,4 +9,5 @@ type AssignmentBaseRepo struct {
 	BaseRepoName  string    `json:"base_repo_name"`
 	BaseID        int64     `json:"base_repo_id"`
 	CreatedAt     time.Time `json:"created_at,omitempty"`
+	Initialized   bool      `json:"initialized"`
 }

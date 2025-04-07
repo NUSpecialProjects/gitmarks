@@ -10,4 +10,5 @@ type Params struct {
 	UserCfg   config.GitHubUserClient
 	Store     storage.Storage
 	GitHubApp github.GitHubAppClient
+	Domains config.Domains
 }
