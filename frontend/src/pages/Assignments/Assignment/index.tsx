@@ -114,7 +114,7 @@ const Assignment: React.FC = () => {
               >
                 {gradedMetrics && (
                   <Doughnut
-                    redraw={true}
+                    redraw={false}
                     data={gradedMetrics}
                     options={{
                       maintainAspectRatio: true,
@@ -135,6 +135,9 @@ const Assignment: React.FC = () => {
                           font: {
                             size: 12,
                           },
+                          formatter: (value) => {
+                            return value === 0 ? '' : value;
+                          }
                         },
                         tooltip: {
                           enabled: false,
@@ -153,7 +156,7 @@ const Assignment: React.FC = () => {
               >
                 {acceptanceMetrics && (
                   <Bar
-                    redraw={true}
+                    redraw={false}
                     data={acceptanceMetrics}
                     options={{
                       maintainAspectRatio: false,
