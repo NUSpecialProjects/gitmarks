@@ -24,7 +24,7 @@ import (
 func New(params types.Params) *fiber.App {
 	app := setupApp()
 
-	useMiddlewares(app)
+	useMiddlewares(app, params)
 
     // Route Groupings
     hello.Routes(app, params)
@@ -45,8 +45,8 @@ func New(params types.Params) *fiber.App {
 	return app
 }
 
-func useMiddlewares(app *fiber.App) {
-	app.Use(middleware.Cors())
+func useMiddlewares(app *fiber.App, params types.Params) {
+	app.Use(middleware.Cors(params.Domains))
 }
 
 func setupApp() *fiber.App {

@@ -1,16 +1,16 @@
 package middleware
 
 import (
-	"os"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/CamPlume1/khoury-classroom/internal/config"
 )
 
-func Cors() fiber.Handler {
-	allowedOrigins := "https://gitmarks.org"
-	if os.Getenv("APP_ENVIRONMENT") == "LOCAL" {
-		allowedOrigins = "http://localhost:3000"
+func Cors(domains config.Domains) fiber.Handler {
+	allowedOrigins := domains.FRONTEND_URL
+
+	if (allowedOrigins == "") {
+		allowedOrigins = "https://gitmarks.org"
 	}
 
 	return cors.New(cors.Config{

@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
+
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/google/go-github/github"
@@ -76,6 +78,11 @@ func (api *CommonAPI) getBranchHead(ctx context.Context, owner, repo, branchName
 	}
 
 	return &branchRef, nil
+}
+
+func (api *CommonAPI) GetBranches(ctx context.Context, owner, repo string) ([]*github.Branch, error) {
+	branches, _, err := api.Client.Repositories.ListBranches(ctx, owner, repo, nil)
+	return branches, err
 }
 
 func (api *CommonAPI) CreateBranch(ctx context.Context, owner, repo, baseBranch, newBranchName string) (*github.Reference, error) {
@@ -196,8 +203,6 @@ func (api *CommonAPI) GetUser(ctx context.Context, userName string) (*github.Use
 	return user, err
 }
 
-
-
 func (api *CommonAPI) createRuleSet(ctx context.Context, ruleset interface{}, orgName, repoName string) error {
 	endpoint := fmt.Sprintf("/repos/%s/%s/rulesets", orgName, repoName)
 	req, err := api.Client.NewRequest("POST", endpoint, ruleset)
@@ -208,7 +213,7 @@ func (api *CommonAPI) createRuleSet(ctx context.Context, ruleset interface{}, or
 	return err
 }
 
-//Given a repo name and org name, create a push ruleset to protect the .github directory
+// Given a repo name and org name, create a push ruleset to protect the .github directory
 func (api *CommonAPI) CreatePushRuleset(ctx context.Context, orgName, repoName string) error {
 	body := map[string]interface{}{
 		"name":        "Restrict .github Directory Edits: Preserves Submission Deadline",
@@ -226,12 +231,10 @@ func (api *CommonAPI) CreatePushRuleset(ctx context.Context, orgName, repoName s
 	return api.createRuleSet(ctx, body, orgName, repoName)
 }
 
-
-
-func (api *CommonAPI) CreateBranchRuleset(ctx context.Context,  orgName, repoName string) error {
+func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName string) error {
 	body := map[string]interface{}{
-		"name": "Feedback and Main Branch Protedtion: PR Enforcement",
-		"target": "branch",
+		"name":        "Feedback and Main Branch Protedtion: PR Enforcement",
+		"target":      "branch",
 		"enforcement": "active",
 		"conditions": map[string]interface{}{
 			"ref_name": map[string]interface{}{
@@ -246,44 +249,42 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context,  orgName, repoNam
 
 			// KHO-315
 			/*
-			map[string]interface{}{
-				"type": "deletion",
-			},
+				map[string]interface{}{
+					"type": "deletion",
+				},
 			*/
 			/*
-			map[string]interface{}{
-				"type": "update",
-				"parameters": map[string]interface{}{
-				  "update_allows_fetch_and_merge": true,
-				},
-			  },
-			  */
+				map[string]interface{}{
+					"type": "update",
+					"parameters": map[string]interface{}{
+					  "update_allows_fetch_and_merge": true,
+					},
+				  },
+			*/
 			map[string]interface{}{
 				"type": "pull_request",
-				"parameters" : map[string]interface{}{
-								"required_approving_review_count": 0,
-        						"dismiss_stale_reviews_on_push": true,
-       							"require_code_owner_review": false,
-        						"require_last_push_approval": false,
-        						"required_review_thread_resolution": false,
-       							"automatic_copilot_code_review_enabled": false,
+				"parameters": map[string]interface{}{
+					"required_approving_review_count":       0,
+					"dismiss_stale_reviews_on_push":         true,
+					"require_code_owner_review":             false,
+					"require_last_push_approval":            false,
+					"required_review_thread_resolution":     false,
+					"automatic_copilot_code_review_enabled": false,
 				},
 			},
 			map[string]interface{}{
 				"type": "required_status_checks",
 				"parameters": map[string]interface{}{
 					"strict_required_status_checks_policy": false,
-					"do_not_enforce_on_create": false,
+					"do_not_enforce_on_create":             false,
 					"required_status_checks": []map[string]string{
-						map[string]string{
+						{
 							"context": "deadline-enforcement",
 						},
-						map[string]string{
+						{
 							"context": "check-pr-target-branch",
 						},
-
 					},
-					
 				},
 			},
 		},
@@ -291,27 +292,20 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context,  orgName, repoNam
 	return api.createRuleSet(ctx, body, orgName, repoName)
 }
 
-
-
-
-
-func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName string) error {
+func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error {
 	addition := models.RepositoryAddition{
-		FilePath: ".github/workflows/deadline-enforcement.yml",
-		RepoName: repoName,
-		OwnerName: orgName,
+		FilePath:          ".github/workflows/deadline-enforcement.yml",
+		RepoName:          repoName,
+		OwnerName:         orgName,
 		DestinationBranch: branchName,
-		Content: actionWithDeadline(repoName),
-		CommitMessage: "Deadline enforcement GH action files",
+		Content:           actionWithDeadline(serverUrl),
+		CommitMessage:     "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
-
 }
 
-
-func actionWithDeadline(repoName string) string {
-	fmt.Printf(repoName)
-    var scriptString = `name: deadline-enforcement
+func actionWithDeadline(serverUrl string) string {
+	scriptString := `name: deadline-enforcement
 
 on:
   pull_request:
@@ -330,7 +324,7 @@ jobs:
         id: webhook-check
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          RESPONSE=$(curl -s "https://on-scorpion-obliging.ngrok-free.app/overdue/$REPO_NAME")
+          RESPONSE=$(curl -s "%s/overdue/$REPO_NAME")
           echo "Response received: $RESPONSE"
           CONTENT=$(echo "$RESPONSE" | jq -r '.overdue')
           echo "Parsed content: $CONTENT"
@@ -345,13 +339,12 @@ jobs:
             echo "::warning::Unexpected response: $CONTENT"
             exit 1
           fi`
-    
-    return scriptString
+
+	return fmt.Sprintf(scriptString, strings.TrimRight(serverUrl, "/"))
 }
-  
-  
-  func targetBranchProtectionAction() string {
-	  var actionString = `name: check-pr-target-branch
+
+func targetBranchProtectionAction() string {
+	var actionString = `name: check-pr-target-branch
   
 on:
   pull_request:
@@ -367,42 +360,64 @@ jobs:
             echo "Error: Pull requests targeting the 'feedback' branch are not allowed"
             exit 1
         fi`
-			return actionString
-  }
-
+	return actionString
+}
 
 func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName, branchName string) error {
 
 	addition := models.RepositoryAddition{
-		FilePath: ".github/workflows/check-pr-target-branch.yml",
-		RepoName: repoName,
-		OwnerName: orgName,
+		FilePath:          ".github/workflows/check-pr-target-branch.yml",
+		RepoName:          repoName,
+		OwnerName:         orgName,
 		DestinationBranch: branchName,
-		Content: targetBranchProtectionAction(),
-		CommitMessage: "Deadline enforcement GH action files",
+		Content:           targetBranchProtectionAction(),
+		CommitMessage:     "Deadline enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
 
 }
 
 func (api *CommonAPI) EditRepository(ctx context.Context, addition *models.RepositoryAddition) error {
+	// Get the current file info if it exists
 	endpoint := fmt.Sprintf("/repos/%s/%s/contents/%s", addition.OwnerName, addition.RepoName, addition.FilePath)
-	encodedContent := base64.StdEncoding.EncodeToString([]byte(addition.Content))
+	req, err := api.Client.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		fmt.Println("Error getting current file info", err)
+		return err
+	}
 
+	var existingFile struct {
+		SHA string `json:"sha"`
+	}
+	_, err = api.Client.Do(ctx, req, &existingFile)
+
+	encodedContent := base64.StdEncoding.EncodeToString([]byte(addition.Content))
 	body := map[string]interface{}{
 		"message": addition.CommitMessage,
 		"content": encodedContent,
-		"branch": addition.DestinationBranch,
+		"branch":  addition.DestinationBranch,
 	}
-	req, err := api.Client.NewRequest("PUT", endpoint, body)
+
+	// If the file already exists, include its SHA
+	if err == nil && existingFile.SHA != "" {
+		body["sha"] = existingFile.SHA
+	}
+
+	// Make the update request
+	req, err = api.Client.NewRequest("PUT", endpoint, body)
 	if err != nil {
+		fmt.Println("Error creating update request", err)
 		return err
 	}
+
 	_, err = api.Client.Do(ctx, req, nil)
-	return err
+	if err != nil {
+		fmt.Println("Error updating file", err)
+		return err
+	}
+
+	return nil
 }
-
-
 
 func (api *CommonAPI) InviteUserToOrganization(ctx context.Context, orgName string, userID int64) error {
 	body := map[string]interface{}{
@@ -723,7 +738,6 @@ func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Reposit
 	return len(branches) == len(srcBranches)
 }
 
-
 func (api *CommonAPI) EnableWorkflow(ctx context.Context, ownerName, repoName, workflowName string) error {
 	endpoint := fmt.Sprintf("/repos/%s/%s/actions/worflows/%s/enable", ownerName, repoName, workflowName)
 
@@ -733,17 +747,16 @@ func (api *CommonAPI) EnableWorkflow(ctx context.Context, ownerName, repoName, w
 	}
 
 	_, err = api.Client.Do(ctx, req, nil)
-	
+
 	return err
 }
-
 
 // /repos/{owner}/{repo}/actions/permissions
 func (api *CommonAPI) EnableActions(ctx context.Context, ownerName, repoName string) error {
 	endpoint := fmt.Sprintf("/repos/%s/%s/actions/permissions", ownerName, repoName)
 
 	body := map[string]interface{}{
-		"enabled": true,
+		"enabled":         true,
 		"allowed_actions": "all",
 	}
 
@@ -753,6 +766,14 @@ func (api *CommonAPI) EnableActions(ctx context.Context, ownerName, repoName str
 	}
 
 	_, err = api.Client.Do(ctx, req, nil)
-	
+
 	return err
+}
+
+func (api *CommonAPI) FileExists(owner string, repo string, path string) (bool, error) {
+	fileContent, directoryContents, _, err := api.Client.Repositories.GetContents(context.Background(), owner, repo, path, nil)
+	if err != nil {
+		return false, fmt.Errorf("error fetching contents: %v", err)
+	}
+	return fileContent != nil || directoryContents != nil, nil
 }

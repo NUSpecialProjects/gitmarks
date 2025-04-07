@@ -6,6 +6,14 @@
         font-size: 1.2rem;
         padding-top: 20px;
         padding-bottom: 20px;
+        justify-content: space-between;
+
+    }
+
+    &__chooseRubric {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     &__noRubric {
@@ -17,7 +25,29 @@
     }
 
     &__noRubricTitle {
-        padding-bottom: 30px;
+        padding-bottom: 20px;
 
+    }
+
+    &__selectOption {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+
+    &__button {
+        width: 240px;
+
+    }
+
+
+    &__scratchLink {
+        color: var(--primary-text);
+        text-decoration: underline;
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.75em;
+        display: block;
     }
 }

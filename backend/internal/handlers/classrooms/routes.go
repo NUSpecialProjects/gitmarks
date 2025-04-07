@@ -10,7 +10,7 @@ import (
 
 func Routes(app *fiber.App, params types.Params) {
 	classroomService := newClassroomService(params.Store, params.GitHubApp, &params.UserCfg)
-	assignmentService := assignments.NewAssignmentService(params.Store, &params.UserCfg, params.GitHubApp)
+	assignmentService := assignments.NewAssignmentService(params.Store, &params.UserCfg, params.GitHubApp, params.Domains)
 	workService := works.NewWorkService(params.Store, &params.UserCfg, params.GitHubApp)
 
 	// Create the base router
