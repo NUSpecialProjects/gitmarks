@@ -38,6 +38,7 @@ func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient
 		return err
 	}
 
+	//TODO: make this work for no-deadline assignments
 	if template.MainDueDate != nil {
 		// There is a deadline
 		err = client.CreateDeadlineEnforcement(ctx, template.MainDueDate, *repository.Organization, *repository.Name, MainRepoBranch, serverUrl)
@@ -65,12 +66,13 @@ func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient
 
 	// Get the master branch name (use main if not specified)
 	mainBranch := MainRepoBranch
-	if repository.MasterBranch != nil {
-		mainBranch = *repository.MasterBranch
-	}
+	// if repository.MasterBranch != nil {
+	// 	mainBranch = *repository.MasterBranch
+	// }
 
 	// Create necessary repo branches
 	for _, branch := range OtherRepoBranches {
+		fmt.Println("Creating branch:", branch)
 		_, err := client.CreateBranch(ctx,
 			*repository.Organization,
 			*repository.Name,
