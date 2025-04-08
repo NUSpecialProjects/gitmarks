@@ -7,7 +7,7 @@ import { Bar, Doughnut } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import { formatDate, formatDateTime } from "@/utils/date";
+import { formatAdvanceDate, formatDate, formatDateTime } from "@/utils/date";
 
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import CopyLink from "@/components/CopyLink";
@@ -44,12 +44,13 @@ const [isModalOpen, setIsModalOpen] = useState(false);
 const [selectedDate, setSelectedDate] = useState("");
 
 const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  console.log(event.target.value)
   setSelectedDate(event.target.value)
 }
 
 const handleDateSave = () => {
   console.log(selectedDate)
-  createAssignmentExtension(selectedClassroom!.id, Number(assignmentID), formatDate(assignment.main_due_date))
+  createAssignmentExtension(selectedClassroom!.id, Number(assignmentID), formatAdvanceDate(new Date(selectedDate)))
   setIsModalOpen(false)
 }
 

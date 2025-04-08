@@ -113,4 +113,5 @@ type Rubric interface {
 
 type Deadline interface {
 	GetDeadlineForRepo(ctx context.Context, repoName string) (*time.Time, error)
+	UpdateAssignmentDeadline(ctx context.Context, ass_id int, due *time.Time) error
 }

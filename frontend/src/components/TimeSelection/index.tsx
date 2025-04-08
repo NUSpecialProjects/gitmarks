@@ -13,7 +13,7 @@ const TimeSelection: React.FC<TimeSelectionProps> = ({ selectedDate, handleDateC
     <div className="modal-overlay">
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={handleClose}>x</button>
-        <h2>Select Due Date</h2>
+        <h2>Select Due Date. All assignments due 23:59 UTC on Due Date</h2>
         <input type="date" value={selectedDate} onChange={handleDateChange} />
         <button onClick={handleSave}>Save</button>
       </div>

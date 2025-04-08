@@ -34,9 +34,10 @@ func (db *DB) UpdateRepoDeadline(ctx context.Context, repoName string, due *time
 }
 
 // Updates the due date for both the assignment and any associated student works
-func (db *DB) UpdateAssignmentDeadline(ctx context.Context, ass_id string, due *time.Time) error {
+func (db *DB) UpdateAssignmentDeadline(ctx context.Context, ass_id int, due *time.Time) error {
+	fmt.Printf("Changing assignment with ID: %d to time: %s" , ass_id, *due)
 	_, err := db.connPool.Exec(ctx,`
-		UPDATE assignment_outline
+		UPDATE assignment_outlines
 		SET main_due_date = $1
 		WHERE id = $2;`, *due, ass_id)
 	if err != nil{
