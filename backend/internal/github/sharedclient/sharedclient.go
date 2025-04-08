@@ -232,14 +232,15 @@ func (api *CommonAPI) CreatePushRuleset(ctx context.Context, orgName, repoName s
 }
 
 func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName string) error {
-	body := map[string]interface{}{
-		"name":        "Feedback and Main Branch Protedtion: PR Enforcement",
+	// Create ruleset for main branch
+	mainBody := map[string]interface{}{
+		"name":        "Main Branch Protection",
 		"target":      "branch",
 		"enforcement": "active",
 		"conditions": map[string]interface{}{
 			"ref_name": map[string]interface{}{
 				"exclude": []interface{}{},
-				"include": []interface{}{"refs/heads/feedback", "~DEFAULT_BRANCH"},
+				"include": []interface{}{"~DEFAULT_BRANCH"},
 			},
 		},
 		"rules": []interface{}{
@@ -281,6 +282,63 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName
 						{
 							"context": "deadline-enforcement",
 						},
+					},
+				},
+			},
+		},
+	}
+	err := api.createRuleSet(ctx, mainBody, orgName, repoName)
+	if err != nil {
+		return fmt.Errorf("failed to create main branch ruleset: %v", err)
+	}
+
+	// Create ruleset for feedback branch
+	feedbackBody := map[string]interface{}{
+		"name":        "Feedback Branch Protection",
+		"target":      "branch",
+		"enforcement": "active",
+		"conditions": map[string]interface{}{
+			"ref_name": map[string]interface{}{
+				"exclude": []interface{}{},
+				"include": []interface{}{"refs/heads/feedback"},
+			},
+		},
+		"rules": []interface{}{
+			map[string]interface{}{
+				"type": "non_fast_forward",
+			},
+
+			// KHO-315
+			/*
+				map[string]interface{}{
+					"type": "deletion",
+				},
+			*/
+			/*
+				map[string]interface{}{
+					"type": "update",
+					"parameters": map[string]interface{}{
+					  "update_allows_fetch_and_merge": true,
+					},
+				  },
+			*/
+			map[string]interface{}{
+				"type": "pull_request",
+				"parameters": map[string]interface{}{
+					"required_approving_review_count":       0,
+					"dismiss_stale_reviews_on_push":         true,
+					"require_code_owner_review":             false,
+					"require_last_push_approval":            false,
+					"required_review_thread_resolution":     false,
+					"automatic_copilot_code_review_enabled": false,
+				},
+			},
+			map[string]interface{}{
+				"type": "required_status_checks",
+				"parameters": map[string]interface{}{
+					"strict_required_status_checks_policy": false,
+					"do_not_enforce_on_create":             false,
+					"required_status_checks": []map[string]string{
 						{
 							"context": "check-pr-target-branch",
 						},
@@ -289,7 +347,12 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName
 			},
 		},
 	}
-	return api.createRuleSet(ctx, body, orgName, repoName)
+	err = api.createRuleSet(ctx, feedbackBody, orgName, repoName)
+	if err != nil {
+		return fmt.Errorf("failed to create feedback branch ruleset: %v", err)
+	}
+
+	return nil
 }
 
 func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error {
@@ -345,9 +408,10 @@ jobs:
 
 func targetBranchProtectionAction() string {
 	var actionString = `name: check-pr-target-branch
-  
+
 on:
   pull_request:
+    branches: [ feedback ]
     types: [opened, reopened, edited, synchronize]
 
 jobs:
@@ -371,7 +435,7 @@ func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName
 		OwnerName:         orgName,
 		DestinationBranch: branchName,
 		Content:           targetBranchProtectionAction(),
-		CommitMessage:     "Deadline enforcement GH action files",
+		CommitMessage:     "Pull request target branch enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
 
