@@ -222,6 +222,10 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
+		if !baseRepo.Initialized {
+			return errs.BadRequest(errors.New("base repo is not initialized"))
+		}
+
 		// Get classroom
 		classroom, err := s.store.GetClassroomByID(c.Context(), assignment.ClassroomID)
 		if err != nil {
@@ -272,21 +276,6 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return err
 		}
 
-		// Initialize the base repository if it is not initialized already
-		if !baseRepo.Initialized {
-			err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName, s.domains.BACKEND_URL)
-			if err != nil {
-				fmt.Println("Error initializing repo:", err)
-				return errs.InternalServerError()
-			}
-		}
-
-		firstCommitSHA, err := s.getFirstCommitSHA(c.Context(), client, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
-		if err != nil {
-			fmt.Println("Error getting first commit SHA:", err)
-			return errs.InternalServerError()
-		}
-
 		// Generate fork
 		err = client.ForkRepository(c.Context(),
 			baseRepo.BaseRepoOwner,
@@ -330,6 +319,12 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 
 			time.Sleep(initialDelay)
 			initialDelay *= 2
+		}
+
+		firstCommitSHA, err := s.getFirstCommitSHA(c.Context(), client, *studentWorkRepo.Owner.Login, *studentWorkRepo.Name)
+		if err != nil {
+			fmt.Println("Error getting first commit SHA:", err)
+			return errs.InternalServerError()
 		}
 
 		// Force push to the first commit, then merge them back in to get rid of the "enable actions" button
@@ -571,7 +566,7 @@ func (s *AssignmentService) getGradedCount() fiber.Handler {
 			totalCounts[models.WorkStateGradingCompleted] -
 			totalCounts[models.WorkStateGradePublished]
 
-        ungradedWorks = ungradedWorks + notAcceptedWorks
+		ungradedWorks = ungradedWorks + notAcceptedWorks
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"assignment_id": assignmentID,
