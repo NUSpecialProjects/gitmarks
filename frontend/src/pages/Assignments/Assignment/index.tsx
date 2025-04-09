@@ -150,6 +150,9 @@ const Assignment: React.FC = () => {
                           font: {
                             size: 12,
                           },
+                          formatter: (value) => {
+                            return value === 0 ? '' : value;
+                          }
                         },
                         tooltip: {
                           enabled: false,

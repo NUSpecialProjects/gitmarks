@@ -4,12 +4,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./styles.css";
 import { getRubric, getRubricsInClassroom } from "@/api/rubrics";
 import Button from "@/components/Button";
-import { Table, TableCell, TableRow } from "@/components/Table";
+import { Table, TableCell, TableDiv, TableRow } from "@/components/Table";
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { getAssignmentRubric } from "@/api/assignments";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
-
 
 const AssignmentRubric: React.FC = () => {
   const location = useLocation();
@@ -27,16 +26,13 @@ const AssignmentRubric: React.FC = () => {
   const [importing, setImporting] = useState(false)
 
 
-  const choseExisting = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedId = parseInt(event.target.value, 10);
-    if (selectedId) {
-      const selectedRubric = rubrics.find((rubric) => rubric.rubric.id === selectedId);
-      if (selectedRubric && assignment) {
-        navigate('/app/rubrics/new', {
-          state: { assignment: assignment, rubricData: selectedRubric, newRubric: true },
-        });
+  const choseExisting = async (rubric: IFullRubric) => {
+    if (rubric && assignment) {
+      navigate('/app/rubrics/new', {
+        state: { assignment: assignment, rubricData: rubric, newRubric: true },
+      });
 
-      }
+
     }
   };
 
@@ -76,7 +72,7 @@ const AssignmentRubric: React.FC = () => {
     };
 
     fetchData();
-}, [location.state, selectedClassroom, assignment]);
+  }, [location.state, selectedClassroom, assignment]);
 
 
 
@@ -88,7 +84,10 @@ const AssignmentRubric: React.FC = () => {
       )}
 
       {loading && !errorState && (
-        <LoadingSpinner />
+        <div className="AssignmentRubric__chooseRubric">
+          <LoadingSpinner />
+          </div>
+        
       )}
 
       {assignment && !errorState && !loading && (
@@ -103,6 +102,8 @@ const AssignmentRubric: React.FC = () => {
             <div>
               <div className="AssignmentRubric__title">
                 {rubricData.rubric.name}
+
+
 
                 <Link to={`/app/rubrics/new`} state={{ assignment, rubricData }}>
                   <Button href=""> Edit Rubric </Button>
@@ -130,36 +131,83 @@ const AssignmentRubric: React.FC = () => {
             </div>
           ) : (
             <div className="AssignmentRubric__noRubric">
-              <div className="AssignmentRubric__noRubricTitle">This Assignment does not have a Rubric yet.</div>
 
 
-              {importing ?
-                <div>
-                  <select id="dropdown" onChange={choseExisting}>
-                    <option value="">-- Select a starter rubric --</option>
-                    {rubrics.map((rubric) => (
-                      <option key={rubric.rubric.id} value={rubric.rubric.id!}>
-                        {rubric.rubric.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <Button href="" variant="secondary" onClick={() => setImporting(false)}>
-                    Cancel
-                  </Button>
-                </div>
-
-                :
-                <div>
-                  <Button href="" variant="secondary" onClick={() => setImporting(true)}> Import existing rubric</Button>
+              {importing ? (
+                <>
 
 
-                  <Link to={`/app/rubrics/new`} state={{ assignment }}>
-                    <Button href="" > Add new rubric</Button>
-                  </Link>
-                </div>
+                  <TableDiv className="GradingAssignmentRow__submissions">
+                    {rubrics.length > 0 ? (
+                      <div>
+                        <Table cols={1}>
+                          <TableRow style={{ borderTop: "none" }}>
+                            <TableCell>
+                              <div> Select a starter rubric for this Assignment.</div>
+                            </TableCell>
+                          </TableRow>
+                          {rubrics.map((rubric, i: number) => (
+                            <TableRow
+                              key={i}
+                              onClick={() => {
+                                choseExisting(rubric)
+                              }}
+                            >
+                              <TableCell>{rubric.rubric.name}</TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="AssignmentRubric__chooseRubric">
 
-              }
+                            <Link to={`/app/rubrics/new`} state={{ assignment }}>
+                              <div className="AssignmentRubric__scratchLink">
+                                Create one from scratch
+                              </div>
+                            </Link>
+
+                          </TableRow>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="AssignmentRubric__noRubric">
+                        <div >
+                          No rubrics have been created.
+                        </div>
+
+                        <Link to={`/app/rubrics/new`} state={{ assignment }}>
+                          <Button className="AssignmentRubric__button" href="">
+                            Add new rubric
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </TableDiv>
+                </>
+
+
+              ) : (
+                <>
+                  <div className="AssignmentRubric__noRubricTitle">This Assignment does not have a Rubric yet.</div>
+
+                  <div className="AssignmentRubric__selectOption">
+                    <Button
+                    className="AssignmentRubric__button"
+                      href=""
+                      variant="secondary"
+                      onClick={() => setImporting(true)}
+                    >
+                      Copy existing rubric
+                    </Button>
+
+                    <Link to={`/app/rubrics/new`} state={{ assignment }}>
+                      <Button className="AssignmentRubric__button" href="">
+                        Create new rubric
+                      </Button>
+                    </Link>
+                  </div>
+
+                </>
+              )}
+
             </div>
           )}
         </>

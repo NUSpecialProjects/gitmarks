@@ -172,7 +172,7 @@ export const useAssignmentMetrics = (classroomId: number | undefined, assignment
         const metrics = await getAssignmentAcceptanceMetrics(classroomId, Number(assignmentId));
         return {
           data: {
-            labels: ["Not Accepted", "Accepted", "Started", "Submitted", "In Grading"],
+            labels: ["Not Accepted", "Accepted", "Started", "Submitted", "Graded"],
             datasets: [{
               backgroundColor: ["#f83b5c", "#50c878", "#fece5a", "#7895cb", "#219386"],
               data: [metrics.not_accepted, metrics.accepted, metrics.started, metrics.submitted, metrics.in_grading]

@@ -272,7 +272,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 
 		// Initialize the base repository if it is not initialized already
 		if !baseRepo.Initialized {
-			err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName)
+			err = common.InitializeRepo(c.Context(), s.appClient, s.store, baseRepo.BaseID, baseRepo.BaseRepoOwner, baseRepo.BaseRepoName, s.domains.BACKEND_URL)
 			if err != nil {
 				fmt.Println("Error initializing repo:", err)
 				return errs.InternalServerError()
@@ -525,7 +525,11 @@ func (s *AssignmentService) getAssignmentRubric() fiber.Handler {
 
 func (s *AssignmentService) getGradedCount() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Parse assignmentID
+		// Parse assignmentID & classroomID
+		classroomID, err := strconv.ParseInt(c.Params("classroom_id"), 10, 64)
+		if err != nil {
+			return errs.BadRequest(err)
+		}
 		assignmentID, err := strconv.ParseInt(c.Params("assignment_id"), 10, 64)
 		if err != nil {
 			return errs.BadRequest(err)
@@ -547,6 +551,25 @@ func (s *AssignmentService) getGradedCount() fiber.Handler {
 				ungradedWorks += count
 			}
 		}
+
+		// Adds the number of unaccepted assignments to the number of ungraded
+		totalCounts, err := s.store.CountWorksByState(c.Context(), int(assignmentID))
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+		numStudents, err := s.store.GetNumberOfStudentsInClassroom(c.Context(), classroomID)
+		if err != nil {
+			return errs.InternalServerError()
+		}
+		notAcceptedWorks := numStudents - totalCounts[models.WorkStateAccepted] -
+			totalCounts[models.WorkStateStarted] -
+			totalCounts[models.WorkStateSubmitted] -
+			totalCounts[models.WorkStateGradingAssigned] -
+			totalCounts[models.WorkStateGradingCompleted] -
+			totalCounts[models.WorkStateGradePublished]
+
+        ungradedWorks = ungradedWorks + notAcceptedWorks
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"assignment_id": assignmentID,

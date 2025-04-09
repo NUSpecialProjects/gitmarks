@@ -333,3 +333,4 @@ func (db *DB) GetAssignmentToken(ctx context.Context, token string) (models.Assi
 
 	return tokenData, nil
 }
+
