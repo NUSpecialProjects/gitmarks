@@ -30,58 +30,31 @@ func InitializeRepo(ctx context.Context, client github.GitHubBaseClient, store s
 }
 
 func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient, store storage.Storage, repository *gh.PushEventRepository, serverUrl string) error {
-	// Retrieve assignment deadline from DB
-	template, err := store.GetAssignmentByRepoName(ctx, *repository.Name)
+	mainBranch := MainRepoBranch
+
+	err := client.CreateDeadlineEnforcement(ctx, *repository.Organization, *repository.Name, mainBranch, serverUrl)
 	if err != nil {
 		//@KHO-239
-		fmt.Println("Error getting assignment:", err)
+		fmt.Println("Error creating deadline enforcement:", err)
 		return err
 	}
 
-	//TODO: make this work for no-deadline assignments
-	if template.MainDueDate != nil {
-		// There is a deadline
-		err = client.CreateDeadlineEnforcement(ctx, template.MainDueDate, *repository.Organization, *repository.Name, MainRepoBranch, serverUrl)
-		if err != nil {
-			//@KHO-239
-			fmt.Println("Error creating deadline enforcement:", err)
-			return err
-		}
-	}
-
 	// Create PR Enforcement Action
-	err = client.CreatePREnforcement(ctx, *repository.Organization, *repository.Name, MainRepoBranch)
+	err = client.CreatePREnforcement(ctx, *repository.Organization, *repository.Name, mainBranch)
 	if err != nil {
 		fmt.Println("Error creating PR enforcement:", err)
 		return err
 	}
 
-	// Create push ruleset to protect .github directory
-	err = client.CreatePushRuleset(ctx, *repository.Organization, *repository.Name)
+	// Create feedback branch
+	_, err = client.CreateBranch(ctx,
+		*repository.Organization,
+		*repository.Name,
+		mainBranch,
+		"feedback")
 	if err != nil {
-		// @KHO-239
-		fmt.Println("Error creating push ruleset:", err)
-		return err
-	}
-
-	// Get the master branch name (use main if not specified)
-	mainBranch := MainRepoBranch
-	// if repository.MasterBranch != nil {
-	// 	mainBranch = *repository.MasterBranch
-	// }
-
-	// Create necessary repo branches
-	for _, branch := range OtherRepoBranches {
-		fmt.Println("Creating branch:", branch)
-		_, err := client.CreateBranch(ctx,
-			*repository.Organization,
-			*repository.Name,
-			mainBranch,
-			branch)
-		if err != nil {
-			fmt.Println("Error creating branch:", err)
-			return errs.InternalServerError()
-		}
+		fmt.Println("Error creating branch:", err)
+		return errs.InternalServerError()
 	}
 
 	// Create empty commit (will create a diff that allows feedback PR to be created)
@@ -91,11 +64,23 @@ func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient
 		return errs.InternalServerError()
 	}
 
-	// Update the base repo initialized field in the database
-	err = store.UpdateBaseRepoInitialized(ctx, *repository.ID, true)
+	// Create development branch
+	_, err = client.CreateBranch(ctx,
+		*repository.Organization,
+		*repository.Name,
+		mainBranch,
+		"development")
 	if err != nil {
-		fmt.Println("Error updating base repo initialized:", err)
+		fmt.Println("Error creating branch:", err)
 		return errs.InternalServerError()
+	}
+
+	// Create push ruleset to protect .github directory
+	err = client.CreatePushRuleset(ctx, *repository.Organization, *repository.Name)
+	if err != nil {
+		// @KHO-239
+		fmt.Println("Error creating push ruleset:", err)
+		return err
 	}
 
 	// Find the associated assignment and classroom
@@ -116,6 +101,13 @@ func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient
 		*repository.Owner.Name, *repository.Name, "pull")
 	if err != nil {
 		fmt.Println("Error updating team repo permissions:", err)
+		return errs.InternalServerError()
+	}
+
+	// Update the base repo initialized field in the database
+	err = store.UpdateBaseRepoInitialized(ctx, *repository.ID, true)
+	if err != nil {
+		fmt.Println("Error updating base repo initialized:", err)
 		return errs.InternalServerError()
 	}
 
