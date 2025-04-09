@@ -83,8 +83,17 @@ func (s *WebHookService) baseRepoInitialization(c *fiber.Ctx, pushEvent github.P
 		return errs.BadRequest(errors.New("invalid repository data"))
 	}
 
+	initialized, err := common.CheckBaseRepoInitialized(c.Context(), s.store, *pushEvent.Repo.ID)
+	if err != nil {
+		return err
+	}
+
+	if initialized {
+		return c.SendStatus(fiber.StatusOK)
+	}
+
 	// Initialize the repository with branches, empty commit, and deadline enforcement
-	err := common.InitializePushEventRepo(c.Context(), s.appClient, s.store, pushEvent.Repo, s.domains.BACKEND_URL)
+	err = common.InitializePushEventRepo(c.Context(), s.appClient, s.store, pushEvent.Repo, s.domains.BACKEND_URL)
 	if err != nil {
 		return err
 	}
