@@ -195,24 +195,22 @@ func (s *AssignmentService) generateAssignmentToken() fiber.Handler {
 func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 	//@KHO-239
 	return func(c *fiber.Ctx) error {
+		// Retrieve user client and session
+		client, githubUser, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
+		if err != nil {
+			return errs.AuthenticationError()
+		}
+
 		token := c.Params("token")
 		if token == "" {
 			fmt.Println("Token is required")
 			return errs.BadRequest(errors.New("token is required"))
 		}
 
-		// Get client and user
-		client, githubUser, user, err := middleware.GetClientAndUser(c, s.store, s.userCfg)
-		if err != nil {
-			fmt.Println("Error getting client and user:", err)
-			return errs.AuthenticationError()
-		}
-
 		// Get assignment using the token
 		assignment, err := s.store.GetAssignmentByToken(c.Context(), token)
 		if err != nil {
-			fmt.Println("Error getting assignment:", err)
-			return errs.BadRequest(errors.New("invalid token"))
+			return c.Status(http.StatusNotFound).JSON(fiber.Map{"message": "Invalid token"})
 		}
 
 		// Get assignment base repository
@@ -249,6 +247,13 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 				fmt.Println("Error requiring at least student role:", err)
 				return err
 			}
+		}
+
+		// Check that the base repository is initialized
+		if !baseRepo.Initialized {
+			return c.Status(http.StatusForbidden).JSON(fiber.Map{
+				"message": "We're still initializing the base repository, please try again in a moment",
+			})
 		}
 
 		// Check if the user has already accepted the assignment (student work exists already)
