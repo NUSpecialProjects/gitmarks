@@ -35,6 +35,7 @@ func (s *WebHookService) PR(c *fiber.Ctx) error {
 
 // todo: finish regrade request handling
 func (s *WebHookService) PRComment(c *fiber.Ctx) error {
+	println("PR comment webhook event")
 	payload := models.WebHookPRComment{}
 	if err := c.BodyParser(&payload); err != nil {
 		return err
@@ -51,6 +52,7 @@ func (s *WebHookService) PRThread(c *fiber.Ctx) error {
 }
 
 func (s *WebHookService) PushEvent(c *fiber.Ctx) error {
+	println("Push event webhook event")
 	// Extract the 'payload' form value
 	pushEvent := github.PushEvent{}
 	if err := c.BodyParser(&pushEvent); err != nil {
