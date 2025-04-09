@@ -6,40 +6,42 @@ import (
 	"time"
 )
 
-
-func (db *DB) GetDeadlineForRepo(ctx context.Context, repoName string) (*time.Time, error){
+func (db *DB) GetDeadlineForRepo(ctx context.Context, repoName string) (*time.Time, error) {
 	query := `
 SELECT sw.unique_due_date FROM student_works as sw
 WHERE sw.repo_name = $1;
 `
-	var uniqueDueDate time.Time
-
+	var uniqueDueDate *time.Time
 
 	err := db.connPool.QueryRow(ctx, query, repoName).Scan(&uniqueDueDate)
 	if err != nil {
-		return nil, fmt.Errorf("Error Retrieving Deadline: %s \n", err.Error())
+		if err.Error() == "no rows in result set" {
+			fmt.Println("No deadline found for repo:", repoName)
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error Retrieving Deadline: %s", err.Error())
 	}
 
-	return &uniqueDueDate, nil
+	return uniqueDueDate, nil
 }
 
 // Sets a due date for a specific student
 func (db *DB) UpdateRepoDeadline(ctx context.Context, repoName string, due *time.Time) error {
 
-		_, err := db.connPool.Exec(ctx,`
+	_, err := db.connPool.Exec(ctx, `
 		UPDATE student_works
 		SET unique_due_date = $1
 		WHERE repo_name = $2;`, *due, repoName)
-		return err
+	return err
 }
 
 // Updates the due date for both the assignment and any associated student works
 func (db *DB) UpdateAssignmentDeadline(ctx context.Context, ass_id string, due *time.Time) error {
-	_, err := db.connPool.Exec(ctx,`
+	_, err := db.connPool.Exec(ctx, `
 		UPDATE assignment_outline
 		SET main_due_date = $1
 		WHERE id = $2;`, *due, ass_id)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
