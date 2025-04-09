@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
@@ -355,7 +354,7 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName
 	return nil
 }
 
-func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error {
+func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, orgName, repoName, branchName, serverUrl string) error {
 	addition := models.RepositoryAddition{
 		FilePath:          ".github/workflows/deadline-enforcement.yml",
 		RepoName:          repoName,
