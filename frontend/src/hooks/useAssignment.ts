@@ -92,17 +92,6 @@ export const useAssignmentBaseRepo = (classroomId: number | undefined, assignmen
   });
 };
 
-export const useStudentWorks = (classroomId: number | undefined, assignmentId: number | undefined) => {
-  return useQuery({
-    queryKey: ['studentWorks', classroomId, assignmentId],
-    queryFn: async () => {
-      if (!classroomId || !assignmentId) return [];
-      return await getStudentWorks(classroomId, assignmentId);
-    },
-    enabled: !!classroomId && !!assignmentId,
-  });
-};
-
 /**
  * Provides an invite link for an assignment.
  * 
