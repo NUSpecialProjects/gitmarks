@@ -63,31 +63,22 @@ const Assignment: React.FC = () => {
     }
   }, [linkError, assignmentError, metricsError, assignmentBaseRepoError]);
 
-  if (assignmentIsLoading) {
-    return (
-      <div className="Assignment__loading">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
-    assignment && (
       <>
         <SubPageHeader
-          pageTitle={assignment.name}
+          pageTitle={assignment?.name}
           chevronLink={"/app/dashboard"}
         >
           <div className="Assignment__dates">
             <div className="Assignment__date">
               <div className="Assignment__date--title"> {"Released on:"}</div>
-              {assignment.created_at
+              {assignment?.created_at
                 ? formatDate(assignment.created_at)
                 : "N/A"}
             </div>
             <div className="Assignment__date">
               <div className="Assignment__date--title"> {"Due Date:"}</div>
-              {assignment.main_due_date
+              {assignment?.main_due_date
                 ? formatDate(assignment.main_due_date)
                 : "N/A"}
             </div>
@@ -100,8 +91,9 @@ const Assignment: React.FC = () => {
               <FaGithub className="icon" /> View GitHub Repository
             </Button>
             <Button
-              href={`/app/assignments/${assignment.id}/rubric`}
+              href={`/app/assignments/${assignment?.id}/rubric`}
               variant="secondary"
+              disabled={!assignment?.id}
               state={{ assignment }}
             >
               <MdEditDocument className="icon" /> View Rubric
@@ -244,7 +236,7 @@ const Assignment: React.FC = () => {
                       {sa.work_state !== StudentWorkState.NOT_ACCEPTED ? (
                         <Link
                           to={`/app/submissions/${sa.student_work_id}`}
-                          state={{ submission: sa, assignmentId: assignment.id }}
+                          state={{ submission: sa, assignmentId: assignment?.id }}
                           className="Dashboard__assignmentLink">
                           {sa.contributors.map(c => `${c.full_name  }`).join(", ")}
                         </Link>
@@ -285,7 +277,6 @@ const Assignment: React.FC = () => {
           </div>
         </div>
       </>
-    )
   );
 };
 
