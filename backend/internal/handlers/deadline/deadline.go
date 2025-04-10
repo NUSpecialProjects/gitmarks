@@ -20,6 +20,11 @@ func (s *DeadlineService) DeadlineHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON("Error Retrieving Assignment Deadline")
 	}
 
+	// If no deadline is set, return false
+	if due == nil {
+		return c.Status(fiber.StatusOK).JSON(map[string]bool{"overdue": false})
+	}
+
 	// return true if the repo is overdue, false if not
 	return c.Status(fiber.StatusOK).JSON(map[string]bool{"overdue": due.Before(time.Now())})
 

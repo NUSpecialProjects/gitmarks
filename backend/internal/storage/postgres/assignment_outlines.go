@@ -311,6 +311,7 @@ func (db *DB) GetAssignmentByRepoName(ctx context.Context, repoName string) (*mo
 		fmt.Println(err)
 		return nil, err
 	}
+
 	return &outline, nil
 }
 
@@ -333,4 +334,3 @@ func (db *DB) GetAssignmentToken(ctx context.Context, token string) (models.Assi
 
 	return tokenData, nil
 }
-

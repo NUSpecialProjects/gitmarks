@@ -2,7 +2,6 @@ package github
 
 import (
 	"context"
-	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/google/go-github/github"
@@ -166,5 +165,5 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Check if a file or directory exists in a repository
 	FileExists(owner string, repo string, path string) (bool, error)
 
-	CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error
+	CreateDeadlineEnforcement(ctx context.Context, orgName, repoName, branchName, serverUrl string) error
 }
