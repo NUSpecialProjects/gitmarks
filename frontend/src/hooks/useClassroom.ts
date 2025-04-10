@@ -39,18 +39,21 @@ export const useClassroomValidation = (name: string) => {
  * 
  * @param classroomId - The ID of the classroom to fetch the invite link for.
  * @param role - The role of the user to fetch the invite link for.
+ * @param expirationDuration - The duration of the invite link.
  * @param enabled - Manually enable or disable the query.
  * @returns The invite link for the classroom.
  */
-export const useClassroomInviteLink = (classroomId: number | undefined, role: ClassroomRole, enabled: boolean = true) => {
+export const useClassroomInviteLink = (classroomId: number | undefined, role: ClassroomRole, expirationDuration: number | undefined = undefined, enabled: boolean = true) => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
   return useQuery({
-    queryKey: ['classroomToken', classroomId, role],
+    queryKey: ['classroomToken', classroomId, role, expirationDuration],
     queryFn: async () => {
       if (!classroomId) return null;
-      const data = await postClassroomToken(classroomId, role);
+      const data = await postClassroomToken(classroomId, role, expirationDuration);
       return `${base_url}/token/classroom/join?token=${data.token}`;
     },
-    enabled: !!classroomId && enabled
+    enabled: !!classroomId && enabled,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };

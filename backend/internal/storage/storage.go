@@ -87,6 +87,7 @@ type AssignmentOutline interface {
 	CreateAssignmentToken(ctx context.Context, tokenData models.AssignmentToken) (models.AssignmentToken, error)
 	GetAssignmentByRepoName(ctx context.Context, repoName string) (*models.AssignmentOutline, error)
 	GetPermanentAssignmentTokenByAssignmentID(ctx context.Context, assignmentID int64) (models.AssignmentToken, error)
+	GetAssignmentToken(ctx context.Context, token string) (models.AssignmentToken, error)
 }
 
 type AssignmentTemplate interface {
@@ -111,7 +112,6 @@ type Rubric interface {
 	UpdateRubricItem(ctx context.Context, rubricItemData models.RubricItem) (models.RubricItem, error)
 	GetRubricsInClassroom(ctx context.Context, classroomID int64) ([]models.Rubric, error)
 }
-
 
 type Deadline interface {
 	GetDeadlineForRepo(ctx context.Context, repoName string) (*time.Time, error)

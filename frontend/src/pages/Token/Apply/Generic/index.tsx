@@ -66,7 +66,7 @@ export interface TokenHandlerConfig<T extends ITokenUseResponse> {
           successCallback(response);
         })
         .catch((error) => {
-          setMessage("Error using token: " + error);
+          setMessage("Error using token: " + error.message);
         })
         .finally(() => {
           setLoading(false);
