@@ -15,10 +15,6 @@ WHERE sw.repo_name = $1;
 
 	err := db.connPool.QueryRow(ctx, query, repoName).Scan(&uniqueDueDate)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
-			fmt.Println("No deadline found for repo:", repoName)
-			return nil, nil
-		}
 		return nil, fmt.Errorf("error Retrieving Deadline: %s", err.Error())
 	}
 
