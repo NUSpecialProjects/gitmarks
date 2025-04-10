@@ -212,17 +212,20 @@ func (api *CommonAPI) createRuleSet(ctx context.Context, ruleset interface{}, or
 	return err
 }
 
-// Given a repo name and org name, create a push ruleset to protect the .github directory
+// Given a repo name and org name, create a push ruleset to protect specific workflow files
 func (api *CommonAPI) CreatePushRuleset(ctx context.Context, orgName, repoName string) error {
 	body := map[string]interface{}{
-		"name":        "Restrict .github Directory Edits: Preserves Submission Deadline",
+		"name":        "Restrict Workflow File Edits: Preserves Submission Deadline & Feedback Branch Protection",
 		"target":      "push",
 		"enforcement": "active",
 		"rules": []interface{}{
 			map[string]interface{}{
 				"type": "file_path_restriction",
 				"parameters": map[string]interface{}{
-					"restricted_file_paths": []string{".github/**/*"},
+					"restricted_file_paths": []string{
+						".github/workflows/check-pr-target-branch.yml",
+						".github/workflows/deadline-enforcement.yml",
+					},
 				},
 			},
 		},
