@@ -10,7 +10,7 @@ import { Line } from 'react-chartjs-2';
 import { MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
 import { useStudentWork, useStudentWorkAnalytics } from "@/hooks/useStudentWorks";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { ErrorToast } from "@/components/Toast";
 
 const StudentSubmission: React.FC = () => {
   const location = useLocation();
@@ -18,7 +18,7 @@ const StudentSubmission: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const assignmentID = location.state.assignmentId;
 
-  const { data: submission, isLoading: submissionLoading, error: submissionError } = useStudentWork(
+  const { data: submission, error: submissionError } = useStudentWork(
     selectedClassroom?.id,
     assignmentID,
     id ? Number(id) : undefined
@@ -32,7 +32,6 @@ const StudentSubmission: React.FC = () => {
     noCommits,
     notEnoughData,
     loadingAllCommits,
-    isLoading: analyticsLoading,
     error: analyticsError
   } = useStudentWorkAnalytics(
     selectedClassroom?.id,
@@ -40,16 +39,12 @@ const StudentSubmission: React.FC = () => {
     id ? Number(id) : undefined
   );
 
-  if (submissionError || analyticsError) {
-    return <div>Error loading submission data</div>;
+  if (submissionError) {
+    ErrorToast("Error loading submission data", "submissionError");
   }
 
-  if (submissionLoading) {
-    return (
-      <div className="StudentSubmission__loading">
-        <LoadingSpinner />
-      </div>
-    );
+  if (analyticsError) {
+    ErrorToast("Error loading analytics data", "analyticsError");
   }
 
   return (
@@ -77,30 +72,28 @@ const StudentSubmission: React.FC = () => {
       </div>
 
 
-      {analyticsLoading ? <div>Loading...</div> : // TODO: add better loading state for metric panels
-        (<div className="StudentSubmission__subSectionWrapper">
-          <h2 style={{ marginBottom: 10 }}>Metrics</h2>
-          <MetricPanel>
-            <Metric title="First Commit Date">{firstCommit ?? "N/A"}</Metric>
-            <Metric title="Total Commits">{totalCommits ?? "N/A"}</Metric>
-            <Metric title="Commits Over Time" className="Metric__bigContent">
-              <div>
-                {loadingAllCommits ? <div>Loading...</div> :
-                noCommits ? <div>N/A</div> :
-                notEnoughData ? <div>Insufficient Data</div> :
-                lineData && lineOptions && (
-                  <Line
-                    className="StudentSubmission__commitsOverTimeChart"
-                    options={lineOptions}
-                    data={lineData}
-                    redraw={false}
-                  />
-                )}
-              </div>
-            </Metric>
-          </MetricPanel>
-        </div>
-      )}
+      <div className="StudentSubmission__subSectionWrapper">
+        <h2 style={{ marginBottom: 10 }}>Metrics</h2>
+        <MetricPanel>
+          <Metric title="First Commit Date">{firstCommit ?? "N/A"}</Metric>
+          <Metric title="Total Commits">{totalCommits ?? "N/A"}</Metric>
+          <Metric title="Commits Over Time" className="Metric__bigContent">
+            <div>
+              {loadingAllCommits ? <div>Loading...</div> :
+              noCommits ? <div>N/A</div> :
+              notEnoughData ? <div>Insufficient Data</div> :
+              lineData && lineOptions && (
+                <Line
+                  className="StudentSubmission__commitsOverTimeChart"
+                  options={lineOptions}
+                  data={lineData}
+                  redraw={false}
+                />
+              )}
+            </div>
+          </Metric>
+        </MetricPanel>
+      </div>
     </div>
   );
 };
