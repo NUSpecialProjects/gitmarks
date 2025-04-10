@@ -123,6 +123,28 @@ export const getAssignmentTemplate = async (
   return data;
 };
 
+export const getAssignmentBaseRepo = async (
+  classroomID: number,
+  assignmentID: number
+): Promise<IAssignmentBaseRepo> => {
+  const result = await fetch(
+    `${base_url}/classrooms/classroom/${classroomID}/assignments/assignment/${assignmentID}/baserepo`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  if (!result.ok) {
+    throw new Error("Network response was not ok");
+  }
+
+  const data: IAssignmentBaseRepo = (await result.json()).assignment_base_repo;
+  return data;
+};
+
 export const createAssignment = async (
   templateRepoID: number,
   assignment: IAssignmentFormData

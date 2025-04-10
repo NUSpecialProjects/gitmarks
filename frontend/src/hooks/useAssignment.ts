@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useQuery, UseQueryResult, useQueryClient } from "@tanstack/react-query";
 import {
+  getAssignmentBaseRepo,
   getAssignmentIndirectNav,
   getAssignments,
   getAssignmentTemplate,
@@ -51,17 +51,42 @@ export const useAssignmentsList = (classroomId: number | undefined) => {
  * @param assignmentId - The ID of the assignment to fetch.
  * @returns The assignment for the classroom.
  */
-export const useAssignment = (classroomId: number | undefined, assignmentId: number | undefined) => {
-  const location = useLocation();
-
+export const useAssignment = (classroomId: number | undefined, assignmentId: number | undefined): UseQueryResult<IAssignmentOutline | null> => {
+  const queryClient = useQueryClient();
+  
   return useQuery({
     queryKey: ['assignment', classroomId, assignmentId],
     queryFn: async () => {
       if (!classroomId || !assignmentId) return null;
-      if (location.state?.assignment) {
-        return location.state.assignment;
+      
+      // Try to find the assignment in the cached list first
+      const cachedAssignments = queryClient.getQueryData<IAssignmentOutline[]>(['assignments', classroomId]);
+      const cachedAssignment = cachedAssignments?.find(a => a.id === assignmentId);
+      if (cachedAssignment) {
+        return cachedAssignment;
       }
+      
+      // If not found in cache, fetch it directly
       return await getAssignmentIndirectNav(classroomId, assignmentId);
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+};
+
+
+/**
+ * Provides the base repository of an assignment
+ * 
+ * @param classroomId - The ID of the classroom to fetch the base repository for.
+ * @param assignmentId - The ID of the assignment to fetch the base repository for.
+ * @returns The base repository of the assignment.
+ */
+export const useAssignmentBaseRepo = (classroomId: number | undefined, assignmentId: number | undefined): UseQueryResult<IAssignmentBaseRepo | null> => {
+  return useQuery({
+    queryKey: ['assignmentBaseRepo', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return null;
+      return await getAssignmentBaseRepo(classroomId, assignmentId);
     },
     enabled: !!classroomId && !!assignmentId
   });

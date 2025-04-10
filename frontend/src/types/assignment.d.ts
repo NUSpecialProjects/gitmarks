@@ -22,6 +22,14 @@ interface IAssignmentTemplate {
   created_at: Date;
 }
 
+interface IAssignmentBaseRepo {
+  base_repo_owner: string;
+  base_repo_name: string;
+  base_repo_id: number;
+  created_at: Date;
+  initialized: boolean;
+}
+
 interface IAssignmentToken {
   assignment_id: number;
   token: string;
