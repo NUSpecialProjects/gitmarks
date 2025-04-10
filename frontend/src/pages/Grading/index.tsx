@@ -17,8 +17,9 @@ import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser"
 import { ClassroomRole, StudentWorkState } from "@/types/enums";
 
 import "./styles.css";
-import { useAssignmentsList, useStudentWorks } from "@/hooks/useAssignment";
+import { useAssignmentsList } from "@/hooks/useAssignment";
 import { useLocalCachedState } from "@/hooks/useLocalStorage";
+import { useStudentWorks } from "@/hooks/useStudentWorks";
 
 interface IGradingAssignmentRow extends React.HTMLProps<HTMLDivElement> {
   assignment: IAssignmentOutline;
