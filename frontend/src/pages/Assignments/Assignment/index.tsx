@@ -98,7 +98,7 @@ const Assignment: React.FC = () => {
             >
               <MdEditDocument className="icon" /> View Rubric
             </Button>
-            <Button href="#" variant="secondary" newTab>
+            <Button href="#" variant="secondary" disabled={!assignment?.id} newTab>
               <MdEdit className="icon" /> Edit Assignment
             </Button>
           </div>
