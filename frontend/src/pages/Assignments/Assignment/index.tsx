@@ -19,9 +19,9 @@ import Pill from "@/components/Pill";
 import "./styles.css";
 import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
-import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentBaseRepo, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
+import { useAssignment, useAssignmentInviteLink, useAssignmentBaseRepo, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
 import { ErrorToast } from "@/components/Toast";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { useStudentWorks } from "@/hooks/useStudentWorks";
 
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);
@@ -31,7 +31,7 @@ const Assignment: React.FC = () => {
   const { id: assignmentID } = useParams();
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
-  const { data: assignment, isLoading: assignmentIsLoading, error: assignmentError } = useAssignment(selectedClassroom?.id, Number(assignmentID));
+  const { data: assignment, error: assignmentError } = useAssignment(selectedClassroom?.id, Number(assignmentID));
   const { data: assignmentBaseRepo, isLoading: assignmentBaseRepoIsLoading, error: assignmentBaseRepoError } = useAssignmentBaseRepo(selectedClassroom?.id, Number(assignmentID));
   const { data: studentWorks } = useStudentWorks(
     selectedClassroom?.id, 
