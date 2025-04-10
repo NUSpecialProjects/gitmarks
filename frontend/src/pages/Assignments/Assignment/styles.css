@@ -7,6 +7,13 @@
   gap: 20px;
   padding-bottom: 50px;
 
+  &__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+
   &__centerAlignedCell {
     text-align: center;
     display: flex;

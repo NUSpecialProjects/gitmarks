@@ -19,8 +19,9 @@ import Pill from "@/components/Pill";
 import "./styles.css";
 import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
-import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
+import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentBaseRepo, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
 import { ErrorToast } from "@/components/Toast";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);
@@ -30,7 +31,8 @@ const Assignment: React.FC = () => {
   const { id: assignmentID } = useParams();
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
-  const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
+  const { data: assignment, isLoading: assignmentIsLoading, error: assignmentError } = useAssignment(selectedClassroom?.id, Number(assignmentID));
+  const { data: assignmentBaseRepo, isLoading: assignmentBaseRepoIsLoading, error: assignmentBaseRepoError } = useAssignmentBaseRepo(selectedClassroom?.id, Number(assignmentID));
   const { data: studentWorks } = useStudentWorks(
     selectedClassroom?.id, 
     Number(assignmentID)
@@ -48,19 +50,26 @@ const Assignment: React.FC = () => {
   const { data: inviteLink = "", isLoading: linkIsLoading, error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url, expirationDuration.value);
 
   const { data: totalAssignmentCommits } = useAssignmentTotalCommits(selectedClassroom?.id, assignment?.id);
-  const { data: assignmentTemplate, error: templateError } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
   const { acceptanceMetrics, gradedMetrics, error: metricsError } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
 
-  const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
+  const assignmentBaseRepoLink = assignmentBaseRepo ? `https://github.com/${assignmentBaseRepo?.base_repo_owner}/${assignmentBaseRepo?.base_repo_name}` : "";
 
   useEffect(() => {
-    if (linkError || templateError || metricsError) {
-      const errorMessage = linkError?.message || templateError?.message || metricsError?.message;
+    if (linkError || assignmentError || metricsError || assignmentBaseRepoError) {
+      const errorMessage = linkError?.message || assignmentError?.message || metricsError?.message || assignmentBaseRepoError?.message;
       if (errorMessage) {
         ErrorToast(errorMessage, "assignment-error");
       }
     }
-  }, [linkError, templateError, metricsError]);
+  }, [linkError, assignmentError, metricsError, assignmentBaseRepoError]);
+
+  if (assignmentIsLoading) {
+    return (
+      <div className="Assignment__loading">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     assignment && (
@@ -87,8 +96,8 @@ const Assignment: React.FC = () => {
 
         <div className="Assignment">
           <div className="Assignment__externalButtons">
-            <Button href={assignmentTemplateLink} variant="secondary" newTab>
-              <FaGithub className="icon" /> View Template Repository
+            <Button href={assignmentBaseRepoLink} variant="secondary" disabled={!assignmentBaseRepoLink || assignmentBaseRepoIsLoading} newTab>
+              <FaGithub className="icon" /> View GitHub Repository
             </Button>
             <Button
               href={`/app/assignments/${assignment.id}/rubric`}
