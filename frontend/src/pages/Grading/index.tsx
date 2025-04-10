@@ -1,6 +1,6 @@
 import { FaChevronRight, FaChevronDown } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import React, { useState } from "react";
+import React from "react";
 import { formatDateTime } from "@/utils/date";
 import {
   Table,
@@ -18,6 +18,7 @@ import { ClassroomRole, StudentWorkState } from "@/types/enums";
 
 import "./styles.css";
 import { useAssignmentsList, useStudentWorks } from "@/hooks/useAssignment";
+import { useLocalCachedState } from "@/hooks/useLocalStorage";
 
 interface IGradingAssignmentRow extends React.HTMLProps<HTMLDivElement> {
   assignment: IAssignmentOutline;
@@ -27,8 +28,11 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
   assignment,
   children,
 }) => {
-  const [collapsed, setCollapsed] = useState(true);
   const { selectedClassroom } = useCurrentClassroom();
+  const [collapsed, setCollapsed] = useLocalCachedState({
+    defaultValue: true,
+    key: `collapsed-${selectedClassroom?.id}-${assignment.id}`,
+  });
   const navigate = useNavigate();
   const { data: studentAssignments } = useStudentWorks(selectedClassroom?.id, assignment.id);
   

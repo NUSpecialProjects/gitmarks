@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { SelectedClassroomContext } from "./selectedClassroom";
 import { gradeWork } from "@/api/grader";
 import { 
@@ -6,7 +6,16 @@ import {
   usePaginatedStudentWork, 
   useAssignmentRubric 
 } from "@/hooks/useGrader";
+import { createUniqueKey, useLocalCachedState } from "@/hooks/useLocalStorage";
 import { useActionToast } from "@/components/Toast";
+  
+// Combines two grader feedback maps, if the same ID exists in both, the value from map2 is used
+export function combineGraderFeedbackMaps(map1: IGraderFeedbackMap, map2: IGraderFeedbackMap): IGraderFeedbackMap {
+  return {
+    ...map1,
+    ...map2,
+  };
+}
 
 interface IGraderContext {
   assignmentID: string | undefined;
@@ -66,12 +75,17 @@ export const GraderProvider: React.FC<{
   const { executeWithToast } = useActionToast();
 
   // State variables
-  const nextFeedbackID = useRef(0);
   const [feedback, setFeedback] = useState<IGraderFeedbackMap>({});
-  const [stagedFeedback, setStagedFeedback] = useState<IGraderFeedbackMap>({});
   const [selectedRubricItems, setSelectedRubricItems] = useState<number[]>([]);
-  const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
   const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
+  
+  // Persisted state with localStorage
+  const [stagedFeedback, setStagedFeedback] = useLocalCachedState<IGraderFeedbackMap>({
+    key: createUniqueKey('staged_feedback', assignmentID, studentWorkID),
+    defaultValue: {},
+  });
+
+  const [selectedFile, setSelectedFile] = useState<IFileTreeNode | null>(null);
   
   // Convert string IDs to numbers for the queries
   const classroomId = selectedClassroom?.id;
@@ -103,24 +117,32 @@ export const GraderProvider: React.FC<{
   const rubric = rubricData || null;
   const dataRetrievalError = fileTreeError || studentWorkError || rubricError;
 
-  // Set feedback when student work data is loaded
-  useEffect(() => {
-    if (studentWorkData) {
-      setFeedback(studentWorkData.feedback || {});
-      setStagedFeedback({});
-    }
-  }, [studentWorkData]);
-
-  // Reset selected file when student work changes
+  // Reset the selected file when the studentWorkID changes
   useEffect(() => {
     setSelectedFile(null);
   }, [studentWorkID]);
 
-  // Feedback management functions
+  // Set feedback when student work data is loaded
+  useEffect(() => {
+    if (studentWorkData) {
+      setFeedback(studentWorkData.feedback || {});
+    }
+  }, [studentWorkData]);
+
   const getNextFeedbackID = () => {
-    const tmp = nextFeedbackID.current;
-    nextFeedbackID.current = nextFeedbackID.current + 1;
-    return tmp;
+    const stagedKeys = Object.keys(stagedFeedback).map(Number);
+    const feedbackKeys = Object.keys(feedback).map(Number);
+    
+    // If both arrays are empty, start with ID 1
+    if (stagedKeys.length === 0 && feedbackKeys.length === 0) {
+      return 1;
+    }
+    
+    // Otherwise, find the max ID in either set and add 1
+    return Math.max(
+      ...(stagedKeys.length > 0 ? stagedKeys : [0]),
+      ...(feedbackKeys.length > 0 ? feedbackKeys : [0])
+    ) + 1;
   };
 
   const addFeedback = (feedback: IGraderFeedback[]) => {
@@ -132,30 +154,30 @@ export const GraderProvider: React.FC<{
       };
     }
 
-    setStagedFeedback((prevFeedback) => ({
-      ...prevFeedback,
-      ...newFeedback,
-    }));
+    setStagedFeedback(
+      combineGraderFeedbackMaps(stagedFeedback, newFeedback)
+    );
   };
 
   const editFeedback = (feedbackID: number, feedback: IGraderFeedback) => {
-    setStagedFeedback((prevFeedback) => ({
-      ...prevFeedback,
-      [feedbackID]: {
-        ...feedback,
+    setStagedFeedback(
+      combineGraderFeedbackMaps(stagedFeedback, {
+        [feedbackID]: {
+          ...feedback,
         action: "EDIT",
       },
     }));
   };
 
   const removeFeedback = (feedbackID: number) => {
-    setStagedFeedback((prevFeedback) => ({
-      ...prevFeedback,
-      [feedbackID]: {
-        ...prevFeedback[feedbackID],
-        action: "DELETE",
-      },
-    }));
+    setStagedFeedback(
+      combineGraderFeedbackMaps(stagedFeedback, {
+        [feedbackID]: {
+          ...stagedFeedback[feedbackID],
+          action: "DELETE",
+        },
+      })
+    );
   };
 
   const postFeedback = async () => {
@@ -200,11 +222,6 @@ export const GraderProvider: React.FC<{
     const deselected = selectedRubricItems.filter((ri) => ri !== riID);
     setSelectedRubricItems(deselected);
   };
-
-  // Reset feedback ID counter when feedback changes
-  useEffect(() => {
-    nextFeedbackID.current = feedback ? Object.keys(feedback).length : 0;
-  }, [feedback]);
 
   return (
     <GraderContext.Provider
