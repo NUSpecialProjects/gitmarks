@@ -16,10 +16,8 @@
         cursor: pointer;
         margin-left: 10px;
         
-            
         color: var(--caption-text);
         font-size: var(--font-size-xs);
-          
     }
 
     &__repoInfo {
@@ -31,6 +29,11 @@
 
     &__repoLink {
         color: var(--primary-text);
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        margin-left: 10px;
         
         a {
             color: var(--brand);
@@ -39,7 +42,20 @@
             &:hover {
                 text-decoration: underline;
             }
+
+            &.disabled-link {
+                color: var(--caption-text);
+                cursor: not-allowed;
+                pointer-events: none;
+            }
         }
+    }
+
+    &__repoValidationIndicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 16px;
     }
 
     &__repoFields {

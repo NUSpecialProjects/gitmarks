@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import GenericDropdown from '@/components/Dropdown';
 import Input from '@/components/Input';
+import { getRepoFromGithub } from '@/api/github';
+import useDebounce from '@/hooks/useDebounce';
+import ValidationIndicator from '@/components/ValidationIndicator';
 
 interface StarterCodeDetailsProps extends IStepComponentProps<IAssignmentFormData> {
   templateRepos: ITemplateRepo[];
@@ -9,8 +12,10 @@ interface StarterCodeDetailsProps extends IStepComponentProps<IAssignmentFormDat
 
 const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange, templateRepos, isLoading }) => {
   const [useCustomRepo, setUseCustomRepo] = useState(false);
-  const [repoOwner, setRepoOwner] = useState('');
-  const [repoName, setRepoName] = useState('');
+  const [repoOwner, debouncedRepoOwner, setRepoOwner] = useDebounce('', 250);
+  const [repoName, debouncedRepoName, setRepoName] = useDebounce('', 250);
+  const [repoID, setRepoID] = useState<number | null>(null);
+  const [loadingRepo, setLoadingRepo] = useState(false);
 
   const formattedOptions = templateRepos.map(repo => repo.template_repo_name);
 
@@ -31,15 +36,28 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
     } else {
       setRepoName(value);
     }
-
-    onChange({ 
-      templateRepo: {
-        template_repo_name: repoName,
-        template_repo_id: -1,
-        template_repo_owner: repoOwner
-      }
-    });
   };
+
+  useEffect(() => {
+    if (debouncedRepoOwner && debouncedRepoName) {
+      setLoadingRepo(true);
+      getRepoFromGithub(debouncedRepoOwner, debouncedRepoName).then(repositoryID => {
+        setRepoID(repositoryID);
+        onChange({ templateRepo: {
+          template_repo_name: debouncedRepoName,
+          template_repo_owner: debouncedRepoOwner,
+          template_repo_id: repositoryID
+        } });
+      })
+      .catch(() => {
+        onChange({ templateRepo: null });
+        setRepoID(null);
+      })
+      .finally(() => {
+        setLoadingRepo(false);
+      });
+    }
+  }, [debouncedRepoOwner, debouncedRepoName]);
 
   const repoLink = repoOwner && repoName ? `https://github.com/${repoOwner}/${repoName}` : '';
 
@@ -87,9 +105,24 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
             />
           </div>
           <div className="CreateAssignmentForms__repoLink">
-            Repository Link: {repoLink ? (
-              <a href={repoLink} target="_blank" rel="noopener noreferrer">{repoLink}</a>
+            <span>{"Repository Link:"}</span> {repoLink ? (
+              <a 
+                href={repoID ? repoLink : undefined} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={!repoID ? 'disabled-link' : ''}
+              >
+                {repoLink}
+              </a>
             ) : 'No repository selected'}
+            {(repoOwner && repoName) && (
+              <div className="CreateAssignmentForms__repoValidationIndicator">
+                <ValidationIndicator
+                  isLoading={loadingRepo}
+                  isValid={!!repoID}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
