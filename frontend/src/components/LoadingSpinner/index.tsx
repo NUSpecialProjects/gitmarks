@@ -10,13 +10,12 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   color = "#0066CC"
 }) => {
   return (
-    <div className="LoadingSpinner">
-      <ClipLoader
-        size={size}
-        color={color}
-        loading={true}
-      />
-    </div>
+    <ClipLoader
+      size={size}
+      color={color}
+      loading={true}
+      className="LoadingSpinner"
+    />
   );
 };
 

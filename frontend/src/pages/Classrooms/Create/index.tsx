@@ -8,6 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useOrganizationDetails } from "@/hooks/useOrganization";
 import { useClassroomNames } from "@/hooks/useClassroom";
 import { useClassroomValidation } from "@/hooks/useClassroom";
+import ValidationIndicator from "@/components/ValidationIndicator";
 
 import "./styles.css";
 import Input from "@/components/Input";
@@ -98,15 +99,10 @@ const ClassroomCreation: React.FC = () => {
                 />
                 {name && (
                   <div className="ClassroomCreation__validationIndicator">
-                    {!isValidRepoName ? (
-                      <span className="validation-icon invalid">✕</span>
-                    ) : isClassroomExistsLoading ? (
-                      <LoadingSpinner size={16} />  
-                    ) : classroomExists ? (
-                      <span className="validation-icon invalid">✕</span>
-                    ) : (
-                      <span className="validation-icon valid">✓</span>
-                    )}
+                    <ValidationIndicator
+                      isLoading={isClassroomExistsLoading}
+                      isValid={isValidRepoName && !classroomExists}
+                    />
                   </div>
                 )}
               </div>
