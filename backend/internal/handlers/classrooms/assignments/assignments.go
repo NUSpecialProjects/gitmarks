@@ -93,8 +93,6 @@ func (s *AssignmentService) getAssignmentBaseRepo() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		fmt.Println("assignmentBaseRepo", assignmentBaseRepo)
-
 		return c.Status(http.StatusOK).JSON(fiber.Map{"assignment_base_repo": assignmentBaseRepo})
 	}
 }
