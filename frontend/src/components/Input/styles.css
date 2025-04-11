@@ -13,6 +13,12 @@
   padding-bottom: 10px;
   width: 100%;
 
+  &:disabled {
+    background: var(--panels-background);
+    color: var(--secondary-text);
+    cursor: not-allowed;
+  }
+
   &__wrapper {
     display: flex;
     padding: 10px;
