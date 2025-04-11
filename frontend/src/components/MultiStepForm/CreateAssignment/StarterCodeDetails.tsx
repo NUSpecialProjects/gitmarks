@@ -53,7 +53,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
             onChange={handleDropdownChange}
             selectedOption={selectedOption}
             loading={isLoading}
-            labelText="Pick a template repository to use as the starter code"
+            labelText="Pick a repository to use as the starter code"
             captionText="Choose from your organization's template repositories"
             disabled={useCustomRepo}
           />
