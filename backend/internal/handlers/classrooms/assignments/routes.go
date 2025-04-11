@@ -26,6 +26,9 @@ func AssignmentRoutes(router fiber.Router, service *AssignmentService, params *t
 	// Get the template of an assignment
 	assignmentRouter.Get("/assignment/:assignment_id/template", service.getAssignmentTemplate())
 
+	// Get the base repository of an assignment
+	assignmentRouter.Get("/assignment/:assignment_id/baserepo", service.getAssignmentBaseRepo())
+
 	// Create an assignment
 	assignmentRouter.Post("/", service.createAssignment())
 
