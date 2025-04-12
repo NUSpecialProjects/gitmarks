@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/github"
@@ -45,6 +46,9 @@ func InitializePushEventRepo(ctx context.Context, client github.GitHubBaseClient
 		fmt.Println("Error creating PR enforcement:", err)
 		return err
 	}
+
+	// Wait before creating branches to ensure the workflow files are created on the main branch
+	time.Sleep(5 * time.Second)
 
 	// Create feedback branch
 	_, err = client.CreateBranch(ctx,
