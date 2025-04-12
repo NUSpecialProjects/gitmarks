@@ -14,7 +14,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
   const [useCustomRepo, setUseCustomRepo] = useState(false);
   const [repoOwner, debouncedRepoOwner, setRepoOwner] = useDebounce('', 250);
   const [repoName, debouncedRepoName, setRepoName] = useDebounce('', 250);
-  const [repoID, setRepoID] = useState<number | null>(null);
+  const [repository, setRepository] = useState<IRepository | null>(null);
   const [loadingRepo, setLoadingRepo] = useState(false);
 
   const formattedOptions = templateRepos.map(repo => repo.template_repo_name);
@@ -26,7 +26,6 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
     if (selectedRepo) {
       setRepoOwner(selectedRepo.template_repo_owner);
       setRepoName(selectedRepo.template_repo_name);
-      onChange({ templateRepo: selectedRepo });
     }
   };
 
@@ -42,7 +41,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
     if (debouncedRepoOwner && debouncedRepoName) {
       setLoadingRepo(true);
       getRepoFromGithub(debouncedRepoOwner, debouncedRepoName).then(repository => {
-        setRepoID(repository.id);
+        setRepository(repository);
         onChange({ templateRepo: {
           template_repo_name: debouncedRepoName,
           template_repo_owner: debouncedRepoOwner,
@@ -51,7 +50,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
       })
       .catch(() => {
         onChange({ templateRepo: null });
-        setRepoID(null);
+        setRepository(null);
       })
       .finally(() => {
         setLoadingRepo(false);
@@ -61,6 +60,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
 
   const repoLink = repoOwner && repoName ? `https://github.com/${repoOwner}/${repoName}` : '';
 
+  //TODO: Add a warning if the repository is not a template repository
   return (
     <div className="CreateAssignmentForms">
       <h2 className="CreateAssignmentForms__header">Starter Code Repository</h2>
@@ -71,13 +71,13 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
             onChange={handleDropdownChange}
             selectedOption={selectedOption}
             loading={isLoading}
-            labelText="Pick a repository to use as the starter code"
+            labelText="Pick a template repository to use as the starter code"
             captionText="Choose from your organization's template repositories"
             disabled={useCustomRepo}
           />
         </div>
         <label className="CreateAssignmentForms__checkbox">
-          Or use a different repository:
+          Or use a different template repository:
           <input
             type="checkbox"
             checked={useCustomRepo}
@@ -107,10 +107,10 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
           <div className="CreateAssignmentForms__repoLink">
             <span>{"Repository Link:"}</span> {repoLink ? (
               <a 
-                href={repoID ? repoLink : undefined} 
+                href={repository ? repoLink : undefined} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className={!repoID ? 'disabled-link' : ''}
+                className={!repository ? 'disabled-link' : ''}
               >
                 {repoLink}
               </a>
@@ -119,7 +119,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
               <div className="CreateAssignmentForms__repoValidationIndicator">
                 <ValidationIndicator
                   isLoading={loadingRepo}
-                  isValid={!!repoID}
+                  isValid={!!repository && repository.is_template}
                 />
               </div>
             )}
