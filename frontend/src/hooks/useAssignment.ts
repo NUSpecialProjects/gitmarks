@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import {
   getAssignmentIndirectNav,
@@ -67,7 +67,14 @@ export const useAssignment = (classroomId: number | undefined, assignmentId: num
   });
 };
 
-export const useStudentWorks = (classroomId: number | undefined, assignmentId: number | undefined) => {
+/**
+ * Provides the list of student works for an assignment.
+ * 
+ * @param classroomId - The ID of the classroom to fetch the student works for.
+ * @param assignmentId - The ID of the assignment to fetch the student works for.
+ * @returns The list of student works for the assignment.
+ */
+export const useStudentWorks = (classroomId: number | undefined, assignmentId: number | undefined): UseQueryResult<IStudentWorkResponses> => {
   return useQuery({
     queryKey: ['studentWorks', classroomId, assignmentId],
     queryFn: async () => {
@@ -149,7 +156,6 @@ export const useAssignmentTotalCommits = (classroomId: number | undefined, assig
     queryKey: ['totalAssignmentCommits', classroomId, assignmentId],
     queryFn: async () => {
       if (!classroomId || !assignmentId) return null;
-      console.log("called...")
       return await getAssignmentTotalCommits(classroomId, assignmentId);
     },
     enabled: !!classroomId && !!assignmentId

@@ -33,6 +33,7 @@ interface IPaginatedStudentWork extends IStudentWork {
 
 interface IStudentWorkResponses {
   student_works: IStudentWork[];
+  non_student_works: IStudentWork[];
 }
 
 interface IPaginatedStudentWorkResponse {
