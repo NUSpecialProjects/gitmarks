@@ -60,7 +60,6 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
 
   const repoLink = repoOwner && repoName ? `https://github.com/${repoOwner}/${repoName}` : '';
 
-  //TODO: Add a warning if the repository is not a template repository
   return (
     <div className="CreateAssignmentForms">
       <h2 className="CreateAssignmentForms__header">Starter Code Repository</h2>
@@ -77,7 +76,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
           />
         </div>
         <label className="CreateAssignmentForms__checkbox">
-          Or use a different template repository:
+          Or use any public template repository:
           <input
             type="checkbox"
             checked={useCustomRepo}
@@ -111,7 +110,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
                 target="_blank" 
                 rel="noopener noreferrer"
                 className={!repository ? 'disabled-link' : ''}
-                title={!repository ? "Repository not found or you don't have access to it" : repository.is_template ? "" : "Repository is not a template repository"}
+                title={!repository ? "Repository not foundt" : repository.is_template ? "" : "Repository is not a template repository"}
               >
                 {repoLink}
               </a>
@@ -122,7 +121,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
                   isLoading={loadingRepo}
                   isValid={!!repository && repository.is_template}
                   title={loadingRepo ? "Checking repository..." : 
-                    !repository ? "Repository not found or you don't have access to it" : 
+                    !repository ? "Repository not found" : 
                     !repository.is_template ? "Repository is not a template repository" : 
                     "Valid template repository"}
                 />
