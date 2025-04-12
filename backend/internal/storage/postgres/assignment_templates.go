@@ -5,6 +5,7 @@ import (
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
+	"github.com/jackc/pgx/v5"
 )
 
 func (db *DB) AssignmentTemplateExists(ctx context.Context, templateID int64) (bool, error) {
@@ -45,6 +46,9 @@ func (db *DB) GetAssignmentTemplateByID(ctx context.Context, templateID int64) (
 		&assignmentTemplate.CreatedAt,
 	)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return models.AssignmentTemplate{}, nil
+		}
 		return models.AssignmentTemplate{}, errs.NewDBError(err)
 	}
 

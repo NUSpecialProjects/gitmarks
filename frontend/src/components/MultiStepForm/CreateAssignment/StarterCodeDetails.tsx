@@ -41,12 +41,12 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
   useEffect(() => {
     if (debouncedRepoOwner && debouncedRepoName) {
       setLoadingRepo(true);
-      getRepoFromGithub(debouncedRepoOwner, debouncedRepoName).then(repositoryID => {
-        setRepoID(repositoryID);
+      getRepoFromGithub(debouncedRepoOwner, debouncedRepoName).then(repository => {
+        setRepoID(repository.id);
         onChange({ templateRepo: {
           template_repo_name: debouncedRepoName,
           template_repo_owner: debouncedRepoOwner,
-          template_repo_id: repositoryID
+          template_repo_id: repository.id
         } });
       })
       .catch(() => {

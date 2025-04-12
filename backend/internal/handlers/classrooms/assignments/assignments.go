@@ -78,56 +78,95 @@ func (s *AssignmentService) getAssignmentTemplate() fiber.Handler {
 func (s *AssignmentService) createAssignment() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Parse request body
-		var assignmentData models.AssignmentOutline
-		error := c.BodyParser(&assignmentData)
+		var assignmentFormData struct {
+			models.AssignmentOutline
+			TemplateRepoOwner string `json:"template_repo_owner"`
+			TemplateRepoName  string `json:"template_repo_name"`
+		}
+		error := c.BodyParser(&assignmentFormData)
 		if error != nil {
-			return errs.InvalidRequestBody(assignmentData)
+			fmt.Println("Error parsing request body:", error)
+			return errs.InvalidRequestBody(assignmentFormData)
 		}
 
 		// Check if user has at least Professor role
-		_, err := s.RequireAtLeastRole(c, assignmentData.ClassroomID, models.Professor)
+		_, err := s.RequireAtLeastRole(c, assignmentFormData.ClassroomID, models.Professor)
 		if err != nil {
+			fmt.Println("Error requiring at least Professor role:", err)
 			return err
 		}
 
 		// Error if assignment already exists
-		existingAssignment, err := s.store.GetAssignmentByNameAndClassroomID(c.Context(), assignmentData.Name, assignmentData.ClassroomID)
+		existingAssignment, err := s.store.GetAssignmentByNameAndClassroomID(c.Context(), assignmentFormData.Name, assignmentFormData.ClassroomID)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			fmt.Println("Error getting assignment by name and classroom ID:", err)
 			return err
 		}
 		if existingAssignment != nil {
+			fmt.Println("Assignment with that name already exists")
 			return errs.BadRequest(errors.New("assignment with that name already exists"))
 		}
 
 		// Get classroom and assignment template
-		classroom, err := s.store.GetClassroomByID(c.Context(), assignmentData.ClassroomID)
+		classroom, err := s.store.GetClassroomByID(c.Context(), assignmentFormData.ClassroomID)
 		if err != nil {
+			fmt.Println("Error getting classroom by ID:", err)
 			return err
 		}
-		template, err := s.store.GetAssignmentTemplateByID(c.Context(), assignmentData.TemplateID)
+		template, err := s.store.GetAssignmentTemplateByID(c.Context(), assignmentFormData.TemplateID)
 		if err != nil {
-			return err
+			fmt.Println("error getting assignment template by id", err)
+		} else if template.TemplateID == 0 {
+			fmt.Println("Template doesnt already exist, creating it", err)
+			fmt.Println("templateID", assignmentFormData.TemplateID)
+			fmt.Println("templateRepoOwner", assignmentFormData.TemplateRepoOwner)
+			fmt.Println("templateRepoName", assignmentFormData.TemplateRepoName)
+			template, err = s.store.CreateAssignmentTemplate(c.Context(), models.AssignmentTemplate{
+				TemplateID:        assignmentFormData.TemplateID,
+				TemplateRepoOwner: assignmentFormData.TemplateRepoOwner,
+				TemplateRepoName:  assignmentFormData.TemplateRepoName,
+			})
+			if err != nil {
+				fmt.Println("Error creating assignment template:", err)
+				return err
+			}
 		}
+
+		fmt.Println("template", template)
 
 		// Create base repository and store locally
-		baseRepoName, err := generateUniqueRepoName(c.Context(), s.appClient, classroom.OrgName, classroom.Name, assignmentData.Name)
+		baseRepoName, err := generateUniqueRepoName(c.Context(), s.appClient, classroom.OrgName, classroom.Name, assignmentFormData.Name)
 		if err != nil {
+			fmt.Println("Error generating unique repo name:", err)
 			return err
 		}
 
-		baseRepo, err := s.appClient.CreateRepoFromTemplate(c.Context(), classroom.OrgName, template.TemplateRepoName, baseRepoName)
+		baseRepo, err := s.appClient.CreateRepoFromTemplate(c.Context(), template.TemplateRepoOwner, template.TemplateRepoName, classroom.OrgName, baseRepoName)
 		if err != nil {
+			fmt.Println("Error creating repo from template:", err)
 			return err
 		}
 		err = s.store.CreateBaseRepo(c.Context(), *baseRepo)
 		if err != nil {
+			fmt.Println("Error creating base repo:", err)
 			return err
 		}
 
 		// Store assignment locally
-		assignmentData.BaseRepoID = baseRepo.BaseID
-		createdAssignment, err := s.store.CreateAssignment(c.Context(), assignmentData)
+		assignmentOutline := models.AssignmentOutline{
+			TemplateID:      assignmentFormData.TemplateID,
+			BaseRepoID:      baseRepo.BaseID,
+			Name:            assignmentFormData.Name,
+			ClassroomID:     assignmentFormData.ClassroomID,
+			RubricID:        assignmentFormData.RubricID,
+			GroupAssignment: assignmentFormData.GroupAssignment,
+			MainDueDate:     assignmentFormData.MainDueDate,
+			DefaultScore:    assignmentFormData.DefaultScore,
+		}
+
+		createdAssignment, err := s.store.CreateAssignment(c.Context(), assignmentOutline)
 		if err != nil {
+			fmt.Println("Error creating assignment:", err)
 			return err
 		}
 
@@ -569,7 +608,7 @@ func (s *AssignmentService) getGradedCount() fiber.Handler {
 			totalCounts[models.WorkStateGradingCompleted] -
 			totalCounts[models.WorkStateGradePublished]
 
-        ungradedWorks = ungradedWorks + notAcceptedWorks
+		ungradedWorks = ungradedWorks + notAcceptedWorks
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"assignment_id": assignmentID,

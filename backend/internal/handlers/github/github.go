@@ -37,7 +37,7 @@ func (s *GithubService) getRepoFromGithub() fiber.Handler {
 		}
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
-			"repo_id": repo.GetID(),
+			"repository": repo,
 		})
 	}
 }
