@@ -530,9 +530,20 @@ func (api *CommonAPI) CancelOrgInvitationByID(ctx context.Context, orgName strin
 	return nil
 }
 
-func (api *CommonAPI) GetRepository(ctx context.Context, owner string, repoName string) (*github.Repository, error) {
-	repo, _, err := api.Client.Repositories.Get(ctx, owner, repoName)
-	return repo, err
+func (api *CommonAPI) GetRepository(ctx context.Context, owner string, repoName string) (*models.Repository, error) {
+	endpoint := fmt.Sprintf("/repos/%s/%s", owner, repoName)
+	req, err := api.Client.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	var repo models.Repository
+	_, err = api.Client.Do(ctx, req, &repo)
+	if err != nil {
+		return nil, fmt.Errorf("error getting repository: %v", err)
+	}
+
+	return &repo, nil
 }
 
 func (api *CommonAPI) UpdateTeamRepoPermissions(ctx context.Context, org, teamSlug, owner, repo, permission string) error {
@@ -704,13 +715,13 @@ func (api *CommonAPI) CreateEmptyCommit(ctx context.Context, owner, repo string)
 	return nil
 }
 
-func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Repository) bool {
-	if repo == nil || repo.Parent.FullName == nil {
+func (api *CommonAPI) CheckForkIsReady(ctx context.Context, parentRepoFullName string, forkRepoFullName string) bool {
+	if parentRepoFullName == "" || forkRepoFullName == "" {
 		return false
 	}
 
 	// Get all branches from source repo
-	endpoint := fmt.Sprintf("/repos/%s/branches", *repo.Parent.FullName)
+	endpoint := fmt.Sprintf("/repos/%s/branches", parentRepoFullName)
 	req, err := api.Client.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return false
@@ -723,7 +734,7 @@ func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Reposit
 	}
 
 	// Get all branches from forked repo
-	endpoint = fmt.Sprintf("/repos/%s/branches", *repo.FullName)
+	endpoint = fmt.Sprintf("/repos/%s/branches", forkRepoFullName)
 	req, err = api.Client.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return false

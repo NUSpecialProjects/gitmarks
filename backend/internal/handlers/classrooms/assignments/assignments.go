@@ -114,13 +114,7 @@ func (s *AssignmentService) createAssignment() fiber.Handler {
 			return err
 		}
 		template, err := s.store.GetAssignmentTemplateByID(c.Context(), assignmentFormData.TemplateID)
-		if err != nil {
-			fmt.Println("error getting assignment template by id", err)
-		} else if template.TemplateID == 0 {
-			fmt.Println("Template doesnt already exist, creating it", err)
-			fmt.Println("templateID", assignmentFormData.TemplateID)
-			fmt.Println("templateRepoOwner", assignmentFormData.TemplateRepoOwner)
-			fmt.Println("templateRepoName", assignmentFormData.TemplateRepoName)
+		if err == nil && template.TemplateID == 0 {
 			template, err = s.store.CreateAssignmentTemplate(c.Context(), models.AssignmentTemplate{
 				TemplateID:        assignmentFormData.TemplateID,
 				TemplateRepoOwner: assignmentFormData.TemplateRepoOwner,
@@ -131,8 +125,6 @@ func (s *AssignmentService) createAssignment() fiber.Handler {
 				return err
 			}
 		}
-
-		fmt.Println("template", template)
 
 		// Create base repository and store locally
 		baseRepoName, err := generateUniqueRepoName(c.Context(), s.appClient, classroom.OrgName, classroom.Name, assignmentFormData.Name)
@@ -342,7 +334,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		initialDelay := 1 * time.Second
 		maxDelay := 30 * time.Second
 
-		var studentWorkRepo *gh.Repository
+		var studentWorkRepo *models.Repository
 		for {
 			repo, err := client.GetRepository(c.Context(), classroom.OrgName, forkName)
 			if err != nil {
@@ -355,8 +347,8 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 				continue
 			}
 
-			studentWorkRepo = repo
-			if client.CheckForkIsReady(c.Context(), studentWorkRepo) {
+			if client.CheckForkIsReady(c.Context(), repo.Parent.FullName, repo.FullName) {
+				studentWorkRepo = repo
 				break
 			}
 
@@ -370,34 +362,34 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		}
 
 		// Force push to the first commit, then merge them back in to get rid of the "enable actions" button
-		err = client.SetBranchToCommit(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName(), "main", *firstCommitSHA)
+		err = client.SetBranchToCommit(c.Context(), studentWorkRepo.Owner.Login, studentWorkRepo.Name, "main", *firstCommitSHA)
 		if err != nil {
 			fmt.Println("Error setting branch to commit:", err)
 			return errs.GithubAPIError(err)
 		}
 
-		err = client.SyncForkWithUpstream(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName(), "main")
+		err = client.SyncForkWithUpstream(c.Context(), studentWorkRepo.Owner.Login, studentWorkRepo.Name, "main")
 		if err != nil {
 			fmt.Println("Error syncing fork with upstream:", err)
 			return errs.GithubAPIError(err)
 		}
 
 		// Create feedback pull request
-		err = client.CreateFeedbackPR(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName())
+		err = client.CreateFeedbackPR(c.Context(), studentWorkRepo.Owner.Login, studentWorkRepo.Name)
 		if err != nil {
 			fmt.Println("Error creating feedback pull request:", err)
 			return errs.CriticalGithubError()
 		}
 
 		// KHO-239
-		err = client.CreateBranchRuleset(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName())
+		err = client.CreateBranchRuleset(c.Context(), studentWorkRepo.Owner.Login, studentWorkRepo.Name)
 		if err != nil {
 			fmt.Println("Error creating branch ruleset:", err)
 			return errs.CriticalGithubError()
 		}
 
 		// Remove student team's access to forked repo
-		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, studentWorkRepo.GetName())
+		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, studentWorkRepo.Name)
 		if err != nil {
 			fmt.Println("Error removing repo from team:", err)
 			return errs.GithubAPIError(err)
@@ -412,7 +404,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":  "Assignment Accepted!",
-			"repo_url": studentWorkRepo.GetHTMLURL(),
+			"repo_url": studentWorkRepo.HTMLURL,
 		})
 	}
 }

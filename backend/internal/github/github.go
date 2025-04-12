@@ -114,7 +114,7 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	CancelOrgInvitationByID(ctx context.Context, orgName string, invitationID int64) error
 
 	// Get the details of a repository
-	GetRepository(ctx context.Context, owner string, repoName string) (*github.Repository, error)
+	GetRepository(ctx context.Context, owner string, repoName string) (*models.Repository, error)
 
 	// Get the details of a team
 	GetTeam(ctx context.Context, teamID int64) (*github.Team, error)
@@ -156,7 +156,7 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	CreateEmptyCommit(ctx context.Context, owner, repo string) error
 
 	// Check if a fork has finished initializing
-	CheckForkIsReady(ctx context.Context, repo *github.Repository) bool
+	CheckForkIsReady(ctx context.Context, parentRepoFullName string, forkRepoFullName string) bool
 
 	//Enable a given action
 	EnableWorkflow(ctx context.Context, repoOwner, forkName, workflowName string) error
