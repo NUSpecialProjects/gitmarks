@@ -2,7 +2,6 @@ package github
 
 import (
 	"context"
-	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/models"
 	"github.com/google/go-github/github"
@@ -26,7 +25,7 @@ type GitHubAppClient interface { // All methods in the APP client
 	AssignPermissionToUser(ctx context.Context, ownerName string, repoName string, userName string, permission string) error
 
 	// Create instance of template repository
-	CreateRepoFromTemplate(ctx context.Context, orgName, templateRepoName, newRepoName string) (*models.AssignmentBaseRepo, error)
+	CreateRepoFromTemplate(ctx context.Context, orgName, templateRepoName, newRepoOwner, newRepoName string) (*models.AssignmentBaseRepo, error)
 }
 
 type GitHubUserClient interface { // All methods in the OAUTH client
@@ -114,7 +113,7 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	CancelOrgInvitationByID(ctx context.Context, orgName string, invitationID int64) error
 
 	// Get the details of a repository
-	GetRepository(ctx context.Context, owner string, repoName string) (*github.Repository, error)
+	GetRepository(ctx context.Context, owner string, repoName string) (*models.Repository, error)
 
 	// Get the details of a team
 	GetTeam(ctx context.Context, teamID int64) (*github.Team, error)
@@ -156,7 +155,7 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	CreateEmptyCommit(ctx context.Context, owner, repo string) error
 
 	// Check if a fork has finished initializing
-	CheckForkIsReady(ctx context.Context, repo *github.Repository) bool
+	CheckForkIsReady(ctx context.Context, parentRepoFullName string, forkRepoFullName string) bool
 
 	//Enable a given action
 	EnableWorkflow(ctx context.Context, repoOwner, forkName, workflowName string) error
@@ -166,5 +165,5 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	// Check if a file or directory exists in a repository
 	FileExists(owner string, repo string, path string) (bool, error)
 
-	CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error
+	CreateDeadlineEnforcement(ctx context.Context, orgName, repoName, branchName, serverUrl string) error
 }

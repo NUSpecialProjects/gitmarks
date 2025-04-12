@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/models"
@@ -213,17 +212,20 @@ func (api *CommonAPI) createRuleSet(ctx context.Context, ruleset interface{}, or
 	return err
 }
 
-// Given a repo name and org name, create a push ruleset to protect the .github directory
+// Given a repo name and org name, create a push ruleset to protect specific workflow files
 func (api *CommonAPI) CreatePushRuleset(ctx context.Context, orgName, repoName string) error {
 	body := map[string]interface{}{
-		"name":        "Restrict .github Directory Edits: Preserves Submission Deadline",
+		"name":        "Restrict Workflow File Edits: Preserves Submission Deadline & Feedback Branch Protection",
 		"target":      "push",
 		"enforcement": "active",
 		"rules": []interface{}{
 			map[string]interface{}{
 				"type": "file_path_restriction",
 				"parameters": map[string]interface{}{
-					"restricted_file_paths": []string{".github/**/*"},
+					"restricted_file_paths": []string{
+						".github/workflows/check-pr-target-branch.yml",
+						".github/workflows/deadline-enforcement.yml",
+					},
 				},
 			},
 		},
@@ -232,14 +234,15 @@ func (api *CommonAPI) CreatePushRuleset(ctx context.Context, orgName, repoName s
 }
 
 func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName string) error {
-	body := map[string]interface{}{
-		"name":        "Feedback and Main Branch Protedtion: PR Enforcement",
+	// Create ruleset for main branch
+	mainBody := map[string]interface{}{
+		"name":        "Main Branch Protection",
 		"target":      "branch",
 		"enforcement": "active",
 		"conditions": map[string]interface{}{
 			"ref_name": map[string]interface{}{
 				"exclude": []interface{}{},
-				"include": []interface{}{"refs/heads/feedback", "~DEFAULT_BRANCH"},
+				"include": []interface{}{"~DEFAULT_BRANCH"},
 			},
 		},
 		"rules": []interface{}{
@@ -281,6 +284,63 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName
 						{
 							"context": "deadline-enforcement",
 						},
+					},
+				},
+			},
+		},
+	}
+	err := api.createRuleSet(ctx, mainBody, orgName, repoName)
+	if err != nil {
+		return fmt.Errorf("failed to create main branch ruleset: %v", err)
+	}
+
+	// Create ruleset for feedback branch
+	feedbackBody := map[string]interface{}{
+		"name":        "Feedback Branch Protection",
+		"target":      "branch",
+		"enforcement": "active",
+		"conditions": map[string]interface{}{
+			"ref_name": map[string]interface{}{
+				"exclude": []interface{}{},
+				"include": []interface{}{"refs/heads/feedback"},
+			},
+		},
+		"rules": []interface{}{
+			map[string]interface{}{
+				"type": "non_fast_forward",
+			},
+
+			// KHO-315
+			/*
+				map[string]interface{}{
+					"type": "deletion",
+				},
+			*/
+			/*
+				map[string]interface{}{
+					"type": "update",
+					"parameters": map[string]interface{}{
+					  "update_allows_fetch_and_merge": true,
+					},
+				  },
+			*/
+			map[string]interface{}{
+				"type": "pull_request",
+				"parameters": map[string]interface{}{
+					"required_approving_review_count":       0,
+					"dismiss_stale_reviews_on_push":         true,
+					"require_code_owner_review":             false,
+					"require_last_push_approval":            false,
+					"required_review_thread_resolution":     false,
+					"automatic_copilot_code_review_enabled": false,
+				},
+			},
+			map[string]interface{}{
+				"type": "required_status_checks",
+				"parameters": map[string]interface{}{
+					"strict_required_status_checks_policy": false,
+					"do_not_enforce_on_create":             false,
+					"required_status_checks": []map[string]string{
 						{
 							"context": "check-pr-target-branch",
 						},
@@ -289,10 +349,15 @@ func (api *CommonAPI) CreateBranchRuleset(ctx context.Context, orgName, repoName
 			},
 		},
 	}
-	return api.createRuleSet(ctx, body, orgName, repoName)
+	err = api.createRuleSet(ctx, feedbackBody, orgName, repoName)
+	if err != nil {
+		return fmt.Errorf("failed to create feedback branch ruleset: %v", err)
+	}
+
+	return nil
 }
 
-func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error {
+func (api *CommonAPI) CreateDeadlineEnforcement(ctx context.Context, orgName, repoName, branchName, serverUrl string) error {
 	addition := models.RepositoryAddition{
 		FilePath:          ".github/workflows/deadline-enforcement.yml",
 		RepoName:          repoName,
@@ -345,9 +410,10 @@ jobs:
 
 func targetBranchProtectionAction() string {
 	var actionString = `name: check-pr-target-branch
-  
+
 on:
   pull_request:
+    branches: [ feedback ]
     types: [opened, reopened, edited, synchronize]
 
 jobs:
@@ -371,7 +437,7 @@ func (api *CommonAPI) CreatePREnforcement(ctx context.Context, orgName, repoName
 		OwnerName:         orgName,
 		DestinationBranch: branchName,
 		Content:           targetBranchProtectionAction(),
-		CommitMessage:     "Deadline enforcement GH action files",
+		CommitMessage:     "Pull request target branch enforcement GH action files",
 	}
 	return api.EditRepository(ctx, &addition)
 
@@ -530,9 +596,20 @@ func (api *CommonAPI) CancelOrgInvitationByID(ctx context.Context, orgName strin
 	return nil
 }
 
-func (api *CommonAPI) GetRepository(ctx context.Context, owner string, repoName string) (*github.Repository, error) {
-	repo, _, err := api.Client.Repositories.Get(ctx, owner, repoName)
-	return repo, err
+func (api *CommonAPI) GetRepository(ctx context.Context, owner string, repoName string) (*models.Repository, error) {
+	endpoint := fmt.Sprintf("/repos/%s/%s", owner, repoName)
+	req, err := api.Client.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	var repo models.Repository
+	_, err = api.Client.Do(ctx, req, &repo)
+	if err != nil {
+		return nil, fmt.Errorf("error getting repository: %v", err)
+	}
+
+	return &repo, nil
 }
 
 func (api *CommonAPI) UpdateTeamRepoPermissions(ctx context.Context, org, teamSlug, owner, repo, permission string) error {
@@ -704,13 +781,13 @@ func (api *CommonAPI) CreateEmptyCommit(ctx context.Context, owner, repo string)
 	return nil
 }
 
-func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Repository) bool {
-	if repo == nil || repo.Parent.FullName == nil {
+func (api *CommonAPI) CheckForkIsReady(ctx context.Context, parentRepoFullName string, forkRepoFullName string) bool {
+	if parentRepoFullName == "" || forkRepoFullName == "" {
 		return false
 	}
 
 	// Get all branches from source repo
-	endpoint := fmt.Sprintf("/repos/%s/branches", *repo.Parent.FullName)
+	endpoint := fmt.Sprintf("/repos/%s/branches", parentRepoFullName)
 	req, err := api.Client.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return false
@@ -723,7 +800,7 @@ func (api *CommonAPI) CheckForkIsReady(ctx context.Context, repo *github.Reposit
 	}
 
 	// Get all branches from forked repo
-	endpoint = fmt.Sprintf("/repos/%s/branches", *repo.FullName)
+	endpoint = fmt.Sprintf("/repos/%s/branches", forkRepoFullName)
 	req, err = api.Client.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return false

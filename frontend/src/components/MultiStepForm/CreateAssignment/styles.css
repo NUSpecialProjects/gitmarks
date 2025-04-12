@@ -2,4 +2,70 @@
     &__header {
         padding-bottom: 20px;
     }
+
+    &__templateSelection {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    &__checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        margin-left: 10px;
+        
+        color: var(--caption-text);
+        font-size: var(--font-size-xs);
+    }
+
+    &__repoInfo {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    &__repoLink {
+        color: var(--primary-text);
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        margin-left: 10px;
+        
+        a {
+            color: var(--brand);
+            text-decoration: none;
+            
+            &:hover {
+                text-decoration: underline;
+            }
+
+            &.disabled-link {
+                color: var(--caption-text);
+                cursor: not-allowed;
+                text-decoration: none;
+                pointer-events: auto;
+                
+                &:hover {
+                    text-decoration: none;
+                }
+            }
+        }
+    }
+
+    &__repoValidationIndicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 16px;
+    }
+
+    &__repoFields {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
 }
