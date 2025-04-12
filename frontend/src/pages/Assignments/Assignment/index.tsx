@@ -19,8 +19,9 @@ import Pill from "@/components/Pill";
 import "./styles.css";
 import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
-import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentBaseRepo, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
+import { useAssignment, useAssignmentInviteLink, useAssignmentBaseRepo, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
 import { ErrorToast } from "@/components/Toast";
+import { useStudentWorks } from "@/hooks/useStudentWorks";
 
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);

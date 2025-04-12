@@ -89,7 +89,7 @@ export const getStudentWorkById = async (
   if (!response.ok) {
     throw new Error("Network response was not ok");
   }
-  const resp = ((await response.json()) as IStudentWork);
+  const resp = ((await response.json()).student_work as IStudentWork);
   return resp;
 }
 
