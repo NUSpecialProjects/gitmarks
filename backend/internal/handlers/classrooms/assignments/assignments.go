@@ -665,8 +665,16 @@ func (s *AssignmentService) GetCommitCount() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
+		students, err := s.store.GetUsersInClassroom(c.Context(), int64(classroomID))
+		if err != nil {
+			return errs.InternalServerError()
+		}
+
+		students, _ = common.FilterStudentsFromUsers(students)
+		studentWorks := common.FilterWorksByUsers(works, students)
+
 		totalCommits := 0
-		for _, work := range works {
+		for _, work := range studentWorks {
 			var branchOpts gh.ListOptions
 			branches, err := s.appClient.ListBranches(c.Context(), work.OrgName, work.RepoName, &branchOpts)
 			if err != nil {

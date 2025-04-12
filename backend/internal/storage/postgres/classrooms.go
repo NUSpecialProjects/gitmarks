@@ -349,8 +349,8 @@ func (db *DB) GetNumberOfStudentsInClassroom(ctx context.Context, classroomID in
 	err := db.connPool.QueryRow(ctx, `
 		SELECT COUNT(*)
 		FROM classroom_membership
-		WHERE (classroom_id = $1 AND classroom_role = 'STUDENT')
-	`, classroomID).Scan(&count)
+		WHERE (classroom_id = $1 AND classroom_role = $2)
+	`, classroomID, models.Student).Scan(&count)
 
 	if err != nil {
 		return 0, errs.NewDBError(err)

@@ -25,7 +25,7 @@ export const getPaginatedStudentWork = async (
 export const getStudentWorks = async (
   classroomID: number,
   assignmentID: number
-): Promise<IStudentWork[]> => {
+): Promise<IStudentWorkResponses> => {
   const response = await fetch(
     `${base_url}/classrooms/classroom/${classroomID}/assignments/assignment/${assignmentID}/works`,
     {
@@ -40,7 +40,7 @@ export const getStudentWorks = async (
     throw new Error("Network response was not ok");
   }
   const data: IStudentWorkResponses = await response.json();
-  return data.student_works;
+  return data;
 };
 
 

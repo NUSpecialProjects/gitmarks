@@ -98,3 +98,56 @@ func InviteUserToClassroom(ctx context.Context, store storage.Storage, appClient
 	}
 	return "Token applied successfully", classroom, classroomUser, nil
 }
+
+// filters out users who are not students
+func FilterStudentsFromUsers(users []models.ClassroomUser) ([]models.ClassroomUser, []models.ClassroomUser) {
+	var students []models.ClassroomUser
+	var nonStudents []models.ClassroomUser
+	for _, user := range users {
+		if user.Role == models.Student {
+			students = append(students, user)
+		} else {
+			nonStudents = append(nonStudents, user)
+		}
+	}
+	return students, nonStudents
+}
+
+// filters out students who haven't accepted the assignment
+func FilterUsersWithoutWorks(students []models.ClassroomUser, works []*models.StudentWorkWithContributors) []models.ClassroomUser {
+	var studentsWithoutWorks []models.ClassroomUser
+	for _, student := range students {
+		if (student.Role == models.Student) && !StudentWorkExists(student.GithubUsername, works) {
+			studentsWithoutWorks = append(studentsWithoutWorks, student)
+		}
+	}
+	return studentsWithoutWorks
+}
+
+// filters out works from non-students (assumes the list of users are all students)
+func FilterWorksByUsers(works []*models.StudentWorkWithContributors, students []models.ClassroomUser) []*models.StudentWorkWithContributors {
+	var filteredWorks []*models.StudentWorkWithContributors
+	for _, student := range students {
+		for _, work := range works {
+			for _, contributor := range work.Contributors {
+				if contributor.GithubUsername == student.GithubUsername {
+					filteredWorks = append(filteredWorks, work)
+					break
+				}
+			}
+		}
+	}
+	return filteredWorks
+}
+
+// checks if a student has a student work
+func StudentWorkExists(studentLogin string, works []*models.StudentWorkWithContributors) bool {
+	for _, work := range works {
+		for _, contributor := range work.Contributors {
+			if contributor.GithubUsername == studentLogin {
+				return true
+			}
+		}
+	}
+	return false
+}

@@ -34,8 +34,9 @@ const GradingAssignmentRow: React.FC<IGradingAssignmentRow> = ({
     key: `collapsed-${selectedClassroom?.id}-${assignment.id}`,
   });
   const navigate = useNavigate();
-  const { data: studentAssignments } = useStudentWorks(selectedClassroom?.id, assignment.id);
-  
+  const { data: studentWorkResponse } = useStudentWorks(selectedClassroom?.id, assignment.id);
+  const studentAssignments = studentWorkResponse?.student_works;
+
   const downloadGrades = () => {
     if (!studentAssignments) return;
     const csvContent =

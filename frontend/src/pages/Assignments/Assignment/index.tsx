@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { MdEdit, MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
 import { useContext, useEffect, useState } from "react";
@@ -7,20 +7,18 @@ import { Bar, Doughnut } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
 import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
-import { formatDate, formatDateTime } from "@/utils/date";
+import { formatDate } from "@/utils/date";
 
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
 import { CopyLinkWithExpiration, IExpirationOption } from "@/components/CopyLink";
-import { Table, TableCell, TableRow } from "@/components/Table";
 import Button from "@/components/Button";
 import MetricPanel from "@/components/Metrics/MetricPanel";
 import Metric from "@/components/Metrics";
-import Pill from "@/components/Pill";
 import "./styles.css";
-import { StudentWorkState } from "@/types/enums";
-import { removeUnderscores } from "@/utils/text";
+
 import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
 import { ErrorToast } from "@/components/Toast";
+import AssignmentTable from "./AssignmentTable";
 
 ChartJS.register(...registerables);
 ChartJS.register(ChartDataLabels);
@@ -31,10 +29,12 @@ const Assignment: React.FC = () => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
   const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
-  const { data: studentWorks } = useStudentWorks(
+  const { data: studentWorkResponse } = useStudentWorks(
     selectedClassroom?.id, 
     Number(assignmentID)
   );
+  const studentWorks = studentWorkResponse?.student_works;
+  const nonStudentWorks = studentWorkResponse?.non_student_works;
 
   const [expirationDuration, setExpirationDuration] = useState<IExpirationOption>({ label: "Expires: Never", value: undefined });
   const expirationOptions = [
@@ -218,62 +218,22 @@ const Assignment: React.FC = () => {
               </Metric>
             </div>
           </div>
+          {studentWorks && studentWorks.length > 0 && (
+            <AssignmentTable 
+              title="Student Assignments" 
+              works={studentWorks} 
+              assignmentId={assignment.id} 
+            />
+          )}
 
-          <div>
-            <h2 style={{ marginBottom: 0 }}>Student Assignments</h2>
-            <Table cols={3}>
-              <TableRow style={{ borderTop: "none" }}>
-                <TableCell>Student Name</TableCell>
-                <TableCell className="Assignment__centerAlignedCell">Status</TableCell>
-                <TableCell>Last Commit</TableCell>
-              </TableRow>
-              {studentWorks &&
-                studentWorks.length > 0 &&
-                studentWorks.map((sa: IStudentWork, i: number) => (
-                  <TableRow key={i} className="Assignment__submission">
-                    <TableCell>
-                      {sa.work_state !== StudentWorkState.NOT_ACCEPTED ? (
-                        <Link
-                          to={`/app/submissions/${sa.student_work_id}`}
-                          state={{ submission: sa, assignmentId: assignment.id }}
-                          className="Dashboard__assignmentLink">
-                          {sa.contributors.map(c => `${c.full_name  }`).join(", ")}
-                        </Link>
-                      ) : (
-                        <div>
-                          {sa.contributors.map(c => `${c.full_name}`).join(", ")}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="Assignment__pillCell">
-                      <Pill label={removeUnderscores(sa.work_state)}
-                        variant={(() => {
-                          switch (sa.work_state) {
-                            case StudentWorkState.ACCEPTED:
-                              return 'green';
-                            case StudentWorkState.STARTED:
-                              return 'amber';
-                            case StudentWorkState.SUBMITTED:
-                              return 'blue';
-                            case StudentWorkState.GRADING_ASSIGNED:
-                              return 'teal';
-                            case StudentWorkState.GRADING_COMPLETED:
-                              return 'teal';
-                            case StudentWorkState.GRADE_PUBLISHED:
-                              return 'teal';
-                            case StudentWorkState.NOT_ACCEPTED:
-                              return 'rose';
-                            default:
-                              return 'default';
-                          }
-                        })()}>
-                      </Pill>
-                    </TableCell>
-                    <TableCell>{sa.last_commit_date ? formatDateTime(new Date(sa.last_commit_date)) : "N/A"}</TableCell>
-                  </TableRow>
-                ))}
-            </Table>
-          </div>
+          {studentWorks && studentWorks.length > 0 &&
+            nonStudentWorks && nonStudentWorks.length > 0 && (
+              <AssignmentTable 
+                title="Administrator Assignments" 
+                works={nonStudentWorks} 
+                assignmentId={assignment.id} 
+              />
+          )}
         </div>
       </>
     )
