@@ -26,7 +26,7 @@ type GitHubAppClient interface { // All methods in the APP client
 	AssignPermissionToUser(ctx context.Context, ownerName string, repoName string, userName string, permission string) error
 
 	// Create instance of template repository
-	CreateRepoFromTemplate(ctx context.Context, orgName, templateRepoName, newRepoName string) (*models.AssignmentBaseRepo, error)
+	CreateRepoFromTemplate(ctx context.Context, orgName, templateRepoName, newRepoOwner, newRepoName string) (*models.AssignmentBaseRepo, error)
 }
 
 type GitHubUserClient interface { // All methods in the OAUTH client
