@@ -46,7 +46,12 @@
             &.disabled-link {
                 color: var(--caption-text);
                 cursor: not-allowed;
-                pointer-events: none;
+                text-decoration: none;
+                pointer-events: auto;
+                
+                &:hover {
+                    text-decoration: none;
+                }
             }
         }
     }

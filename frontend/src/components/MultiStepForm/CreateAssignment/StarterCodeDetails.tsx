@@ -111,6 +111,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
                 target="_blank" 
                 rel="noopener noreferrer"
                 className={!repository ? 'disabled-link' : ''}
+                title={!repository ? "Repository not found or you don't have access to it" : repository.is_template ? "" : "Repository is not a template repository"}
               >
                 {repoLink}
               </a>
@@ -120,6 +121,10 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
                 <ValidationIndicator
                   isLoading={loadingRepo}
                   isValid={!!repository && repository.is_template}
+                  title={loadingRepo ? "Checking repository..." : 
+                    !repository ? "Repository not found or you don't have access to it" : 
+                    !repository.is_template ? "Repository is not a template repository" : 
+                    "Valid template repository"}
                 />
               </div>
             )}

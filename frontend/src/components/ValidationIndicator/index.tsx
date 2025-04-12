@@ -5,14 +5,16 @@ import './styles.css';
 interface ValidationIndicatorProps {
   isLoading: boolean;
   isValid: boolean | null;
+  title?: string;
 }
 
 const ValidationIndicator: React.FC<ValidationIndicatorProps> = ({
   isLoading,
   isValid,
+  title,
 }) => {
   return (
-    <div className="ValidationIndicator">
+    <div className="ValidationIndicator" title={title}>
       {isLoading ? (
         <LoadingSpinner size={16} />
       ) : isValid ? (
