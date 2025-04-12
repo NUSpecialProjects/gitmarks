@@ -251,10 +251,6 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		if !baseRepo.Initialized {
-			return errs.BadRequest(errors.New("base repo is not initialized"))
-		}
-
 		// Get classroom
 		classroom, err := s.store.GetClassroomByID(c.Context(), assignment.ClassroomID)
 		if err != nil {
