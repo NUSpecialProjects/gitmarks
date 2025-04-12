@@ -29,10 +29,10 @@ ChartJS.register(ChartDataLabels);
 const Assignment: React.FC = () => {
   const { selectedClassroom } = useContext(SelectedClassroomContext);
   const { id: assignmentID } = useParams();
-  const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
+  const baseUrl: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
   const { data: assignment, error: assignmentError } = useAssignment(selectedClassroom?.id, Number(assignmentID));
-  const { data: assignmentBaseRepo, isLoading: assignmentBaseRepoIsLoading, error: assignmentBaseRepoError } = useAssignmentBaseRepo(selectedClassroom?.id, Number(assignmentID));
+  const { data: assignmentBaseRepo, error: assignmentBaseRepoError } = useAssignmentBaseRepo(selectedClassroom?.id, Number(assignmentID));
   const { data: studentWorks } = useStudentWorks(
     selectedClassroom?.id, 
     Number(assignmentID)
@@ -47,7 +47,7 @@ const Assignment: React.FC = () => {
     { label: "Expires: 1 month", value: 43200 },
     { label: "Expires: Never", value: undefined },
   ];
-  const { data: inviteLink = "", isLoading: linkIsLoading, error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url, expirationDuration.value);
+  const { data: inviteLink = "", isLoading: linkIsLoading, error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, baseUrl, expirationDuration.value);
 
   const { data: totalAssignmentCommits } = useAssignmentTotalCommits(selectedClassroom?.id, assignment?.id);
   const { acceptanceMetrics, gradedMetrics, error: metricsError } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
@@ -87,7 +87,7 @@ const Assignment: React.FC = () => {
 
         <div className="Assignment">
           <div className="Assignment__externalButtons">
-            <Button href={assignmentBaseRepoLink} variant="secondary" disabled={!assignmentBaseRepoLink || assignmentBaseRepoIsLoading} newTab>
+            <Button href={assignmentBaseRepoLink} variant="secondary" disabled={!assignmentBaseRepoLink} newTab>
               <FaGithub className="icon" /> View GitHub Repository
             </Button>
             <Button
