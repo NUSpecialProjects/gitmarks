@@ -229,10 +229,13 @@ func (db *DB) UpdateAssignmentRubric(ctx context.Context, rubricID int64, assign
 func (db *DB) GetEarliestCommitDate(ctx context.Context, assignmentID int) (*time.Time, error) {
 	var earliestCommitDate *time.Time
 	err := db.connPool.QueryRow(ctx, `
-		SELECT MIN(first_commit_date)
-		FROM student_works
-		WHERE assignment_outline_id = $1
-	`, assignmentID).Scan(&earliestCommitDate)
+		SELECT MIN(sw.first_commit_date)
+		FROM student_works sw
+		JOIN work_contributors wc ON sw.id = wc.student_work_id
+		JOIN classroom_membership cm ON wc.user_id = cm.user_id
+		WHERE sw.assignment_outline_id = $1
+		AND cm.classroom_role = $2
+	`, assignmentID, models.Student).Scan(&earliestCommitDate)
 	if err != nil {
 		return nil, err
 	}
@@ -243,10 +246,13 @@ func (db *DB) GetEarliestCommitDate(ctx context.Context, assignmentID int) (*tim
 func (db *DB) GetTotalWorkCommits(ctx context.Context, assignmentID int) (int, error) {
 	var totalCommits int
 	err := db.connPool.QueryRow(ctx, `
-		SELECT SUM(commit_amount) 
-		FROM student_works 
-		WHERE assignment_outline_id = $1
-	`, assignmentID).Scan(&totalCommits)
+		SELECT SUM(sw.commit_amount)
+		FROM student_works sw
+		JOIN work_contributors wc ON sw.id = wc.student_work_id
+		JOIN classroom_membership cm ON wc.user_id = cm.user_id
+		WHERE sw.assignment_outline_id = $1
+		AND cm.classroom_role = $2
+	`, assignmentID, models.Student).Scan(&totalCommits)
 	if err != nil {
 		return 0, err
 	}
@@ -262,10 +268,13 @@ func (db *DB) CountWorksByState(ctx context.Context, assignmentID int) (map[mode
 	}
 
 	// Query for the count of student works by status
-	rows, err := db.connPool.Query(ctx, `SELECT work_state, COUNT(*) AS state_count
-		FROM student_works
-		WHERE assignment_outline_id = $1
-		GROUP BY work_state;`, assignmentID)
+	rows, err := db.connPool.Query(ctx, `SELECT sw.work_state, COUNT(*) AS state_count
+		FROM student_works sw
+		JOIN work_contributors wc ON sw.id = wc.student_work_id
+		JOIN classroom_membership cm ON wc.user_id = cm.user_id
+		WHERE sw.assignment_outline_id = $1
+		AND cm.classroom_role = $2
+		GROUP BY sw.work_state;`, assignmentID, models.Student)
 	if err != nil {
 		return nil, err
 	}
