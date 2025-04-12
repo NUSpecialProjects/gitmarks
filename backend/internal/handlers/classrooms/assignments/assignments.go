@@ -357,7 +357,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			initialDelay *= 2
 		}
 
-		firstCommitSHA, err := s.getFirstCommitSHA(c.Context(), client, *studentWorkRepo.Owner.Login, *studentWorkRepo.Name)
+		firstCommitSHA, err := s.getFirstCommitSHA(c.Context(), client, studentWorkRepo.Owner.Login, studentWorkRepo.Name)
 		if err != nil {
 			fmt.Println("Error getting first commit SHA:", err)
 			return errs.InternalServerError()
