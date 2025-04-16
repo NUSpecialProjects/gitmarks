@@ -4,6 +4,7 @@ import {
   getAssignmentIndirectNav,
   getAssignments,
   getAssignmentTemplate,
+  getAssignmentTotalCommits,
   postAssignmentToken,
 } from "@/api/assignments";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/api/metrics";
 import { getStudentWorks } from "@/api/student_works";
 import { ChartData } from 'chart.js';
+import { getOrganizationTemplates } from "@/api/organizations";
 
 /**
  * Provides the list of assignments for a classroom.
@@ -82,14 +84,15 @@ export const useStudentWorks = (classroomId: number | undefined, assignmentId: n
  * @param classroomId - The ID of the classroom to fetch the invite link for.
  * @param assignmentId - The ID of the assignment to fetch the invite link for.
  * @param baseUrl - The base URL to use for the invite link.
+ * @param expirationDuration - The expiration duration to use for the invite link.
  * @returns The invite link for the assignment.
  */
-export const useAssignmentInviteLink = (classroomId: number | undefined, assignmentId: number | undefined, baseUrl: string) => {
+export const useAssignmentInviteLink = (classroomId: number | undefined, assignmentId: number | undefined, baseUrl: string, expirationDuration: number | undefined = undefined) => {
   return useQuery({
-    queryKey: ['assignmentToken', classroomId, assignmentId],
+    queryKey: ['assignmentToken', classroomId, assignmentId, expirationDuration],
     queryFn: async () => {
       if (!classroomId || !assignmentId) return "";
-      const tokenData = await postAssignmentToken(classroomId, assignmentId);
+      const tokenData = await postAssignmentToken(classroomId, assignmentId, expirationDuration);
       return `${baseUrl}/token/assignment/accept?token=${tokenData.token}`;
     },
     enabled: !!classroomId && !!assignmentId
@@ -115,6 +118,45 @@ export const useAssignmentTemplate = (classroomId: number | undefined, assignmen
 };
 
 /**
+ * Provides template repositories for an organization
+ * 
+ * @param orgName - The name of the organization to fetch templates for
+ * @returns The template repositories and loading state
+ */
+export const useTemplateRepos = (orgName: string | undefined) => {
+  return useQuery({
+    queryKey: ['templateRepos', orgName],
+    queryFn: async () => {
+      if (!orgName) return [];
+      // TODO: KHO-211 Implement dynamic pagination in template dropdown
+      const response = await getOrganizationTemplates(orgName, "100", "1");
+      return response.templates;
+    },
+    enabled: !!orgName,
+    initialData: [] as ITemplateRepo[]
+  });
+};
+
+/**
+ * Provides the number of commits made for this assignment
+ * 
+ * @param classroomId - The ID of the classroom to fetch the template for.
+ * @param assignmentId - The ID of the assignment to fetch the template for.
+ * @returns The the number of commits made for this assignment.
+ */
+export const useAssignmentTotalCommits = (classroomId: number | undefined, assignmentId: number | undefined) => {
+  return useQuery({
+    queryKey: ['totalAssignmentCommits', classroomId, assignmentId],
+    queryFn: async () => {
+      if (!classroomId || !assignmentId) return null;
+      console.log("called...")
+      return await getAssignmentTotalCommits(classroomId, assignmentId);
+    },
+    enabled: !!classroomId && !!assignmentId
+  });
+};
+
+/**
  * Provides the acceptance metrics for an assignment.
  * 
  * @param classroomId - The ID of the classroom to fetch the acceptance metrics for.
@@ -130,7 +172,7 @@ export const useAssignmentMetrics = (classroomId: number | undefined, assignment
         const metrics = await getAssignmentAcceptanceMetrics(classroomId, Number(assignmentId));
         return {
           data: {
-            labels: ["Not Accepted", "Accepted", "Started", "Submitted", "In Grading"],
+            labels: ["Not Accepted", "Accepted", "Started", "Submitted", "Graded"],
             datasets: [{
               backgroundColor: ["#f83b5c", "#50c878", "#fece5a", "#7895cb", "#219386"],
               data: [metrics.not_accepted, metrics.accepted, metrics.started, metrics.submitted, metrics.in_grading]

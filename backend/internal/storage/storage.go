@@ -19,6 +19,7 @@ type Storage interface {
 	Rubric
 	AssignmentTemplate
 	AssignmentBaseRepo
+	Deadline
 }
 
 type FeedbackComment interface {
@@ -34,6 +35,7 @@ type Works interface {
 
 	UpdateStudentWork(ctx context.Context, UpdateStudentWork models.StudentWork) (models.StudentWork, error)
 	GetWorkByRepoName(ctx context.Context, repoName string) (models.StudentWork, error)
+	GetWorkByGitHubUserID(ctx context.Context, classroomID int, assignmentID int, gitHubUserID int64) (models.StudentWork, error)
 }
 
 type Test interface {
@@ -85,6 +87,7 @@ type AssignmentOutline interface {
 	CreateAssignmentToken(ctx context.Context, tokenData models.AssignmentToken) (models.AssignmentToken, error)
 	GetAssignmentByRepoName(ctx context.Context, repoName string) (*models.AssignmentOutline, error)
 	GetPermanentAssignmentTokenByAssignmentID(ctx context.Context, assignmentID int64) (models.AssignmentToken, error)
+	GetAssignmentToken(ctx context.Context, token string) (models.AssignmentToken, error)
 }
 
 type AssignmentTemplate interface {
@@ -97,6 +100,7 @@ type AssignmentTemplate interface {
 type AssignmentBaseRepo interface {
 	CreateBaseRepo(ctx context.Context, baseRepoData models.AssignmentBaseRepo) error
 	GetBaseRepoByID(ctx context.Context, id int64) (models.AssignmentBaseRepo, error)
+	UpdateBaseRepoInitialized(ctx context.Context, id int64, initialized bool) error
 }
 
 type Rubric interface {
@@ -107,4 +111,8 @@ type Rubric interface {
 	UpdateRubric(ctx context.Context, rubricID int64, rubricData models.Rubric) (models.Rubric, error)
 	UpdateRubricItem(ctx context.Context, rubricItemData models.RubricItem) (models.RubricItem, error)
 	GetRubricsInClassroom(ctx context.Context, classroomID int64) ([]models.Rubric, error)
+}
+
+type Deadline interface {
+	GetDeadlineForRepo(ctx context.Context, repoName string) (*time.Time, error)
 }

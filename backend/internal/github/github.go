@@ -25,8 +25,6 @@ type GitHubAppClient interface { // All methods in the APP client
 	// Add a repository permission to a user
 	AssignPermissionToUser(ctx context.Context, ownerName string, repoName string, userName string, permission string) error
 
-	CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName string) error
-
 	// Create instance of template repository
 	CreateRepoFromTemplate(ctx context.Context, orgName, templateRepoName, newRepoName string) (*models.AssignmentBaseRepo, error)
 }
@@ -52,6 +50,12 @@ type GitHubUserClient interface { // All methods in the OAUTH client
 	// Fork a repository as a student
 	ForkRepository(ctx context.Context, srcOwner, srcRepo, dstOrg, dstRepo string) error
 
+	// Set a branch to a specific commit
+	SetBranchToCommit(ctx context.Context, owner, repo, branch, sha string) error
+
+	// Sync a fork with its upstream repository
+	SyncForkWithUpstream(ctx context.Context, owner, repo, branch string) error
+
 	// Create initial feedback pull request
 	CreateFeedbackPR(ctx context.Context, owner, repo string) error
 }
@@ -69,6 +73,9 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 
 	// Create a new branch in a repository
 	CreateBranch(ctx context.Context, owner, repo, baseBranch, newBranchName string) (*github.Reference, error)
+
+	// List the branches in a repository
+	ListBranches(ctx context.Context, owner string, repo string, opts *github.ListOptions) ([]*github.Branch, error)
 
 	// Get the details of a pull request
 	GetPullRequest(ctx context.Context, owner string, repo string, pullNumber int) (*github.PullRequest, error)
@@ -155,4 +162,9 @@ type GitHubBaseClient interface { //All methods in the SHARED client
 	EnableWorkflow(ctx context.Context, repoOwner, forkName, workflowName string) error
 
 	EnableActions(ctx context.Context, ownerName, repoName string) error
+
+	// Check if a file or directory exists in a repository
+	FileExists(owner string, repo string, path string) (bool, error)
+
+	CreateDeadlineEnforcement(ctx context.Context, deadline *time.Time, orgName, repoName, branchName, serverUrl string) error
 }

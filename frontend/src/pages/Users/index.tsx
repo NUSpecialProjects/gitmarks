@@ -5,7 +5,7 @@ import { Table, TableCell, TableRow } from "@/components/Table";
 import EmptyDataBanner from "@/components/EmptyDataBanner";
 import './styles.css';
 import Button from "@/components/Button";
-import CopyLink from "@/components/CopyLink";
+import { CopyLinkWithExpiration, IExpirationOption } from "@/components/CopyLink";
 import Pill from "@/components/Pill";
 import { removeUnderscores } from "@/utils/text";
 import { useClassroomUser, useClassroomUsersList, useCurrentClassroom, useInviteClassroomUser, useRevokeClassroomInvite, useRemoveClassroomUser } from "@/hooks/useClassroomUser";
@@ -24,13 +24,20 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
   const { selectedClassroom } = useCurrentClassroom();
   const { classroomUser: currentClassroomUser } = useClassroomUser(ClassroomRole.TA, "/app/access-denied");
   const [loadingUserIds, setLoadingUserIds] = useState<Set<number>>(new Set());
-
+  const [expirationDuration, setExpirationDuration] = useState<IExpirationOption>({ label: "Expires: Never", value: undefined });
+  const expirationOptions = [
+    { label: "Expires: 6 hours", value: 360 },
+    { label: "Expires: 12 hours", value: 720 },
+    { label: "Expires: 1 day", value: 1440 },
+    { label: "Expires: 7 days", value: 10080 },
+    { label: "Expires: 1 month", value: 43200 },
+    { label: "Expires: Never", value: undefined },
+  ];
   const { classroomUsers: users, error: usersError } = useClassroomUsersList(selectedClassroom?.id);
-  const { data: inviteLink = "", error: inviteLinkError } = useClassroomInviteLink(selectedClassroom?.id, role_type, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
+  const { data: inviteLink = "", isLoading: inviteLinkLoading, error: inviteLinkError } = useClassroomInviteLink(selectedClassroom?.id, role_type, expirationDuration.value, currentClassroomUser?.classroom_role === ClassroomRole.PROFESSOR);
   const { inviteUser } = useInviteClassroomUser(selectedClassroom?.id);
   const { revokeInvite } = useRevokeClassroomInvite(selectedClassroom?.id);
   const { removeUser } = useRemoveClassroomUser(selectedClassroom?.id, currentClassroomUser?.id);
-
   const { executeWithToast } = useActionToast();
 
   const handleInviteUser = (userId: number) => {
@@ -122,15 +129,22 @@ const GenericRolePage: React.FC<GenericRolePageProps> = ({
     <div>
       <SubPageHeader pageTitle={role_label + `s`} chevronLink="/app/dashboard/"></SubPageHeader>
       
-      {inviteLink && (
+      {(inviteLink || inviteLinkLoading) && (
         <div className="Users__inviteLinkWrapper">
           <div>
             <h2>Invite {role_label + `s`}</h2>
-            <p>Share this link to invite and add students to {selectedClassroom?.name}.</p>
+            <p>Share this link to invite and add {role_label.toLowerCase()}s to {selectedClassroom?.name}.</p>
             {(role_type === ClassroomRole.PROFESSOR || role_type === ClassroomRole.TA) &&
-              <p>Warning: This will make them an admin of the organization.</p>}
+              <p className="Users__warning">Warning: This will make them an admin of the GitHub organization.</p>}
           </div>
-          <CopyLink link={inviteLink} name="invite-link"></CopyLink>
+          <CopyLinkWithExpiration 
+            link={inviteLink || ""} 
+            name="invite-link" 
+            duration={expirationDuration} 
+            setDuration={(newDuration: IExpirationOption) => setExpirationDuration(newDuration)} 
+            expirationOptions={expirationOptions}
+            loading={inviteLinkLoading}
+          />
         </div>
       )}
 

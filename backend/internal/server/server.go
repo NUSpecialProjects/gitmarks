@@ -4,6 +4,7 @@ import (
 	"github.com/CamPlume1/khoury-classroom/internal/errs"
 	"github.com/CamPlume1/khoury-classroom/internal/handlers/auth"
 	"github.com/CamPlume1/khoury-classroom/internal/handlers/classrooms"
+	"github.com/CamPlume1/khoury-classroom/internal/handlers/deadline"
 	"github.com/CamPlume1/khoury-classroom/internal/handlers/hello"
 	"github.com/CamPlume1/khoury-classroom/internal/handlers/organizations"
 	"github.com/CamPlume1/khoury-classroom/internal/handlers/rubrics"
@@ -23,10 +24,11 @@ import (
 func New(params types.Params) *fiber.App {
 	app := setupApp()
 
-	useMiddlewares(app)
+	useMiddlewares(app, params)
 
     // Route Groupings
     hello.Routes(app, params)
+	deadline.Routes(app, params)
 	auth.Routes(app, params)
 	organizations.Routes(app, params)
 	classrooms.Routes(app, params)
@@ -43,8 +45,8 @@ func New(params types.Params) *fiber.App {
 	return app
 }
 
-func useMiddlewares(app *fiber.App) {
-	app.Use(middleware.Cors())
+func useMiddlewares(app *fiber.App, params types.Params) {
+	app.Use(middleware.Cors(params.Domains))
 }
 
 func setupApp() *fiber.App {

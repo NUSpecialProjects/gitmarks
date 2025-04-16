@@ -7,7 +7,6 @@ import { ItemFeedbackType } from "@/components/RubricItem";
 import { createRubric, updateRubric } from "@/api/rubrics";
 import { setAssignmentRubric } from "@/api/assignments";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FaRegTrashAlt } from "react-icons/fa";
 import { ClassroomRole } from "@/types/enums";
 import { useClassroomUser, useCurrentClassroom } from "@/hooks/useClassroomUser";
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
@@ -92,8 +91,8 @@ const RubricEditor: React.FC = () => {
 
             // validate items
             let explantionIssue = false
-            let pointIssue = false
-            for (const item of rubricItems) {
+            let pointIssue = false  
+            for (const item of rubricItems.filter((item) => !item.deleted)) {
                 // check each explanation contains something
                 if (item.explanation === "") {
                     setInvalidExplanation(true)
@@ -217,8 +216,9 @@ const RubricEditor: React.FC = () => {
     // handles adding another rubric item
     const addNewItem = () => {
         setRubricEdited(true)
-        setRubricItemData([...rubricItemData, newRubricItem]);
+        setRubricItemData([...rubricItemData, newRubricItem])
         incrementCount()
+
     };
 
     const determinePointImpact = (point_value: number) => {
@@ -229,22 +229,24 @@ const RubricEditor: React.FC = () => {
     }
 
     const deleteItem = (item_id: number) => {
-            setRubricEdited(true)
-            setRubricItemData((prevItems) =>
-                prevItems.map((item) =>
-                    item.frontFacingIndex === item_id
-                        ? {
-                            ...item,
-                            hidden: true,
-                            rubricItem: {
-                                ...item.rubricItem,
-                                deleted: true,
-                            },
-                        }
-                        : item
-                )
-            );
-        
+        setRubricEdited(true)
+        setRubricItemData((prevItems) =>
+            prevItems.map((item) =>
+                item.frontFacingIndex === item_id
+                    ? {
+                        ...item,
+                        hidden: true,
+                        rubricItem: {
+                            ...item.rubricItem,
+                            deleted: true,
+                        },
+                    }
+                    : item
+            )
+        );
+        console.log(rubricData)
+
+
 
     }
 
@@ -253,7 +255,7 @@ const RubricEditor: React.FC = () => {
     useEffect(() => {
         if (location.state) {
             if (location.state.assignment && location.state.rubricData) {
-                
+
                 const assignment = location.state.assignment
                 setAssignmentData(assignment)
                 const rubric = location.state.rubricData
@@ -265,7 +267,7 @@ const RubricEditor: React.FC = () => {
                 } else {
                     setRubricName(rubric.rubric.name)
                 }
-                
+
 
             } else if (location.state.assignment && !location.state.rubricData) {
                 const assignment = location.state.assignment
@@ -308,12 +310,12 @@ const RubricEditor: React.FC = () => {
 
     return (
         <>
-        <SubPageHeader
-            pageTitle={pageTitle}
-            chevronLink={"/app/rubrics"}
-        >
-        </SubPageHeader>
-            <div className="NewRubric__body">
+            <SubPageHeader
+                pageTitle={pageTitle}
+                chevronLink={"/app/rubrics"}
+            >
+            </SubPageHeader>
+            <div className="NewRubric__main">
                 <div className="NewRubric__title">
                     {assignmentData !== null && assignmentData !== undefined ? `${assignmentData.name} > ` : ""}
                     {pageTitle}
@@ -343,7 +345,7 @@ const RubricEditor: React.FC = () => {
                         {" - Point impact cannot be empty for non-zero values."}
                     </div>
                 }
-                
+
                 {failedToSave && emptyRubric &&
                     <div className="NewRubric__title__FailedSave">
                         {" - A rubric cannot have no items."}
@@ -368,21 +370,16 @@ const RubricEditor: React.FC = () => {
                                 <div key={`item_display_${i}`} className="NewRubric__itemDisplay">
                                     <RubricItem
                                         key={`itemID_${item.frontFacingIndex}`}
+                                        fid={item.frontFacingIndex}
                                         name={item.rubricItem.explanation}
+                                        deleteItem={deleteItem}
                                         points={item.rubricItem.point_value !== undefined && item.rubricItem.point_value !== null
                                             ? Math.abs(item.rubricItem.point_value).toString() : ""}
                                         impact={item.impact}
                                         onChange={(newItem) => handleItemChange(item.frontFacingIndex, newItem)}
                                     />
 
-
-                                    <Button
-                                        key={`delete_id${item.frontFacingIndex}`}
-                                        href=""
-                                        variant="secondary"
-                                        onClick={() => { deleteItem(item.frontFacingIndex) }}>
-                                        <FaRegTrashAlt />
-                                    </Button>
+                                  
 
 
                                 </div>
@@ -394,12 +391,12 @@ const RubricEditor: React.FC = () => {
 
 
 
-                <Button href="" variant="secondary" onClick={addNewItem}> + Add a new item </Button>
+                <div className="NewRubric__newItem" style={{ textDecoration: "underline" }} onClick={addNewItem}> + Add a new item</div>
 
 
-                <div className="NewRubric__decisionButtons">
-                    <Button href="" variant="secondary" onClick={backButton}> Cancel </Button>
-                    <Button href="" onClick={saveRubric}> Save rubric </Button>
+                <div className="NewRubric__decisionButtonsBar">
+                    <Button className="NewRubric__decisionButton" href="" variant="secondary" onClick={backButton}> Cancel </Button>
+                    <Button className="NewRubric__decisionButton" href="" onClick={saveRubric}> Save Rubric</Button>
                 </div>
             </div>
         </>

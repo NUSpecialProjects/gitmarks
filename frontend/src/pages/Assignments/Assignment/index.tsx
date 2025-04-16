@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { MdEdit, MdEditDocument } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Chart as ChartJS, registerables } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -10,7 +10,7 @@ import { SelectedClassroomContext } from "@/contexts/selectedClassroom";
 import { formatDate, formatDateTime } from "@/utils/date";
 
 import SubPageHeader from "@/components/PageHeader/SubPageHeader";
-import CopyLink from "@/components/CopyLink";
+import { CopyLinkWithExpiration, IExpirationOption } from "@/components/CopyLink";
 import { Table, TableCell, TableRow } from "@/components/Table";
 import Button from "@/components/Button";
 import MetricPanel from "@/components/Metrics/MetricPanel";
@@ -19,7 +19,7 @@ import Pill from "@/components/Pill";
 import "./styles.css";
 import { StudentWorkState } from "@/types/enums";
 import { removeUnderscores } from "@/utils/text";
-import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics } from "@/hooks/useAssignment";
+import { useAssignment, useStudentWorks, useAssignmentInviteLink, useAssignmentTemplate, useAssignmentMetrics, useAssignmentTotalCommits } from "@/hooks/useAssignment";
 import { ErrorToast } from "@/components/Toast";
 
 ChartJS.register(...registerables);
@@ -31,21 +31,27 @@ const Assignment: React.FC = () => {
   const base_url: string = import.meta.env.VITE_PUBLIC_FRONTEND_DOMAIN as string;
 
   const { data: assignment } = useAssignment(selectedClassroom?.id, Number(assignmentID));
-  const { data: studentWorks, isLoading: isLoadingWorks } = useStudentWorks(
+  const { data: studentWorks } = useStudentWorks(
     selectedClassroom?.id, 
     Number(assignmentID)
   );
-  const { data: inviteLink = "", error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url);
+
+  const [expirationDuration, setExpirationDuration] = useState<IExpirationOption>({ label: "Expires: Never", value: undefined });
+  const expirationOptions = [
+    { label: "Expires: 6 hours", value: 360 },
+    { label: "Expires: 12 hours", value: 720 },
+    { label: "Expires: 1 day", value: 1440 },
+    { label: "Expires: 7 days", value: 10080 },
+    { label: "Expires: 1 month", value: 43200 },
+    { label: "Expires: Never", value: undefined },
+  ];
+  const { data: inviteLink = "", isLoading: linkIsLoading, error: linkError } = useAssignmentInviteLink(selectedClassroom?.id, assignment?.id, base_url, expirationDuration.value);
+
+  const { data: totalAssignmentCommits } = useAssignmentTotalCommits(selectedClassroom?.id, assignment?.id);
   const { data: assignmentTemplate, error: templateError } = useAssignmentTemplate(selectedClassroom?.id, assignment?.id);
   const { acceptanceMetrics, gradedMetrics, error: metricsError } = useAssignmentMetrics(selectedClassroom?.id, Number(assignmentID));
 
   const assignmentTemplateLink = assignmentTemplate ? `https://github.com/${assignmentTemplate.template_repo_owner}/${assignmentTemplate.template_repo_name}` : "";
-  const totalCommits = isLoadingWorks ? 0 : studentWorks?.reduce((total, work) => total + work.commit_amount, 0);
-  const firstCommitDate = isLoadingWorks ? null : studentWorks?.reduce((earliest, work) => {
-    if (!work.first_commit_date) return earliest;
-    if (!earliest) return new Date(work.first_commit_date);
-    return new Date(work.first_commit_date) < earliest ? new Date(work.first_commit_date) : earliest;
-  }, null as Date | null);
 
   useEffect(() => {
     if (linkError || templateError || metricsError) {
@@ -98,17 +104,21 @@ const Assignment: React.FC = () => {
 
           <div className="Assignment__link">
             <h2>Assignment Link</h2>
-            <CopyLink link={inviteLink} name="invite-assignment" />
+            <CopyLinkWithExpiration 
+              link={inviteLink} 
+              name="invite-assignment" 
+              duration={expirationDuration}
+              setDuration={(newDuration: IExpirationOption) => setExpirationDuration(newDuration)}
+              expirationOptions={expirationOptions}
+              loading={linkIsLoading}
+            />
           </div>
 
           <div className="Assignment__metrics">
             <h2>Metrics</h2>
             <MetricPanel>
-              <Metric title="First Commit Date">
-                {firstCommitDate ? formatDate(firstCommitDate) : "N/A"}
-              </Metric>
               <Metric title="Total Commits">
-                {totalCommits?.toString() ?? "N/A"}
+                {totalAssignmentCommits ? totalAssignmentCommits.toString() : 0}
               </Metric>
             </MetricPanel>
 
@@ -119,7 +129,7 @@ const Assignment: React.FC = () => {
               >
                 {gradedMetrics && (
                   <Doughnut
-                    redraw={true}
+                    redraw={false}
                     data={gradedMetrics}
                     options={{
                       maintainAspectRatio: true,
@@ -140,6 +150,9 @@ const Assignment: React.FC = () => {
                           font: {
                             size: 12,
                           },
+                          formatter: (value) => {
+                            return value === 0 ? '' : value;
+                          }
                         },
                         tooltip: {
                           enabled: false,
@@ -158,7 +171,7 @@ const Assignment: React.FC = () => {
               >
                 {acceptanceMetrics && (
                   <Bar
-                    redraw={true}
+                    redraw={false}
                     data={acceptanceMetrics}
                     options={{
                       maintainAspectRatio: false,
