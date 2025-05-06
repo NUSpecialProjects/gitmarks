@@ -124,11 +124,10 @@ export const getAssignmentTemplate = async (
 };
 
 export const createAssignment = async (
-  templateRepoID: number,
-  assignment: IAssignmentFormData
+  assignmentFormData: IAssignmentFormData
 ): Promise<IAssignmentOutline> => {
   const result = await fetch(
-    `${base_url}/classrooms/classroom/${assignment.classroomId}/assignments`,
+    `${base_url}/classrooms/classroom/${assignmentFormData.classroomId}/assignments`,
     {
       method: "POST",
       credentials: "include",
@@ -136,11 +135,13 @@ export const createAssignment = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        template_id: templateRepoID,
-        name: assignment.assignmentName,
-        classroom_id: assignment.classroomId,
+        template_id: assignmentFormData.templateRepo?.template_repo_id,
+        template_repo_owner: assignmentFormData.templateRepo?.template_repo_owner,
+        template_repo_name: assignmentFormData.templateRepo?.template_repo_name,
+        name: assignmentFormData.assignmentName,
+        classroom_id: assignmentFormData.classroomId,
         // group_assignment: assignment.groupAssignment,
-        main_due_date: assignment.mainDueDate,
+        main_due_date: assignmentFormData.mainDueDate,
         // default_score: Number(assignment.defaultScore),
       }),
     }

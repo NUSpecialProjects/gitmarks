@@ -78,56 +78,87 @@ func (s *AssignmentService) getAssignmentTemplate() fiber.Handler {
 func (s *AssignmentService) createAssignment() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Parse request body
-		var assignmentData models.AssignmentOutline
-		error := c.BodyParser(&assignmentData)
+		var assignmentFormData struct {
+			models.AssignmentOutline
+			TemplateRepoOwner string `json:"template_repo_owner"`
+			TemplateRepoName  string `json:"template_repo_name"`
+		}
+		error := c.BodyParser(&assignmentFormData)
 		if error != nil {
-			return errs.InvalidRequestBody(assignmentData)
+			fmt.Println("Error parsing request body:", error)
+			return errs.InvalidRequestBody(assignmentFormData)
 		}
 
 		// Check if user has at least Professor role
-		_, err := s.RequireAtLeastRole(c, assignmentData.ClassroomID, models.Professor)
+		_, err := s.RequireAtLeastRole(c, assignmentFormData.ClassroomID, models.Professor)
 		if err != nil {
+			fmt.Println("Error requiring at least Professor role:", err)
 			return err
 		}
 
 		// Error if assignment already exists
-		existingAssignment, err := s.store.GetAssignmentByNameAndClassroomID(c.Context(), assignmentData.Name, assignmentData.ClassroomID)
+		existingAssignment, err := s.store.GetAssignmentByNameAndClassroomID(c.Context(), assignmentFormData.Name, assignmentFormData.ClassroomID)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			fmt.Println("Error getting assignment by name and classroom ID:", err)
 			return err
 		}
 		if existingAssignment != nil {
+			fmt.Println("Assignment with that name already exists")
 			return errs.BadRequest(errors.New("assignment with that name already exists"))
 		}
 
 		// Get classroom and assignment template
-		classroom, err := s.store.GetClassroomByID(c.Context(), assignmentData.ClassroomID)
+		classroom, err := s.store.GetClassroomByID(c.Context(), assignmentFormData.ClassroomID)
 		if err != nil {
+			fmt.Println("Error getting classroom by ID:", err)
 			return err
 		}
-		template, err := s.store.GetAssignmentTemplateByID(c.Context(), assignmentData.TemplateID)
-		if err != nil {
-			return err
+		template, err := s.store.GetAssignmentTemplateByID(c.Context(), assignmentFormData.TemplateID)
+		if err == nil && template.TemplateID == 0 {
+			template, err = s.store.CreateAssignmentTemplate(c.Context(), models.AssignmentTemplate{
+				TemplateID:        assignmentFormData.TemplateID,
+				TemplateRepoOwner: assignmentFormData.TemplateRepoOwner,
+				TemplateRepoName:  assignmentFormData.TemplateRepoName,
+			})
+			if err != nil {
+				fmt.Println("Error creating assignment template:", err)
+				return err
+			}
 		}
 
 		// Create base repository and store locally
-		baseRepoName, err := generateUniqueRepoName(c.Context(), s.appClient, classroom.OrgName, classroom.Name, assignmentData.Name)
+		baseRepoName, err := generateUniqueRepoName(c.Context(), s.appClient, classroom.OrgName, classroom.Name, assignmentFormData.Name)
 		if err != nil {
+			fmt.Println("Error generating unique repo name:", err)
 			return err
 		}
 
-		baseRepo, err := s.appClient.CreateRepoFromTemplate(c.Context(), classroom.OrgName, template.TemplateRepoName, baseRepoName)
+		baseRepo, err := s.appClient.CreateRepoFromTemplate(c.Context(), template.TemplateRepoOwner, template.TemplateRepoName, classroom.OrgName, baseRepoName)
 		if err != nil {
+			fmt.Println("Error creating repo from template:", err)
 			return err
 		}
 		err = s.store.CreateBaseRepo(c.Context(), *baseRepo)
 		if err != nil {
+			fmt.Println("Error creating base repo:", err)
 			return err
 		}
 
 		// Store assignment locally
-		assignmentData.BaseRepoID = baseRepo.BaseID
-		createdAssignment, err := s.store.CreateAssignment(c.Context(), assignmentData)
+		assignmentOutline := models.AssignmentOutline{
+			TemplateID:      assignmentFormData.TemplateID,
+			BaseRepoID:      baseRepo.BaseID,
+			Name:            assignmentFormData.Name,
+			ClassroomID:     assignmentFormData.ClassroomID,
+			RubricID:        assignmentFormData.RubricID,
+			GroupAssignment: assignmentFormData.GroupAssignment,
+			MainDueDate:     assignmentFormData.MainDueDate,
+			DefaultScore:    assignmentFormData.DefaultScore,
+		}
+
+		createdAssignment, err := s.store.CreateAssignment(c.Context(), assignmentOutline)
 		if err != nil {
+			fmt.Println("Error creating assignment:", err)
 			return err
 		}
 
@@ -220,10 +251,6 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			return errs.InternalServerError()
 		}
 
-		if !baseRepo.Initialized {
-			return errs.BadRequest(errors.New("base repo is not initialized"))
-		}
-
 		// Get classroom
 		classroom, err := s.store.GetClassroomByID(c.Context(), assignment.ClassroomID)
 		if err != nil {
@@ -299,7 +326,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 		initialDelay := 1 * time.Second
 		maxDelay := 30 * time.Second
 
-		var studentWorkRepo *gh.Repository
+		var studentWorkRepo *models.Repository
 		for {
 			repo, err := client.GetRepository(c.Context(), classroom.OrgName, forkName)
 			if err != nil {
@@ -312,8 +339,8 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 				continue
 			}
 
-			studentWorkRepo = repo
-			if client.CheckForkIsReady(c.Context(), studentWorkRepo) {
+			if client.CheckForkIsReady(c.Context(), repo.Parent.FullName, repo.FullName) {
+				studentWorkRepo = repo
 				break
 			}
 
@@ -326,41 +353,41 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 			initialDelay *= 2
 		}
 
-		firstCommitSHA, err := s.getFirstCommitSHA(c.Context(), client, *studentWorkRepo.Owner.Login, *studentWorkRepo.Name)
+		firstCommitSHA, err := s.getFirstCommitSHA(c.Context(), client, studentWorkRepo.Owner.Login, studentWorkRepo.Name)
 		if err != nil {
 			fmt.Println("Error getting first commit SHA:", err)
 			return errs.InternalServerError()
 		}
 
 		// Force push to the first commit, then merge them back in to get rid of the "enable actions" button
-		err = client.SetBranchToCommit(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName(), "main", *firstCommitSHA)
+		err = client.SetBranchToCommit(c.Context(), studentWorkRepo.Owner.Login, studentWorkRepo.Name, "main", *firstCommitSHA)
 		if err != nil {
 			fmt.Println("Error setting branch to commit:", err)
 			return errs.GithubAPIError(err)
 		}
 
-		err = client.SyncForkWithUpstream(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName(), "main")
+		err = client.SyncForkWithUpstream(c.Context(), studentWorkRepo.Owner.Login, studentWorkRepo.Name, "main")
 		if err != nil {
 			fmt.Println("Error syncing fork with upstream:", err)
 			return errs.GithubAPIError(err)
 		}
 
 		// Create feedback pull request
-		err = client.CreateFeedbackPR(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName())
+		err = client.CreateFeedbackPR(c.Context(), studentWorkRepo.Owner.Login, studentWorkRepo.Name)
 		if err != nil {
 			fmt.Println("Error creating feedback pull request:", err)
 			return errs.CriticalGithubError()
 		}
 
 		// KHO-239
-		err = client.CreateBranchRuleset(c.Context(), studentWorkRepo.GetOrganization().GetLogin(), studentWorkRepo.GetName())
+		err = client.CreateBranchRuleset(c.Context(), studentWorkRepo.Owner.Login, studentWorkRepo.Name)
 		if err != nil {
 			fmt.Println("Error creating branch ruleset:", err)
 			return errs.CriticalGithubError()
 		}
 
 		// Remove student team's access to forked repo
-		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, studentWorkRepo.GetName())
+		err = client.RemoveRepoFromTeam(c.Context(), classroom.OrgName, *classroom.StudentTeamName, classroom.OrgName, studentWorkRepo.Name)
 		if err != nil {
 			fmt.Println("Error removing repo from team:", err)
 			return errs.GithubAPIError(err)
@@ -375,7 +402,7 @@ func (s *AssignmentService) useAssignmentToken() fiber.Handler {
 
 		return c.Status(http.StatusOK).JSON(fiber.Map{
 			"message":  "Assignment Accepted!",
-			"repo_url": studentWorkRepo.GetHTMLURL(),
+			"repo_url": studentWorkRepo.HTMLURL,
 		})
 	}
 }

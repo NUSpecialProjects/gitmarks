@@ -5,6 +5,7 @@
     flex-direction: column;
     flex: 1;
     justify-content: center;
+    gap: 8px;
   }
 
   &__select-wrapper {
@@ -62,6 +63,9 @@
 
   &__selected-text {
     padding-right: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__button {
@@ -85,6 +89,12 @@
 
     &:hover {
       background: var(--panels-background);
+    }
+
+    &:disabled {
+      background: var(--panels-background);
+      color: var(--secondary-text);
+      cursor: not-allowed;
     }
   }
 
