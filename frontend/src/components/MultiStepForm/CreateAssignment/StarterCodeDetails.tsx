@@ -10,22 +10,26 @@ interface StarterCodeDetailsProps extends IStepComponentProps<IAssignmentFormDat
   isLoading: boolean;
 }
 
-const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange, templateRepos, isLoading }) => {
-  const [useCustomRepo, setUseCustomRepo] = useState(false);
+const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ onChange, templateRepos, isLoading }) => {
   const [repoOwner, debouncedRepoOwner, setRepoOwner] = useDebounce('', 250);
   const [repoName, debouncedRepoName, setRepoName] = useDebounce('', 250);
   const [repository, setRepository] = useState<IRepository | null>(null);
   const [loadingRepo, setLoadingRepo] = useState(false);
 
-  const formattedOptions = templateRepos.map(repo => repo.template_repo_name);
+  const formattedOptions = ["Custom", ...templateRepos.map(repo => repo.template_repo_name)];
 
-  const selectedOption = data.templateRepo ? data.templateRepo.template_repo_name : null;
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const handleDropdownChange = (selected: string) => {
-    const selectedRepo = templateRepos.find(repo => repo.template_repo_name === selected);
-    if (selectedRepo) {
-      setRepoOwner(selectedRepo.template_repo_owner);
-      setRepoName(selectedRepo.template_repo_name);
+    if (selected === "Custom") {
+      setSelectedOption("Custom");
+    } else {
+      const selectedRepo = templateRepos.find(repo => repo.template_repo_name === selected);
+      if (selectedRepo) {
+        setSelectedOption(selected);
+        setRepoOwner(selectedRepo.template_repo_owner);
+        setRepoName(selectedRepo.template_repo_name);
+      }
     }
   };
 
@@ -36,25 +40,31 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
       setRepoName(value);
     }
   };
+  // Visually indicate that the repo is loading as soon as the user starts typing rather than once the debounced value changes
+  useEffect(() => {
+    setLoadingRepo(true);
+  }, [repoOwner, repoName]);
 
   useEffect(() => {
     if (debouncedRepoOwner && debouncedRepoName) {
       setLoadingRepo(true);
       getRepoFromGithub(debouncedRepoOwner, debouncedRepoName).then(repository => {
         setRepository(repository);
-        onChange({ templateRepo: {
-          template_repo_name: debouncedRepoName,
-          template_repo_owner: debouncedRepoOwner,
-          template_repo_id: repository.id
-        } });
+        onChange({
+          templateRepo: {
+            template_repo_name: debouncedRepoName,
+            template_repo_owner: debouncedRepoOwner,
+            template_repo_id: repository.id
+          }
+        });
       })
-      .catch(() => {
-        onChange({ templateRepo: null });
-        setRepository(null);
-      })
-      .finally(() => {
-        setLoadingRepo(false);
-      });
+        .catch(() => {
+          onChange({ templateRepo: null });
+          setRepository(null);
+        })
+        .finally(() => {
+          setLoadingRepo(false);
+        });
     }
   }, [debouncedRepoOwner, debouncedRepoName]);
 
@@ -71,18 +81,9 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
             selectedOption={selectedOption}
             loading={isLoading}
             labelText="Pick a template repository to use as the starter code"
-            captionText="Choose from your organization's template repositories"
-            disabled={useCustomRepo}
+            captionText="Choose from your organization's template repositories or add any other template repository"
           />
         </div>
-        <label className="CreateAssignmentForms__checkbox">
-          Or use any public template repository:
-          <input
-            type="checkbox"
-            checked={useCustomRepo}
-            onChange={(e) => setUseCustomRepo(e.target.checked)}
-          />
-        </label>
 
         <div className="CreateAssignmentForms__repoInfo">
           <div className="CreateAssignmentForms__repoFields">
@@ -92,7 +93,7 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
               required
               value={repoOwner}
               onChange={(e) => handleCustomRepoChange('owner', e.target.value)}
-              disabled={!useCustomRepo}
+              disabled={selectedOption !== "Custom"}
             />
             <Input
               label="Repository Name"
@@ -100,17 +101,17 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
               required
               value={repoName}
               onChange={(e) => handleCustomRepoChange('name', e.target.value)}
-              disabled={!useCustomRepo}
+              disabled={selectedOption !== "Custom"}
             />
           </div>
           <div className="CreateAssignmentForms__repoLink">
             <span>{"Repository Link:"}</span> {repoLink ? (
-              <a 
-                href={repository ? repoLink : undefined} 
-                target="_blank" 
+              <a
+                href={repository ? repoLink : undefined}
+                target="_blank"
                 rel="noopener noreferrer"
                 className={!repository ? 'disabled-link' : ''}
-                title={!repository ? "Repository not foundt" : repository.is_template ? "" : "Repository is not a template repository"}
+                title={!repository ? "Repository not found" : repository.is_template ? "" : "Repository is not a template repository"}
               >
                 {repoLink}
               </a>
@@ -120,10 +121,10 @@ const StarterCodeDetails: React.FC<StarterCodeDetailsProps> = ({ data, onChange,
                 <ValidationIndicator
                   isLoading={loadingRepo}
                   isValid={!!repository && repository.is_template}
-                  title={loadingRepo ? "Checking repository..." : 
-                    !repository ? "Repository not found" : 
-                    !repository.is_template ? "Repository is not a template repository" : 
-                    "Valid template repository"}
+                  title={loadingRepo ? "Checking repository..." :
+                    !repository ? "Repository not found" :
+                      !repository.is_template ? "Repository is not a template repository" :
+                        "Valid template repository"}
                 />
               </div>
             )}
